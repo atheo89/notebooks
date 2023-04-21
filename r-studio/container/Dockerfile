@@ -35,11 +35,45 @@ USER 0
 #RUN  yum -y install libxcb-icccm libxcb-image libxcb-keysyms libxcb-render-util
 
 #RUN yum update -y && yum install -y wget && \ wget https://developer.download.nvidia.com/devtools/repos/rhel7/x86_64/NVIDIA.repo -O /etc/yum.repos.d/nvidia.repo   yum clean all &&  yum install -y nsight-systems-2021.2.1 &&  rm -f /etc/yum.repos.d/nvidia.repo 
-RUN yum update -y && yum install -y wget && wget https://developer.download.nvidia.com/devtools/repos/rhel7/x86_64/NVIDIA.repo -O /etc/yum.repos.d/nvidia.repo  
-RUN yum install -y nsight-systems-2021.2.1 
+# RUN yum update -y && yum install -y wget && wget https://developer.download.nvidia.com/devtools/repos/rhel7/x86_64/nsight-systems-2022.2.1.31-1.x86_64.rpm -O /etc/yum.repos.d/nsight-systems-2021.2.1  
+# RUN yum install -y nsight-systems-2021.2.1 
 
-RUN yum -y install cuda-nsight-systems-11-8 && yum -y install cuda-visual-tools-11-8  && yum -y install cuda-tools-11-8 && yum -y install cuda-toolkit-11-8 
-ENV XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/local/cuda
+# RUN yum update -y && yum install -y wget && \
+#     wget https://developer.download.nvidia.com/devtools/repos/rhel7/x86_64/nsight-systems-2022.2.1.31-1.x86_64.rpm -O nsight-systems.rpm && \
+#     rpm -ivh nsight-systems.rpm && \
+#     rm nsight-systems.rpm
+
+
+# RUN yum update -y && yum install -y wget && \
+#     wget https://developer.download.nvidia.com/devtools/repos/rhel7/x86_64/nsight-systems-2022.2.1.31-1.x86_64.rpm -O nsight-systems.rpm && \
+#     yum install -y nsight-systems.rpm && \
+#     rm nsight-systems.rpm
+
+# RUN yum update -y && yum install -y wget && \
+#     wget https://developer.download.nvidia.com/devtools/repos/rhel7/x86_64/nsight-systems-2022.2.1.31-1.x86_64.rpm -O nsight-systems.rpm && \
+#     yum remove -y nsight-systems-2022.2.1 && \
+#     yum install -y nsight-systems.rpm && \
+#     rm nsight-systems.rpm
+
+#RUN yum -y install cuda-nsight-systems-11-8 && yum -y install cuda-visual-tools-11-8  && yum -y install cuda-tools-11-8 && yum install -y nsight-systems && yum -y install cuda-toolkit-11-8 
+
+
+# RUN yum -y install cuda-nsight-systems-11-8 && \
+#     yum -y install cuda-visual-tools-11-8 && \
+#     yum -y install cuda-tools-11-8 && \
+#     yum -y install nsight-systems && \
+#     yum -y install cuda-toolkit-11-8
+
+# ENV XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/local/cuda
+
+RUN yum -y update && yum clean all 
+RUN yum -y install dnf-plugins-core && dnf config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo 
+
+RUN yum -y install cuda-toolkit-11-8 
+ENV PATH="/usr/local/cuda/bin:${PATH}" 
+ENV LD_LIBRARY_PATH="/usr/local/cuda/lib64:${LD_LIBRARY_PATH}" 
+
+
 
 ENV R_VERSION=4.2.2
 #####
