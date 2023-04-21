@@ -1,5 +1,5 @@
 CONTAINER_ENGINE ?= podman
-IMAGE_REGISTRY   ?= quay.io/opendatahub/workbench-images
+IMAGE_REGISTRY   ?= quay.io/rh_ee_atheodor/notebooks
 RELEASE	 		 ?= 2023a
 DATE 			 ?= $(shell date +'%Y%m%d')
 IMAGE_TAG		 ?= $(RELEASE)_$(DATE)
@@ -84,7 +84,7 @@ cuda-jupyter-tensorflow-ubi8-python-3.8: cuda-jupyter-datascience-ubi8-python-3.
 # Build and push base-ubi9-python-3.9 image to the registry
 .PHONY: base-ubi9-python-3.9
 base-ubi9-python-3.9:
-	$(call image,$@,base/ubi9-python-3.9)
+	$(call build_image,$@,base/ubi9-python-3.9)
 
 # Build and push jupyter-minimal-ubi9-python-3.9 image to the registry
 .PHONY: jupyter-minimal-ubi9-python-3.9
@@ -109,7 +109,7 @@ cuda-ubi9-python-3.9: base-ubi9-python-3.9
 # Build and push cuda-jupyter-minimal-ubi9-python-3.9 image to the registry
 .PHONY: cuda-jupyter-minimal-ubi9-python-3.9
 cuda-jupyter-minimal-ubi9-python-3.9: cuda-ubi9-python-3.9
-	$(call image,$@,jupyter/minimal/ubi9-python-3.9,$<)
+	$(call build_image,$@,jupyter/minimal/ubi9-python-3.9,$<)
 
 # Build and push cuda-jupyter-datascience-ubi9-python-3.9 image to the registry
 .PHONY: cuda-jupyter-datascience-ubi9-python-3.9
@@ -125,6 +125,15 @@ cuda-jupyter-tensorflow-ubi9-python-3.9: cuda-jupyter-datascience-ubi9-python-3.
 .PHONY: jupyter-trustyai-ubi9-python-3.9
 jupyter-trustyai-ubi9-python-3.9: jupyter-datascience-ubi9-python-3.9
 	$(call image,$@,jupyter/trustyai/ubi9-python-3.9,$<)
+
+.PHONY: code-server-ubi9-python-3.9
+code-server-ubi9-python-3.9: base-ubi9-python-3.9
+	$(call build_image,$@,code-server/container,$<)
+
+.PHONY: r-studio-ubi9-python-3.9
+r-studio-ubi9-python-3.9: cuda-ubi9-python-3.9
+	$(call build_image,$@,r-studio/container,$<)
+
 
 # Download kubectl binary
 .PHONY: bin/kubectl
