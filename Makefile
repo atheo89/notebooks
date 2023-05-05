@@ -131,7 +131,7 @@ code-server-ubi9-python-3.9: base-ubi9-python-3.9
 	$(call build_image,$@,code-server/container,$<)
 
 .PHONY: r-studio-ubi9-python-3.9
-r-studio-ubi9-python-3.9: cuda-ubi9-python-3.9
+r-studio-ubi9-python-3.9: base-ubi9-python-3.9
 	$(call build_image,$@,r-studio/container,$<)
 
 

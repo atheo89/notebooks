@@ -1,6 +1,7 @@
 ARG BASE_IMAGE
-#=quay.io/sclorg/s2i-base-c9s:c9s
-#registry.redhat.io/rhel7:7.9-983.1679306060
+#=registry.redhat.io/rhel:latest
+#=quay.io/opendatahub-contrib/workbench-images:base-c9s-py39_2023b_latest
+#=quay.io/opendatahub-contrib/workbench-images:cuda-base-c9s-py39_2023b_latest
 FROM ${BASE_IMAGE}
 
 ARG UBI_VERSION
@@ -9,6 +10,7 @@ ARG PYTHON_VERSION_LONG
 ARG RELEASE
 ARG DATE
 ARG CUDA=cuda-
+
 
 LABEL name="workbench-images:${CUDA}rstudio-${UBI_VERSION}-${PYTHON_VERSION}_${RELEASE}_${DATE}" \
     summary="Rstudio with ${PYTHON_VERSION_LONG} based on ${UBI_VERSION}" \
@@ -27,61 +29,69 @@ LABEL name="workbench-images:${CUDA}rstudio-${UBI_VERSION}-${PYTHON_VERSION}_${R
 USER 0
 
 # R needs the CUDA toolkit and special flags to build Tensorflow and other packages
-# RUN if [ "$CUDA" = "cuda-" ] ; then \
 
+###### Way 1
+# RUN if [ "$CUDA" = "cuda-" ] ; then \
 #         yum -y install cuda-toolkit-11-8 && \
 #         yum -y clean all  --enablerepo='*'; \
 #     fi
-#RUN  yum -y install libxcb-icccm libxcb-image libxcb-keysyms libxcb-render-util
 
-#RUN yum update -y && yum install -y wget && \ wget https://developer.download.nvidia.com/devtools/repos/rhel7/x86_64/NVIDIA.repo -O /etc/yum.repos.d/nvidia.repo   yum clean all &&  yum install -y nsight-systems-2021.2.1 &&  rm -f /etc/yum.repos.d/nvidia.repo 
-# RUN yum update -y && yum install -y wget && wget https://developer.download.nvidia.com/devtools/repos/rhel7/x86_64/nsight-systems-2022.2.1.31-1.x86_64.rpm -O /etc/yum.repos.d/nsight-systems-2021.2.1  
-# RUN yum install -y nsight-systems-2021.2.1 
+# ENV XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/local/cuda
 
-# RUN yum update -y && yum install -y wget && \
-#     wget https://developer.download.nvidia.com/devtools/repos/rhel7/x86_64/nsight-systems-2022.2.1.31-1.x86_64.rpm -O nsight-systems.rpm && \
-#     rpm -ivh nsight-systems.rpm && \
-#     rm nsight-systems.rpm
+##### ERROR
+# No match for argument: cuda-toolkit-11-8
+# Error: Unable to find a match: cuda-toolkit-11-8
+# Error: building at STEP "RUN if [ "$CUDA" = "cuda-" ] ; then         yum -y install cuda-toolkit-11-8 &&         yum -y clean all  --enablerepo='*';     fi": while running runtime: exit status 1
+# make: *** [Makefile:135: r-studio-ubi9-python-3.9] Error 1
+#(The same error when using the quay.io/opendatahub-contrib/workbench-images:base-c9s-py39_2023b_latest as base)
 
-
-# RUN yum update -y && yum install -y wget && \
-#     wget https://developer.download.nvidia.com/devtools/repos/rhel7/x86_64/nsight-systems-2022.2.1.31-1.x86_64.rpm -O nsight-systems.rpm && \
-#     yum install -y nsight-systems.rpm && \
-#     rm nsight-systems.rpm
-
-# RUN yum update -y && yum install -y wget && \
-#     wget https://developer.download.nvidia.com/devtools/repos/rhel7/x86_64/nsight-systems-2022.2.1.31-1.x86_64.rpm -O nsight-systems.rpm && \
-#     yum remove -y nsight-systems-2022.2.1 && \
-#     yum install -y nsight-systems.rpm && \
-#     rm nsight-systems.rpm
-
-#RUN yum -y install cuda-nsight-systems-11-8 && yum -y install cuda-visual-tools-11-8  && yum -y install cuda-tools-11-8 && yum install -y nsight-systems && yum -y install cuda-toolkit-11-8 
-
-
-# RUN yum -y install cuda-nsight-systems-11-8 && \
+###### Way 2
+# RUN yum check-update && yum update && \
+#     yum -y install cuda-nsight-systems-11-8 && \
 #     yum -y install cuda-visual-tools-11-8 && \
 #     yum -y install cuda-tools-11-8 && \
 #     yum -y install nsight-systems && \
 #     yum -y install cuda-toolkit-11-8
 
 # ENV XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/local/cuda
+##### ERROR
+# Error: building at STEP "RUN yum [...] "
+# exit status 100
+# make: *** [Makefile:135: r-studio-ubi9-python-3.9] Error 100
 
-RUN yum -y update && yum clean all 
-RUN yum -y install dnf-plugins-core && dnf config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo 
+###### Way 3
+# RUN if [ "$CUDA" = "cuda-" ] ; then \
+#         yum check-update && yum update && \
+#         yum -y install cuda-toolkit-11-8 && \
+#         yum -y clean all  --enablerepo='*'; \
+#     fi
 
-RUN yum -y install cuda-toolkit-11-8 
-ENV PATH="/usr/local/cuda/bin:${PATH}" 
-ENV LD_LIBRARY_PATH="/usr/local/cuda/lib64:${LD_LIBRARY_PATH}" 
+# ENV XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/local/cuda
 
 
+
+###### Way 4
+
+# RUN yum install subscription-manager
+
+# RUN yum config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/rhel9/x86_64/cuda-rhel9.repo && \
+#     yum clean all && \
+#     yum -y module install nvidia-driver:latest-dkms && \
+#     yum -y install cuda 
+
+# ENV XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/local/cuda
+
+#### ERROR 
+# There are no enabled repos.
+#  Run "yum repolist all" to see the repos you have.
+#  To enable Red Hat Subscription Management repositories:
+#      subscription-manager repos --enable <repo>
+#  To enable custom repositories:
+#      yum-config-manager --enable <repo>
+# Error: building at STEP "RUN yum install subscription-manager": while running runtime: exit status 1
+# make: *** [Makefile:135: r-studio-ubi9-python-3.9] Error 1
 
 ENV R_VERSION=4.2.2
-#####
-
-# RUN yum clean expire-cache \
-#     && yum install -y nvidia-container-toolkit-base
-
-#####
 
 # Install R
 RUN yum install -y yum-utils && \
@@ -184,3 +194,48 @@ WORKDIR /opt/app-root/src
 USER 1001
 
 CMD /opt/app-root/bin/run-rstudio.sh
+
+
+
+# # ########################NOTES
+# # # RUN if [ "$CUDA" = "cuda-" ] ; then \
+
+# # #         yum -y install cuda-toolkit-11-8 && \
+# # #         yum -y clean all  --enablerepo='*'; \
+# # #     fi
+# # #RUN  yum -y install libxcb-icccm libxcb-image libxcb-keysyms libxcb-render-util
+
+# # #RUN yum update -y && yum install -y wget && \ wget https://developer.download.nvidia.com/devtools/repos/rhel7/x86_64/NVIDIA.repo -O /etc/yum.repos.d/nvidia.repo   yum clean all &&  yum install -y nsight-systems-2021.2.1 &&  rm -f /etc/yum.repos.d/nvidia.repo 
+# # # RUN yum update -y && yum install -y wget && wget https://developer.download.nvidia.com/devtools/repos/rhel7/x86_64/nsight-systems-2022.2.1.31-1.x86_64.rpm -O /etc/yum.repos.d/nsight-systems-2021.2.1  
+# # # RUN yum install -y nsight-systems-2021.2.1 
+
+# # # RUN yum update -y && yum install -y wget && \
+# # #     wget https://developer.download.nvidia.com/devtools/repos/rhel7/x86_64/nsight-systems-2022.2.1.31-1.x86_64.rpm -O nsight-systems.rpm && \
+# # #     rpm -ivh nsight-systems.rpm && \
+# # #     rm nsight-systems.rpm
+
+
+# # # RUN yum update -y && yum install -y wget && \
+# # #     wget https://developer.download.nvidia.com/devtools/repos/rhel7/x86_64/nsight-systems-2022.2.1.31-1.x86_64.rpm -O nsight-systems.rpm && \
+# # #     yum install -y nsight-systems.rpm && \
+# # #     rm nsight-systems.rpm
+
+# # # RUN yum update -y && yum install -y wget && \
+# # #     wget https://developer.download.nvidia.com/devtools/repos/rhel7/x86_64/nsight-systems-2022.2.1.31-1.x86_64.rpm -O nsight-systems.rpm && \
+# # #     yum remove -y nsight-systems-2022.2.1 && \
+# # #     yum install -y nsight-systems.rpm && \
+# # #     rm nsight-systems.rpm
+
+# # #RUN yum -y install cuda-nsight-systems-11-8 && yum -y install cuda-visual-tools-11-8  && yum -y install cuda-tools-11-8 && yum install -y nsight-systems && yum -y install cuda-toolkit-11-8 
+
+
+# # # RUN yum -y install cuda-nsight-systems-11-8 && \
+# # #     yum -y install cuda-visual-tools-11-8 && \
+# # #     yum -y install cuda-tools-11-8 && \
+# # #     yum -y install nsight-systems && \
+# # #     yum -y install cuda-toolkit-11-8
+
+# # # ENV XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/local/cuda
+
+
+###https://issues.redhat.com/browse/RHELBU-851
