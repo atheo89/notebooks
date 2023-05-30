@@ -11,12 +11,14 @@ LABEL name="odh-notebook-jupyter-minimal-ubi9-python-3.9" \
     io.openshift.build.source-location="https://github.com/opendatahub-io/notebooks/tree/main/jupyter/minimal/ubi9-python-3.9" \
     io.openshift.build.image="quay.io/opendatahub/workbench-images:jupyter-minimal-ubi9-python-3.9"
 
+
 WORKDIR /opt/app-root/bin
 
 COPY utils utils/
 
 COPY Pipfile.lock start-notebook.sh ./
 
+COPY test/ ./
 # Install Python dependencies from Pipfile.lock file
 RUN echo "Installing softwares and packages" && micropipenv install && rm -f ./Pipfile.lock
 

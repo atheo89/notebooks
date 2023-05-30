@@ -1,5 +1,5 @@
 CONTAINER_ENGINE ?= podman
-IMAGE_REGISTRY   ?= quay.io/opendatahub/workbench-images
+IMAGE_REGISTRY   ?= quay.io/rh_ee_atheodor/notebooks
 RELEASE	 		 ?= 2023a
 DATE 			 ?= $(shell date +'%Y%m%d')
 IMAGE_TAG		 ?= $(RELEASE)_$(DATE)
@@ -246,17 +246,18 @@ undeploy-c9s-%-c9s-python-3.9: bin/kubectl
 	$(info # Undeploying notebook from $(NOTEBOOK_DIR) directory...)
 	$(KUBECTL_BIN) delete -k $(NOTEBOOK_DIR)
 
+
 # Check if the notebook is ready by pinging the /api endpoint
 .PHONY: test
 test-%: bin/kubectl
 	$(eval NOTEBOOK_NAME := $(subst .,-,$(subst cuda-,,$*)))
 	$(info # Running tests for $(NOTEBOOK_NAME) notebook...)
 	$(KUBECTL_BIN) wait --for=condition=ready pod -l app=$(NOTEBOOK_NAME) --timeout=300s
-	$(KUBECTL_BIN) port-forward svc/$(NOTEBOOK_NAME)-notebook 8888:8888 &
-	curl --retry 5 --retry-delay 5 --retry-connrefused \
-		http://localhost:8888/notebook/opendatahub/jovyan/api; EXIT_CODE=$$?; echo && \
-	pkill --full "^$(KUBECTL_BIN).*port-forward.*"; \
-	exit $${EXIT_CODE}
+	$(eval ONOMA = $(shell ($(KUBECTL_BIN) get pods -l app=$(NOTEBOOK_NAME) -o custom-columns=":metadata.name" | tr -d '\n')))
+#	$(KUBECTL_BIN) port-forward svc/$(NOTEBOOK_NAME)-notebook 8888:8888
+	$(KUBECTL_BIN) exec -it $(ONOMA) -- /bin/bash -c "jupyter nbconvert --execute --to markdown --no-input /opt/app-root/bin/test_minimal_ok.ipynb"
+	$(eval MLKIES := $(shell ($(KUBECTL_BIN) exec -it $(ONOMA) -- /bin/bash -c "cat /opt/app-root/bin/test_minimal_ok.md | tr -d '\n'")))
+	@exit $(MLKIES);
 
 # Validate that runtime image meets minimum criteria
 # This validation is created from subset of https://github.com/elyra-ai/elyra/blob/9c417d2adc9d9f972de5f98fd37f6945e0357ab9/Makefile#L325
