@@ -3,13 +3,24 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 name = "pypi"
 
+[[source]]
+url = "https://download.pytorch.org/whl/cu118"
+verify_ssl = true
+name = "pytorch"
+
 [dev-packages]
 
 [packages]
 # PyTorch and useful extensions
+<<<<<<< HEAD
 torch = "~=1.13.1"
 tensorboard = "~=2.11.2"
 torchvision = "~=0.14.1"
+=======
+tensorboard = "~=2.11.2"
+torch = {version = "~=2.0.0", index = "pytorch"}
+torchvision = {version = "~=0.15.1", index = "pytorch"}
+>>>>>>> fd15ebd (Update PyTorch notebook:updated package version and direved it back from cuda-data-science)
 
 # Datascience and useful extensions
 elyra-pipeline-editor-extension = "~=3.15.0"

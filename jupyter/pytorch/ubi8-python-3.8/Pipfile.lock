@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "42affb0a5dbc626ff122c2a1235a88ee0e433c05e21cbab7af926409f49c08df"
+            "sha256": "af9d790439c8eaedda813dcb3bb659ae28f29ab1e6d58d650f0a5d7f575aa63e"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -11,6 +11,11 @@
             {
                 "name": "pypi",
                 "url": "https://pypi.org/simple",
+                "verify_ssl": true
+            },
+            {
+                "name": "pytorch",
+                "url": "https://download.pytorch.org/whl/cu118",
                 "verify_ssl": true
             }
         ]
@@ -324,6 +329,7 @@
         },
         "boto3": {
             "hashes": [
+<<<<<<< HEAD
                 "sha256:3a60283676399ae94b49b7a170fb0f42ca2ddcde490988fb0af7fd5a64440ab8",
                 "sha256:455b6e1f12768b21b5f3990cf1fadeed9bf1c6b36e5a7a303352b927f530c434"
             ],
@@ -337,6 +343,21 @@
             ],
             "markers": "python_version >= '3.7'",
             "version": "==1.29.156"
+=======
+                "sha256:8763b3abd3abe35be8e948de05f71fad1517ac018908c207babb624d728b684c",
+                "sha256:9dde9b81a04bf3ec346fbf9a2d005fd22604adf039f1a4d91494e1787a2484e2"
+            ],
+            "index": "pypi",
+            "version": "==1.26.149"
+        },
+        "botocore": {
+            "hashes": [
+                "sha256:2996117aac40e8c30a41e01b16f75f14f1a51fc2fa27ce9090eeece045f0ac35",
+                "sha256:b8ffb9ae92d2232dbf0c5e661328f3c174fd55dfd9505626a3606ffdc89268b2"
+            ],
+            "markers": "python_version >= '3.7'",
+            "version": "==1.29.149"
+>>>>>>> fd15ebd (Update PyTorch notebook:updated package version and direved it back from cuda-data-science)
         },
         "cachetools": {
             "hashes": [
@@ -519,6 +540,28 @@
             ],
             "markers": "python_version >= '3.6'",
             "version": "==2.2.1"
+        },
+        "cmake": {
+            "hashes": [
+                "sha256:05cfd76c637eb22058c95e2dc383cadd4e0615e2643e637bb498a6cc24825790",
+                "sha256:1b92f9f59f48c803106dbdd6750b0f571a0500e25d3a62c42ba84bb7a9240d10",
+                "sha256:1d887be5f1a3f17559a78707a6bc0560f4f8cb93cebb9d823d90a63e68bae09b",
+                "sha256:230227bf99f36614de84cdc92ffce3a50eb2803020e946f8da945a08fcf766bf",
+                "sha256:235d8eac93a28dcce5a1cd7130412885a2aa53d5735cb2230e0f26f589347b65",
+                "sha256:24110035aff586a04a6a6fcf4609270642e4f503c0620c962dff75b653f81414",
+                "sha256:248a90816abfc10ff6e1109b54b8235c3e62f0ac92da16541753deb3b5ae063d",
+                "sha256:3175442985558d5415b97f264a6a1bb0af5ecfe10e3f7510257b1ea66bd33848",
+                "sha256:3e280e81713408987b7053f5b922c9f94e45668ca6efff1f02846309ca0b5b0f",
+                "sha256:432837364aa6cab2826a72e8a4cdd3586f5ac9ce495217ccd59aa70f2bba8120",
+                "sha256:93015da6f1c0e1e5f2debf752f1803ea52d742d915ad674043d36e471f937507",
+                "sha256:93a03bad17b9741acaff4a8651f8596496506602fa123e70fe67142f1b21ee2e",
+                "sha256:b7a6946c345497c14064e0c9585b30f5aaebbefdfc0b245b6bb5a978eb4fc85f",
+                "sha256:c3b0e72750c0f6c0373242c1299bc4ffdbebdd5004966ae6df0b2e9845aa6990",
+                "sha256:d45b30b9ce7280829888c78650177ab525df2b6785e1a5b3d82b4c147d828c0e",
+                "sha256:d726671ae7ae4aa6989e73d26b9f8f8e6af45163a26ea243949d72246566fdd8",
+                "sha256:e058e59154a1e490fb9425b420f87e28144292397607638d73e323509f7efae6"
+            ],
+            "version": "==3.26.4"
         },
         "colorama": {
             "hashes": [
@@ -792,11 +835,19 @@
         },
         "filelock": {
             "hashes": [
+<<<<<<< HEAD
                 "sha256:002740518d8aa59a26b0c76e10fb8c6e15eae825d34b6fdf670333fd7b938d81",
                 "sha256:cbb791cdea2a72f23da6ac5b5269ab0a0d161e9ef0100e653b69049a7706d1ec"
             ],
             "markers": "python_version >= '3.7'",
             "version": "==3.12.2"
+=======
+                "sha256:ad98852315c2ab702aeb628412cbf7e95b7ce8c3bf9565670b4eaecf1db370a9",
+                "sha256:fc03ae43288c013d2ea83c8597001b1129db351aad9c57fe2409327916b8e718"
+            ],
+            "markers": "python_version >= '3.7'",
+            "version": "==3.12.0"
+>>>>>>> fd15ebd (Update PyTorch notebook:updated package version and direved it back from cuda-data-science)
         },
         "fire": {
             "hashes": [
@@ -813,6 +864,7 @@
         },
         "fonttools": {
             "hashes": [
+<<<<<<< HEAD
                 "sha256:00ab569b2a3e591e00425023ade87e8fef90380c1dde61be7691cb524ca5f743",
                 "sha256:022c4a16b412293e7f1ce21b8bab7a6f9d12c4ffdf171fdc67122baddb973069",
                 "sha256:05171f3c546f64d78569f10adc0de72561882352cac39ec7439af12304d8d8c0",
@@ -850,6 +902,13 @@
             ],
             "markers": "python_version >= '3.8'",
             "version": "==4.40.0"
+=======
+                "sha256:106caf6167c4597556b31a8d9175a3fdc0356fdcd70ab19973c3b0d4c893c461",
+                "sha256:dba8d7cdb8e2bac1b3da28c5ed5960de09e59a2fe7e63bb73f5a59e57b0430d2"
+            ],
+            "markers": "python_version >= '3.8'",
+            "version": "==4.39.4"
+>>>>>>> fd15ebd (Update PyTorch notebook:updated package version and direved it back from cuda-data-science)
         },
         "fqdn": {
             "hashes": [
@@ -972,11 +1031,19 @@
         },
         "google-auth": {
             "hashes": [
+<<<<<<< HEAD
                 "sha256:030af34138909ccde0fbce611afc178f1d65d32fbff281f25738b1fe1c6f3eaa",
                 "sha256:23b7b0950fcda519bfb6692bf0d5289d2ea49fc143717cc7188458ec620e63fa"
             ],
             "markers": "python_version >= '3.6'",
             "version": "==2.20.0"
+=======
+                "sha256:a9cfa88b3e16196845e64a3658eb953992129d13ac7337b064c6546f77c17183",
+                "sha256:ea165e014c7cbd496558796b627c271aa8c18b4cba79dc1cc962b24c5efdfb85"
+            ],
+            "markers": "python_version >= '3.6'",
+            "version": "==2.19.1"
+>>>>>>> fd15ebd (Update PyTorch notebook:updated package version and direved it back from cuda-data-science)
         },
         "google-auth-httplib2": {
             "hashes": [
@@ -1168,11 +1235,19 @@
         },
         "importlib-metadata": {
             "hashes": [
+<<<<<<< HEAD
                 "sha256:1aaf550d4f73e5d6783e7acb77aec43d49da8017410afae93822cc9cca98c4d4",
                 "sha256:cb52082e659e97afc5dac71e79de97d8681de3aa07ff18578330904a9d18e5b5"
             ],
             "markers": "python_version < '3.10'",
             "version": "==6.7.0"
+=======
+                "sha256:43dd286a2cd8995d5eaef7fee2066340423b818ed3fd70adf0bad5f1fac53fed",
+                "sha256:92501cdf9cc66ebd3e612f1b4f0c0765dfa42f0fa38ffb319b6bd84dd675d705"
+            ],
+            "markers": "python_version < '3.10'",
+            "version": "==6.6.0"
+>>>>>>> fd15ebd (Update PyTorch notebook:updated package version and direved it back from cuda-data-science)
         },
         "importlib-resources": {
             "hashes": [
@@ -1191,11 +1266,19 @@
         },
         "ipykernel": {
             "hashes": [
+<<<<<<< HEAD
                 "sha256:7ccb6e2d32fd958c21453db494c914f3474908a2fdefd99ab548a5375b548d1f",
                 "sha256:fcfb67c5b504aa1bfcda1c5b3716636239e0f7b9290958f1c558c79b4c0e7ed5"
             ],
             "markers": "python_version >= '3.8'",
             "version": "==6.23.2"
+=======
+                "sha256:1aba0ae8453e15e9bc6b24e497ef6840114afcdb832ae597f32137fa19d42a6f",
+                "sha256:77aeffab056c21d16f1edccdc9e5ccbf7d96eb401bd6703610a21be8b068aadc"
+            ],
+            "markers": "python_version >= '3.8'",
+            "version": "==6.23.1"
+>>>>>>> fd15ebd (Update PyTorch notebook:updated package version and direved it back from cuda-data-science)
         },
         "ipython": {
             "hashes": [
@@ -1425,11 +1508,19 @@
         },
         "jupyterlab-server": {
             "hashes": [
+<<<<<<< HEAD
                 "sha256:83c01aa4ad9451cd61b383e634d939ff713850f4640c0056b2cdb2b6211a74c7",
                 "sha256:a5ea2c839336a8ba7c38c8e7b2f24cedf919f0d439f4d2e606d9322013a95788"
             ],
             "markers": "python_version >= '3.7'",
             "version": "==2.23.0"
+=======
+                "sha256:1c8eb55c7cd70a50a51fef42a7b4e26ef2f7fc48728f0290604bd89b1dd156e6",
+                "sha256:dfaaf898af84b9d01ae9583b813f378b96ee90c3a66f24c5186ea5d1bbdb2089"
+            ],
+            "markers": "python_version >= '3.7'",
+            "version": "==2.22.1"
+>>>>>>> fd15ebd (Update PyTorch notebook:updated package version and direved it back from cuda-data-science)
         },
         "jupyterlab-widgets": {
             "hashes": [
@@ -1596,6 +1687,12 @@
             ],
             "markers": "python_version >= '3.7'",
             "version": "==1.9.0"
+        },
+        "lit": {
+            "hashes": [
+                "sha256:71745d9e58dad3717735d27e2a9cca0e9ca6861d067da73c307e02fd38c98479"
+            ],
+            "version": "==16.0.5.post0"
         },
         "lxml": {
             "hashes": [
@@ -1851,6 +1948,16 @@
             ],
             "markers": "python_version >= '3.6'",
             "version": "==5.0.2"
+<<<<<<< HEAD
+=======
+        },
+        "mpmath": {
+            "hashes": [
+                "sha256:7a28eb2a9774d00c7bc92411c19a89209d5da7c4c9a9e227be8330a23a25b91f",
+                "sha256:a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c"
+            ],
+            "version": "==1.3.0"
+>>>>>>> fd15ebd (Update PyTorch notebook:updated package version and direved it back from cuda-data-science)
         },
         "multidict": {
             "hashes": [
@@ -1953,16 +2060,28 @@
                 "sha256:25e861299e5303a0477568557c4045eccc7a34c17fc08e7959558707b9ebe548",
                 "sha256:f9b179cd4b2d7bca965f900a2ebf0db4a12ebff2f36a711cb66861e4ae158e55"
             ],
+<<<<<<< HEAD
             "markers": "python_full_version >= '3.8.0'",
+=======
+            "markers": "python_version >= '3.8'",
+>>>>>>> fd15ebd (Update PyTorch notebook:updated package version and direved it back from cuda-data-science)
             "version": "==0.8.0"
         },
         "nbconvert": {
             "hashes": [
+<<<<<<< HEAD
                 "sha256:24fcf27efdef2b51d7f090cc5ce5a9b178766a55be513c4ebab08c91899ab550",
                 "sha256:5a445c6794b0791984bc5436608fe2c066cb43c83920c7bc91bde3b765e9a264"
             ],
             "markers": "python_version >= '3.7'",
             "version": "==7.6.0"
+=======
+                "sha256:51b6c77b507b177b73f6729dba15676e42c4e92bcb00edc8cc982ee72e7d89d7",
+                "sha256:af5064a9db524f9f12f4e8be7f0799524bd5b14c1adea37e34e83c95127cc818"
+            ],
+            "markers": "python_version >= '3.7'",
+            "version": "==7.4.0"
+>>>>>>> fd15ebd (Update PyTorch notebook:updated package version and direved it back from cuda-data-science)
         },
         "nbdime": {
             "hashes": [
@@ -2053,6 +2172,7 @@
             ],
             "index": "pypi",
             "version": "==1.24.3"
+<<<<<<< HEAD
         },
         "nvidia-cublas-cu11": {
             "hashes": [
@@ -2086,6 +2206,8 @@
             ],
             "markers": "platform_system == 'Linux'",
             "version": "==8.5.0.96"
+=======
+>>>>>>> fd15ebd (Update PyTorch notebook:updated package version and direved it back from cuda-data-science)
         },
         "oauthlib": {
             "hashes": [
@@ -2278,11 +2400,19 @@
         },
         "platformdirs": {
             "hashes": [
+<<<<<<< HEAD
                 "sha256:57e28820ca8094678b807ff529196506d7a21e17156cb1cddb3e74cebce54640",
                 "sha256:ffa199e3fbab8365778c4a10e1fbf1b9cd50707de826eb304b50e57ec0cc8d38"
             ],
             "markers": "python_version >= '3.7'",
             "version": "==3.6.0"
+=======
+                "sha256:412dae91f52a6f84830f39a8078cecd0e866cb72294a5c66808e74d5e88d251f",
+                "sha256:e2378146f1964972c03c085bb5662ae80b2b8c06226c54b2ff4aa9483e8a13a5"
+            ],
+            "markers": "python_version >= '3.7'",
+            "version": "==3.5.1"
+>>>>>>> fd15ebd (Update PyTorch notebook:updated package version and direved it back from cuda-data-science)
         },
         "plotly": {
             "hashes": [
@@ -2790,11 +2920,19 @@
         },
         "rich": {
             "hashes": [
+<<<<<<< HEAD
                 "sha256:8f87bc7ee54675732fa66a05ebfe489e27264caeeff3728c945d25971b6485ec",
                 "sha256:d653d6bccede5844304c605d5aac802c7cf9621efd700b46c7ec2b51ea914898"
             ],
             "markers": "python_full_version >= '3.7.0'",
             "version": "==13.4.2"
+=======
+                "sha256:76f6b65ea7e5c5d924ba80e322231d7cb5b5981aa60bfc1e694f1bc097fe6fe1",
+                "sha256:d204aadb50b936bf6b1a695385429d192bc1fdaf3e8b907e8e26f4c4e4b5bf75"
+            ],
+            "markers": "python_version >= '3.7'",
+            "version": "==13.4.1"
+>>>>>>> fd15ebd (Update PyTorch notebook:updated package version and direved it back from cuda-data-science)
         },
         "rich-click": {
             "hashes": [
@@ -2816,16 +2954,28 @@
                 "sha256:90260d9058e514786967344d0ef75fa8727eed8a7d2e43ce9f4bcf1b536174f7",
                 "sha256:e38464a49c6c85d7f1351b0126661487a7e0a14a50f1675ec50eb34d4f20ef21"
             ],
+<<<<<<< HEAD
             "markers": "python_version >= '3.6' and python_version < '4'",
+=======
+            "markers": "python_version >= '3.6' and python_full_version < '4.0.0'",
+>>>>>>> fd15ebd (Update PyTorch notebook:updated package version and direved it back from cuda-data-science)
             "version": "==4.9"
         },
         "ruamel.yaml": {
             "hashes": [
+<<<<<<< HEAD
                 "sha256:23cd2ed620231677564646b0c6a89d138b6822a0d78656df7abda5879ec4f447",
                 "sha256:ec939063761914e14542972a5cba6d33c23b0859ab6342f61cf070cfc600efc2"
             ],
             "markers": "python_version >= '3'",
             "version": "==0.17.32"
+=======
+                "sha256:098ed1eb6d338a684891a72380277c1e6fc4d4ae0e120de9a447275056dda335",
+                "sha256:3cf153f0047ced526e723097ac615d3009371779432e304dbd5596b6f3a4c777"
+            ],
+            "markers": "python_version >= '3'",
+            "version": "==0.17.31"
+>>>>>>> fd15ebd (Update PyTorch notebook:updated package version and direved it back from cuda-data-science)
         },
         "ruamel.yaml.clib": {
             "hashes": [
@@ -2950,11 +3100,19 @@
         },
         "setuptools": {
             "hashes": [
+<<<<<<< HEAD
                 "sha256:11e52c67415a381d10d6b462ced9cfb97066179f0e871399e006c4ab101fc85f",
                 "sha256:baf1fdb41c6da4cd2eae722e135500da913332ab3f2f5c7d33af9b492acb5235"
             ],
             "markers": "python_version >= '3.7'",
             "version": "==68.0.0"
+=======
+                "sha256:5df61bf30bb10c6f756eb19e7c9f3b473051f48db77fddbe06ff2ca307df9a6f",
+                "sha256:62642358adc77ffa87233bc4d2354c4b2682d214048f500964dbe760ccedf102"
+            ],
+            "markers": "python_version >= '3.7'",
+            "version": "==67.8.0"
+>>>>>>> fd15ebd (Update PyTorch notebook:updated package version and direved it back from cuda-data-science)
         },
         "simpervisor": {
             "hashes": [
@@ -3013,6 +3171,14 @@
                 "sha256:307c2bd147cd35997c8ed2e9a3bdca48ad9c9617e04ea46599095201b4ce998f"
             ],
             "version": "==0.1.10"
+        },
+        "sympy": {
+            "hashes": [
+                "sha256:c3588cd4295d0c0f603d0f2ae780587e64e2efeedb3521e46b9bb1d08d184fa5",
+                "sha256:ebf595c8dac3e0fdc4152c51878b498396ec7f30e7a914d6071e674d49420fb8"
+            ],
+            "markers": "python_version >= '3.8'",
+            "version": "==1.12"
         },
         "tabulate": {
             "hashes": [
@@ -3146,55 +3312,31 @@
         },
         "torch": {
             "hashes": [
-                "sha256:0122806b111b949d21fa1a5f9764d1fd2fcc4a47cb7f8ff914204fd4fc752ed5",
-                "sha256:0aa46f0ac95050c604bcf9ef71da9f1172e5037fdf2ebe051962d47b123848e7",
-                "sha256:0d9b8061048cfb78e675b9d2ea8503bfe30db43d583599ae8626b1263a0c1380",
-                "sha256:22128502fd8f5b25ac1cd849ecb64a418382ae81dd4ce2b5cebaa09ab15b0d9b",
-                "sha256:2c3581a3fd81eb1f0f22997cddffea569fea53bafa372b2c0471db373b26aafc",
-                "sha256:2ee7b81e9c457252bddd7d3da66fb1f619a5d12c24d7074de91c4ddafb832c93",
-                "sha256:33e67eea526e0bbb9151263e65417a9ef2d8fa53cbe628e87310060c9dcfa312",
-                "sha256:393a6273c832e047581063fb74335ff50b4c566217019cc6ace318cd79eb0566",
-                "sha256:50ff5e76d70074f6653d191fe4f6a42fdbe0cf942fbe2a3af0b75eaa414ac038",
-                "sha256:5e1e722a41f52a3f26f0c4fcec227e02c6c42f7c094f32e49d4beef7d1e213ea",
-                "sha256:6930791efa8757cb6974af73d4996b6b50c592882a324b8fb0589c6a9ba2ddaf",
-                "sha256:727dbf00e2cf858052364c0e2a496684b9cb5aa01dc8a8bc8bbb7c54502bdcdd",
-                "sha256:76024be052b659ac1304ab8475ab03ea0a12124c3e7626282c9c86798ac7bc11",
-                "sha256:98124598cdff4c287dbf50f53fb455f0c1e3a88022b39648102957f3445e9b76",
-                "sha256:d9fe785d375f2e26a5d5eba5de91f89e6a3be5d11efb497e76705fdf93fa3c2e",
-                "sha256:df8434b0695e9ceb8cc70650afc1310d8ba949e6db2a0525ddd9c3b2b181e5fe",
-                "sha256:e0df902a7c7dd6c795698532ee5970ce898672625635d885eade9976e5a04949",
-                "sha256:ea8dda84d796094eb8709df0fcd6b56dc20b58fdd6bc4e8d7109930dafc8e419",
-                "sha256:eeeb204d30fd40af6a2d80879b46a7efbe3cf43cdbeb8838dd4f3d126cc90b2b",
-                "sha256:f402ca80b66e9fbd661ed4287d7553f7f3899d9ab54bf5c67faada1555abde28",
-                "sha256:fd12043868a34a8da7d490bf6db66991108b00ffbeecb034228bfcbbd4197143"
+                "sha256:143b6c658c17d43376e2dfbaa2c106d35639d615e5e8dec4429cf1e510dd8d61",
+                "sha256:2ce38a6e4ea7c4b7f5baa51e65243a5f687f6e19ab7915ba5b2a431105f50bbe",
+                "sha256:a7a49d459bf4862f64f7bc1a68beccf8881c2fa9f3e0569608e16ba6f85ebf7b",
+                "sha256:b663a4ee744d574095dbd612644de345944247c0605692309fd9f6c7ccdea022",
+                "sha256:e58d26a11bd57ac19761c018c3151c15bc71d068afc8ec409bfd9b4cfcc63a52",
+                "sha256:eb55f29db5744eda8a96f5594e637daed0d52278273005de759970e67cfa6a5a",
+                "sha256:f58d75619bc96e4322343c030b893613701caa2d6db8017155da226c14171335",
+                "sha256:fa225b6f941ee0e78978ac85ed7744d3c19fff462473821f8060c14faa60043e"
             ],
-            "index": "pypi",
-            "version": "==1.13.1"
+            "index": "pytorch",
+            "version": "==2.0.1+cu118"
         },
         "torchvision": {
             "hashes": [
-                "sha256:0ed02aefd09bf1114d35f1aa7dce55aa61c2c7e57f9aa02dce362860be654e85",
-                "sha256:13986f0c15377ff23039e1401012ccb6ecf71024ce53def27139e4eac5a57592",
-                "sha256:30fcf0e9fe57d4ac4ce6426659a57dce199637ccb6c70be1128670f177692624",
-                "sha256:6099b3191dc2516099a32ae38a5fb349b42e863872a13545ab1a524b6567be60",
-                "sha256:68ed03359dcd3da9cd21b8ab94da21158df8a6a0c5bad0bf4a42f0e448d28cb3",
-                "sha256:6d7b35653113664ea3fdcb71f515cfbf29d2fe393000fd8aaff27a1284de6908",
-                "sha256:758b20d079e810b4740bd60d1eb16e49da830e3360f9be379eb177ee221fa5d4",
-                "sha256:83045507ef8d3c015d4df6be79491375b2f901352cfca6e72b4723e9c4f9a55d",
-                "sha256:89fb0419780ec9a9eb9f7856a0149f6ac9f956b28f44b0c0080c6b5b48044db7",
-                "sha256:8a9eb773a2fa8f516e404ac09c059fb14e6882c48fdbb9c946327d2ce5dba6cd",
-                "sha256:8d0766ea92affa7af248e327dd85f7c9cfdf51a57530b43212d4e1858548e9d7",
-                "sha256:92a324712a87957443cc34223274298ae9496853f115c252f8fc02b931f2340e",
-                "sha256:a2d4237d3c9705d7729eb4534e4eb06f1d6be7ff1df391204dfb51586d9b0ecb",
-                "sha256:a541e49fc3c4e90e49e6988428ab047415ed52ea97d0c0bfd147d8bacb8f4df8",
-                "sha256:b337e1245ca4353623dd563c03cd8f020c2496a7c5d12bba4d2e381999c766e0",
-                "sha256:c5e744f56e5f5b452deb5fc0f3f2ba4d2f00612d14d8da0dbefea8f09ac7690b",
-                "sha256:eaed58cf454323ed9222d4e0dd5fb897064f454b400696e03a5200e65d3a1e76",
-                "sha256:eeb05dd9dd3af5428fee525400759daf8da8e4caec45ddd6908cfb36571f6433",
-                "sha256:fb7a793fd33ce1abec24b42778419a3fb1e3159d7dfcb274a3ca8fb8cbc408dc"
+                "sha256:19ca4ab5d6179bbe53cff79df1a855ee6533c2861ddc7389f68349d8b9f8302a",
+                "sha256:27be62ec887ab9a7b86612eac55ba80f8c23978c8afd5e4339669a1bbc4925ea",
+                "sha256:406ed3d8bc5b66a99b692d4c742de39a3a515a399e6bfd1c24fbb688fbb31968",
+                "sha256:af6807d5e599fe5381c916235a5581407e850eb77c3d43899f37a1511ff81cc0",
+                "sha256:bfd2435d681418bea8dacde2b2cb6e5dd40a0e0243d3631e2b71c10bf9831f39",
+                "sha256:def9af47ebc2cad55c5aa2dad1230dcf4261833ed6df8a73e839bc233764f09e",
+                "sha256:ee36a68bb369d4173eb74ddf457751f6be1531d883f456eaf9b337a06f31c8fb",
+                "sha256:f2c6f5a100bcf9020b82f5d4c87cd7e26af0409cf33b90fb797b1127dcd42de6"
             ],
-            "index": "pypi",
-            "version": "==0.14.1"
+            "index": "pytorch",
+            "version": "==0.15.2+cu118"
         },
         "tornado": {
             "hashes": [
@@ -3228,6 +3370,30 @@
             ],
             "markers": "python_version >= '3.7'",
             "version": "==5.9.0"
+        },
+        "triton": {
+            "hashes": [
+                "sha256:0117722f8c2b579cd429e0bee80f7731ae05f63fe8e9414acd9a679885fcbf42",
+                "sha256:1aca3303629cd3136375b82cb9921727f804e47ebee27b2677fef23005c3851a",
+                "sha256:226941c7b8595219ddef59a1fdb821e8c744289a132415ddd584facedeb475b1",
+                "sha256:38806ee9663f4b0f7cd64790e96c579374089e58f49aac4a6608121aa55e2505",
+                "sha256:42a0d2c3fc2eab4ba71384f2e785fbfd47aa41ae05fa58bf12cb31dcbd0aeceb",
+                "sha256:47b4d70dc92fb40af553b4460492c31dc7d3a114a979ffb7a5cdedb7eb546c08",
+                "sha256:4c9fc8c89874bc48eb7e7b2107a9b8d2c0bf139778637be5bfccb09191685cfd",
+                "sha256:52c47b72c72693198163ece9d90a721299e4fb3b8e24fd13141e384ad952724f",
+                "sha256:74f118c12b437fb2ca25e1a04759173b517582fcf4c7be11913316c764213656",
+                "sha256:75834f27926eab6c7f00ce73aaf1ab5bfb9bec6eb57ab7c0bfc0a23fac803b4c",
+                "sha256:8f05a7e64e4ca0565535e3d5d3405d7e49f9d308505bb7773d21fb26a4c008c2",
+                "sha256:9618815a8da1d9157514f08f855d9e9ff92e329cd81c0305003eb9ec25cc5add",
+                "sha256:9d4978298b74fcf59a75fe71e535c092b023088933b2f1df933ec32615e4beef",
+                "sha256:bb4b99ca3c6844066e516658541d876c28a5f6e3a852286bbc97ad57134827fd",
+                "sha256:bcd9be5d0c2e45d2b7e6ddc6da20112b6862d69741576f9c3dbaf941d745ecae",
+                "sha256:d2684b6a60b9f174f447f36f933e9a45f31db96cb723723ecd2dcfd1c57b778b",
+                "sha256:e3e13aa8b527c9b642e3a9defcc0fbd8ffbe1c80d8ac8c15a01692478dc64d8a",
+                "sha256:fedce6a381901b1547e0e7e1f2546e4f65dca6d91e2d8a7305a2d1f5551895be"
+            ],
+            "markers": "platform_system == 'Linux' and platform_machine == 'x86_64'",
+            "version": "==2.0.0"
         },
         "typer": {
             "hashes": [
@@ -3345,11 +3511,19 @@
         },
         "virtualenv": {
             "hashes": [
+<<<<<<< HEAD
                 "sha256:34da10f14fea9be20e0fd7f04aba9732f84e593dac291b757ce42e3368a39419",
                 "sha256:8ff19a38c1021c742148edc4f81cb43d7f8c6816d2ede2ab72af5b84c749ade1"
             ],
             "markers": "python_version >= '3.7'",
             "version": "==20.23.1"
+=======
+                "sha256:6abec7670e5802a528357fdc75b26b9f57d5d92f29c5462ba0fbe45feacc685e",
+                "sha256:a85caa554ced0c0afbd0d638e7e2d7b5f92d23478d05d17a76daeac8f279f924"
+            ],
+            "markers": "python_version >= '3.7'",
+            "version": "==20.23.0"
+>>>>>>> fd15ebd (Update PyTorch notebook:updated package version and direved it back from cuda-data-science)
         },
         "watchdog": {
             "hashes": [
@@ -3407,6 +3581,7 @@
         },
         "websocket-client": {
             "hashes": [
+<<<<<<< HEAD
                 "sha256:72d7802608745b0a212f79b478642473bd825777d8637b6c8c421bf167790d4f",
                 "sha256:e84c7eafc66aade6d1967a51dfd219aabdf81d15b9705196e11fd81f48666b78"
             ],
@@ -3420,6 +3595,21 @@
             ],
             "markers": "python_version >= '3.8'",
             "version": "==2.3.6"
+=======
+                "sha256:c7d67c13b928645f259d9b847ab5b57fd2d127213ca41ebd880de1f553b7c23b",
+                "sha256:f8c64e28cd700e7ba1f04350d66422b6833b82a796b525a51e740b8cc8dab4b1"
+            ],
+            "markers": "python_version >= '3.7'",
+            "version": "==1.5.2"
+        },
+        "werkzeug": {
+            "hashes": [
+                "sha256:26c6a6a63a8a8d10a8d4e13e7f10821772ff5f138909262e89e946717c72b857",
+                "sha256:f6426f626540009131f06482c73f10c536efd47125afc63c850cc950db9ae585"
+            ],
+            "markers": "python_version >= '3.8'",
+            "version": "==2.3.5"
+>>>>>>> fd15ebd (Update PyTorch notebook:updated package version and direved it back from cuda-data-science)
         },
         "whatthepatch": {
             "hashes": [
@@ -3535,10 +3725,17 @@
         },
         "yapf": {
             "hashes": [
+<<<<<<< HEAD
                 "sha256:63386557876c2686cb29d8c422b2d1e484f29f7a278821f91515b5c5adf569a7",
                 "sha256:7eeb8c404e386f16e24cbd785103dbc573f51cbb68e65a35f4392e0233f3d7bc"
             ],
             "version": "==0.40.0"
+=======
+                "sha256:4c2b59bd5ffe46f3a7da48df87596877189148226ce267c16e8b44240e51578d",
+                "sha256:da62bdfea3df3673553351e6246abed26d9fe6780e548a5af9e70f6d2b4f5b9a"
+            ],
+            "version": "==0.33.0"
+>>>>>>> fd15ebd (Update PyTorch notebook:updated package version and direved it back from cuda-data-science)
         },
         "yarl": {
             "hashes": [

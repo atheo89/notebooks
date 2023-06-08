@@ -71,6 +71,7 @@
         },
         "fonttools": {
             "hashes": [
+<<<<<<< HEAD
                 "sha256:00ab569b2a3e591e00425023ade87e8fef90380c1dde61be7691cb524ca5f743",
                 "sha256:022c4a16b412293e7f1ce21b8bab7a6f9d12c4ffdf171fdc67122baddb973069",
                 "sha256:05171f3c546f64d78569f10adc0de72561882352cac39ec7439af12304d8d8c0",
@@ -108,6 +109,13 @@
             ],
             "markers": "python_version >= '3.8'",
             "version": "==4.40.0"
+=======
+                "sha256:106caf6167c4597556b31a8d9175a3fdc0356fdcd70ab19973c3b0d4c893c461",
+                "sha256:dba8d7cdb8e2bac1b3da28c5ed5960de09e59a2fe7e63bb73f5a59e57b0430d2"
+            ],
+            "markers": "python_version >= '3.8'",
+            "version": "==4.39.4"
+>>>>>>> fd15ebd (Update PyTorch notebook:updated package version and direved it back from cuda-data-science)
         },
         "joblib": {
             "hashes": [
