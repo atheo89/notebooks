@@ -81,9 +81,11 @@ COPY nginx/api/ /opt/app-root/api/
 COPY utils utils/
 COPY run-code-server.sh run-nginx.sh ./
 
+WORKDIR /opt/app-root/src
+
 ENV SHELL /bin/bash
 
-WORKDIR /opt/app-root/src
+WORKDIR /opt/app-root/workspace
 
 USER 1001
 

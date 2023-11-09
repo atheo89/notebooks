@@ -22,4 +22,4 @@ start_process /usr/bin/code-server \
   --disable-telemetry \
   --auth none \
   --disable-update-check \
-  /opt/app-root/src
+  /opt/app-root/workspace
