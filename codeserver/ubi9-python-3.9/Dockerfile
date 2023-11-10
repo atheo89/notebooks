@@ -83,9 +83,11 @@ COPY run-code-server.sh run-nginx.sh ./
 
 WORKDIR /opt/app-root/src
 
+
+
 ENV SHELL /bin/bash
 
-WORKDIR /opt/app-root/workspace
+WORKDIR /opt/app-root/src/lost+found
 
 USER 1001
 
