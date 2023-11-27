@@ -29,7 +29,17 @@ RUN echo "Installing softwares and packages" && \
     fix-permissions /opt/app-root -P
 
 # Install usefull OS packages
-RUN dnf install -y jq git-lfs libsndfile
+RUN dnf install -y jq git-lfs libsndfile mongocli
+
+# Install MongoDB Client, We need a special repo for MongoDB as they do their own distribution
+COPY mongodb-org-6.0.repo-x86_64 /etc/yum.repos.d/mongodb-org-6.0.repo
+
+# Install MSSQL Client, We need a special repo for MSSQL as they do their own distribution
+COPY mssql-2022.repo-x86_64 /etc/yum.repos.d/mssql-2022.repo
+
+RUN ACCEPT_EULA=Y dnf install -y mssql-tools18 unixODBC-devel
+
+ENV PATH="$PATH:/opt/mssql-tools18/bin"
 
 # Install Code Server
 RUN yum install -y "https://github.com/coder/code-server/releases/download/${CODESERVER_VERSION}/code-server-${CODESERVER_VERSION/v/}-amd64.rpm" && \
