@@ -59,6 +59,11 @@ location /vscode/ {
     proxy_set_header X-NginX-Proxy true;
     proxy_redirect off;
 
+    # ssl self-signed
+    proxy_ssl_trusted_certificate /var/run/secrets/kubernetes.io/serviceaccount/ca.crt;
+    proxy_ssl_verify       on;
+    proxy_ssl_verify_depth 2;
+
     access_log /var/log/nginx/vscode.access.log json if=$loggable;
 }
 ###############

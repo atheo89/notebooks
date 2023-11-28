@@ -1,8 +1,8 @@
 CONTAINER_ENGINE ?= podman
-IMAGE_REGISTRY   ?= quay.io/opendatahub/workbench-images
+IMAGE_REGISTRY   ?= quay.io/rh_ee_atheodor/workbench-images
 RELEASE	 		 ?= 2023b
 DATE 			 ?= $(shell date +'%Y%m%d')
-IMAGE_TAG		 ?= $(RELEASE)_$(DATE)
+IMAGE_TAG		 ?= $(RELEASE)_trial-2
 KUBECTL_BIN      ?= bin/kubectl
 KUBECTL_VERSION  ?= v1.23.11
 NOTEBOOK_REPO_BRANCH_BASE ?= https://raw.githubusercontent.com/opendatahub-io/notebooks/main
@@ -23,7 +23,7 @@ define build_image
 		$(eval BUILD_ARGS := --build-arg BASE_IMAGE=$(BASE_IMAGE_NAME)),
 		$(eval BUILD_ARGS :=)
 	)
-	$(CONTAINER_ENGINE) build --no-cache  -t $(IMAGE_NAME) $(BUILD_ARGS) $(2)
+	$(CONTAINER_ENGINE) build -t $(IMAGE_NAME) $(BUILD_ARGS) $(2)
 endef
 
 # Push function for the notebok image:
