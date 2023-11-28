@@ -42,9 +42,20 @@ if [ ! -f "/opt/app-root/src/.local/share/code-server" ]; then
 fi
 
 # Start server
-start_process /usr/bin/code-server \
+if [ -d "/etc/tls/private" ]; then
+  start_process /usr/bin/code-server \
   --bind-addr 0.0.0.0:8787 \
   --disable-telemetry \
+  --cert /etc/tls/private/tls.crt \
+  --cert-key /etc/tls/private/tls.key \
   --auth none \
   --disable-update-check \
   /opt/app-root/src
+else
+  start_process /usr/bin/code-server \
+    --bind-addr 0.0.0.0:8787 \
+    --disable-telemetry \
+    --auth none \
+    --disable-update-check \
+    /opt/app-root/src
+fi
