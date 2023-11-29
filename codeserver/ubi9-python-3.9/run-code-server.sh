@@ -41,9 +41,28 @@ if [ ! -f "/opt/app-root/src/.local/share/code-server" ]; then
     fi
 fi
 
+# https://github.com/coder/code-server/issues/1566#issuecomment-623254087
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /opt/app-root/bin/private-key.key -out /opt/app-root/bin/certificate.crt -subj "/C=US"
+#openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -keyout /opt/app-root/bin/key.pem -out /opt/app-root/bin/cert.pem  -subj "/C=US"
+
+
+# mydomain=$(cat /etc/nginx/nginx.conf  | grep 'server_name' | awk '{print $2}' | tr -d ';' | head -n 1)
+
+# sudo -i certbot --non-interactive --redirect --agree-tos --nginx -d $mydomain -m atheodor@redhat.com
+
+
+if [ ! -f  "~/.config/code-server/config.yaml" ]; then
+  echo "cert: true" > "~/.config/code-server/config.yaml"
+else
+  sed -i 's/cert: false/cert: true/' "~/.config/code-server/config.yaml"
+fi
+
 # Start server
 start_process /usr/bin/code-server \
   --bind-addr 0.0.0.0:8787 \
+  --cert true \
+  --cert /opt/app-root/bin/certificate.crt \
+  --cert-key /opt/app-root/bin/private-key.key \
   --disable-telemetry \
   --auth none \
   --disable-update-check \
