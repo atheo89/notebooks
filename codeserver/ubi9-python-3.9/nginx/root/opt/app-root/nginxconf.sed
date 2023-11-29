@@ -4,6 +4,17 @@
 # Remove listening on IPv6
 /\[::\]/d
 
+# Append 8443
+/listen 80;/a\
+\listen 8443 ssl;
+
+# Add SSL configuration
+/server_name/a\
+\    listen 443 ssl;\n\
+\    ssl_certificate /etc/tls/private/tls.crt;\
+\    ssl_certificate_key /etc/tls/private/private-key.key;\n\
+
+
 # One worker only
 /worker_processes/s%auto%1%
 

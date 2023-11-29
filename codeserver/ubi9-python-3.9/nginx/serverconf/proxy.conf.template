@@ -57,7 +57,11 @@ location /vscode/ {
     proxy_set_header X-Forwarded-Proto $custom_scheme;
     proxy_set_header Host $http_host;
     proxy_set_header X-NginX-Proxy true;
-    proxy_redirect off;
+    #proxy_redirect off;
+
+    # Approach from https://github.com/coder/code-server/issues/1211#issuecomment-575985054
+    proxy_redirect http://$http_host https://$http_host/vscode;	
+	  proxy_buffering off;
 
     access_log /var/log/nginx/vscode.access.log json if=$loggable;
 }
