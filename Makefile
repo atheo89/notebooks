@@ -1,8 +1,8 @@
 CONTAINER_ENGINE ?= podman
-IMAGE_REGISTRY   ?= quay.io/opendatahub/workbench-images
+IMAGE_REGISTRY   ?= quay.io/rh_ee_atheodor/workbench-images
 RELEASE	 		 ?= 2023b
 DATE 			 ?= $(shell date +'%Y%m%d')
-IMAGE_TAG		 ?= $(RELEASE)_$(DATE)
+IMAGE_TAG		 ?= $(RELEASE)_plus
 KUBECTL_BIN      ?= bin/kubectl
 KUBECTL_VERSION  ?= v1.23.11
 NOTEBOOK_REPO_BRANCH_BASE ?= https://raw.githubusercontent.com/opendatahub-io/notebooks/main
@@ -121,7 +121,7 @@ runtime-cuda-tensorflow-ubi8-python-3.8: cuda-ubi8-python-3.8
 # Build and push base-ubi9-python-3.9 image to the registry
 .PHONY: base-ubi9-python-3.9
 base-ubi9-python-3.9:
-	$(call image,$@,base/ubi9-python-3.9)
+	$(call build_image,$@,base/ubi9-python-3.9)
 
 # Build and push jupyter-minimal-ubi9-python-3.9 image to the registry
 .PHONY: jupyter-minimal-ubi9-python-3.9
@@ -185,8 +185,11 @@ runtime-cuda-tensorflow-ubi9-python-3.9: cuda-ubi9-python-3.9
 
 .PHONY: codeserver-ubi9-python-3.9
 codeserver-ubi9-python-3.9: base-ubi9-python-3.9
-	$(call image,$@,codeserver/ubi9-python-3.9,$<)
+	$(call build_image,$@,codeserver/ubi9-python-3.9,$<)
 
+.PHONY: codeserver-ubi9-python-3.9-plus
+codeserver-ubi9-python-3.9-plus: codeserver-ubi9-python-3.9
+	$(call image,$@,codeserver/ubi9-python-3.9-plus,$<)
 
 ####################################### Buildchain for Python 3.9 using C9S #######################################
 
