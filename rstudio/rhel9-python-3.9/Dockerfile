@@ -13,6 +13,12 @@ LABEL name="odh-notebook-rstudio-rhel9-python-3.9" \
 
 USER 0
 
+# Copy the RHEL subscription secret to the default location
+COPY rhel-subscription-secret /etc/rhsm/credentials
+
+# Run the subscription manager command using the provided credentials
+RUN subscription-manager register --username=$(cat /etc/rhsm/credentials/username) --password=$(cat /etc/rhsm/credentials/password)
+
 ENV R_VERSION=4.3.1
 
 # Install R

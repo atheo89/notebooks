@@ -1,0 +1,19 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: example-build-config
+spec:
+  source:
+    git:
+      uri: https://github.com/example/my-app.git
+      ref: master
+  strategy:
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+  output:
+    to:
+      kind: ImageStreamTag
+      name: 'example-app:latest'
+  secrets:
+    - secretSource:
+        name: rhel-subscription-secret
