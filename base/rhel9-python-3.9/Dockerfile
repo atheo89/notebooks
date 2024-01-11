@@ -16,7 +16,7 @@ WORKDIR /opt/app-root/bin
 RUN pip install -U "micropipenv[toml]"
 
 # Install Python dependencies from Pipfile.lock file
-COPY Pipfile.lock ./
+COPY base/rhel9-python-3.9/Pipfile.lock ./
 
 # OS Packages needs to be installed as root
 USER root
