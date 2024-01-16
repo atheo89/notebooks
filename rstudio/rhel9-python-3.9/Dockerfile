@@ -14,7 +14,17 @@ LABEL name="odh-notebook-rstudio-rhel9-python-3.9" \
 USER 0
 
 # Copy the RHEL subscription secret to the default location
-COPY rhel-subscription-secret /etc/rhsm/credentials
+# Access the secret from the environment variable
+ARG username
+ARG password
+ENV username=$username
+ENV password=$password
+
+# Create a file containing the secret value
+RUN echo $username > /tmp/secret-user && echo $ > /tmp/secret-pass
+# Create a file containing the secret value
+RUN cat /tmp/secret-user
+RUN cat /tmp/secret-pass
 
 # Run the subscription manager command using the provided credentials
 RUN subscription-manager register --username=$(cat /etc/rhsm/credentials/username) --password=$(cat /etc/rhsm/credentials/password)
