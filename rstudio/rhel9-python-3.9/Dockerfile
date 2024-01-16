@@ -15,17 +15,17 @@ USER 0
 
 # Copy the RHEL subscription secret to the default location
 # Access the secret from the environment variable
-ARG username
-ARG password
-ENV username=$username
-ENV password=$password
+ARG USERNAME
+ARG PASSWORD
+ENV USERNAME=$USERNAME
+ENV PASSWORD=$PASSWORD
 
 # Create a file containing the secret value
 RUN echo $username > /tmp/secret-user && echo $ > /tmp/secret-pass
 
 # Print the values for debugging (remove in production)
-RUN echo "username: $username"
-RUN echo "password: $password"
+RUN echo "USERNAME: $USERNAME"
+RUN echo "PASSWORD: $PASSWORD"
 
 # Run the subscription manager command using the provided credentials
 RUN subscription-manager register --username=$(cat /etc/rhsm/credentials/username) --password=$(cat /etc/rhsm/credentials/password)
