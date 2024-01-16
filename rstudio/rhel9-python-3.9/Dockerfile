@@ -28,7 +28,7 @@ RUN echo "USERNAME: $USERNAME"
 RUN echo "PASSWORD: $PASSWORD"
 
 # Run the subscription manager command using the provided credentials
-RUN subscription-manager register --username=$(cat /etc/rhsm/credentials/username) --password=$(cat /etc/rhsm/credentials/password)
+RUN subscription-manager register --username=$USERNAME --password=$PASSWORD
 
 ENV R_VERSION=4.3.1
 
