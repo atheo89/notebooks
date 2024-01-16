@@ -22,9 +22,10 @@ ENV password=$password
 
 # Create a file containing the secret value
 RUN echo $username > /tmp/secret-user && echo $ > /tmp/secret-pass
-# Create a file containing the secret value
-RUN cat /tmp/secret-user
-RUN cat /tmp/secret-pass
+
+# Print the values for debugging (remove in production)
+RUN echo "USERNAME: $USERNAME"
+RUN echo "PASSWORD: $PASSWORD"
 
 # Run the subscription manager command using the provided credentials
 RUN subscription-manager register --username=$(cat /etc/rhsm/credentials/username) --password=$(cat /etc/rhsm/credentials/password)
