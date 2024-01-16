@@ -1,6 +1,12 @@
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
+# Access the secret from the environment variable
+ARG USERNAME
+ARG PASSWORD
+ENV USERNAME=$USERNAME
+ENV PASSWORD=$PASSWORD
+
 LABEL name="odh-notebook-rstudio-rhel9-python-3.9" \
       summary="R Studio image with python 3.9 based on Red Hat Enterprise Linux 9" \
       description="Code Server (VS Code) image with python 3.9 based on Red Hat Enterprise Linux 9" \
@@ -12,16 +18,6 @@ LABEL name="odh-notebook-rstudio-rhel9-python-3.9" \
       io.openshift.build.image="quay.io/opendatahub/workbench-images:rstudio-rhel9-python-3.9"
 
 USER 0
-
-# Copy the RHEL subscription secret to the default location
-# Access the secret from the environment variable
-ARG USERNAME
-ARG PASSWORD
-ENV USERNAME=$USERNAME
-ENV PASSWORD=$PASSWORD
-
-# Create a file containing the secret value
-RUN echo $username > /tmp/secret-user && echo $ > /tmp/secret-pass
 
 # Print the values for debugging (remove in production)
 RUN echo "USERNAME: $USERNAME"
