@@ -23,30 +23,30 @@ USER 0
 RUN echo "USERNAME: $USERNAME"
 RUN echo "PASSWORD: $PASSWORD"
 
-# # uncomment the bellow line if you fall on this error: subscription-manager is disabled when running inside a container. Please refer to your host system for subscription management.
-# #RUN sed -i 's/\(def in_container():\)/\1\n    return False/g' /usr/lib64/python*/*-packages/rhsm/config.py
+# uncomment the bellow line if you fall on this error: subscription-manager is disabled when running inside a container. Please refer to your host system for subscription management.
+#RUN sed -i 's/\(def in_container():\)/\1\n    return False/g' /usr/lib64/python*/*-packages/rhsm/config.py
 
-# # Run the subscription manager command using the provided credentials
-# RUN subscription-manager register --username=$USERNAME --password=$PASSWORD --auto-attach
+# Run the subscription manager command using the provided credentials
+RUN subscription-manager register --username=$USERNAME --password=$PASSWORD --auto-attach
 
-# ENV R_VERSION=4.3.1
+ENV R_VERSION=4.3.1
 
-# # Install R
-# RUN yum install -y yum-utils && \
-  #   subscription-manager repos --enable codeready-builder-for-rhel-9-x86_64-rpms && \
-    # yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
-    # INSTALL_PKGS="R-core R-core-devel R-java R-Rcpp R-highlight \
-    # R-littler R-littler-examples openssl-libs compat-openssl11" && \
-    # yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS && \
-    # echo 'options(repos = c(CRAN = "https://cran.rstudio.com/"), download.file.method = "libcurl")' >> /usr/lib64/R/etc/Rprofile.site && \
-    # (umask 002;touch /usr/lib64/R/etc/Renviron.site) && \
-    # yum -y clean all --enablerepo='*'
+# Install R
+RUN yum install -y yum-utils && \
+    subscription-manager repos --enable codeready-builder-for-rhel-9-x86_64-rpms && \
+    yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
+    INSTALL_PKGS="R-core R-core-devel R-java R-Rcpp R-highlight \
+    R-littler R-littler-examples openssl-libs compat-openssl11" && \
+    yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS && \
+    echo 'options(repos = c(CRAN = "https://cran.rstudio.com/"), download.file.method = "libcurl")' >> /usr/lib64/R/etc/Rprofile.site && \
+    (umask 002;touch /usr/lib64/R/etc/Renviron.site) && \
+    yum -y clean all --enablerepo='*'
 
 # set R library to default (used in install.r from littler)
-# ENV LIBLOC /usr/lib64/R/library
+ENV LIBLOC /usr/lib64/R/library
 
 # set User R Library path
-# ENV R_LIBS_USER /opt/app-root/src/Rpackages/4.2
+ENV R_LIBS_USER /opt/app-root/src/Rpackages/4.2
 
 WORKDIR /tmp/
 
@@ -123,6 +123,9 @@ WORKDIR /opt/app-root/bin
 
 COPY rstudio/rhel9-python-3.9/utils utils/
 COPY rstudio/rhel9-python-3.9/run-rstudio.sh rstudio/rhel9-python-3.9/setup_rstudio.py rstudio/rhel9-python-3.9/rsession.sh rstudio/rhel9-python-3.9/run-nginx.sh ./
+
+# Unregister the system
+RUN subscription-manager remove --all && subscription-manager unregister && subscription-manager clean
 
 WORKDIR /opt/app-root/src
 
