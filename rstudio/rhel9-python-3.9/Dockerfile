@@ -29,7 +29,6 @@ RUN echo "PASSWORD: $PASSWORD"
 # Run the subscription manager command using the provided credentials
 # RUN subscription-manager register --username=$USERNAME --password=$PASSWORD --auto-attach
 
-RUN subscription-manager register --serverurl=subscription.rhsm.stage.redhat.com:443/subscription --baseurl=cdn.redhat.com --username=entmqcl --password=redhatqa --force --auto-attach
 
 ENV R_VERSION=4.3.1
 
