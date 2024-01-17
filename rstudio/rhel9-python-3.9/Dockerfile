@@ -25,6 +25,8 @@ USER 0
 # Print the values for debugging (remove in production)
 RUN echo "USERNAME: $USERNAME"
 RUN echo "PASSWORD: $PASSWORD"
+RUN echo "SERVERURL: $SERVERURL"
+RUN echo "BASEURL: $BASEURL"
 
 # uncomment the bellow line if you fall on this error: subscription-manager is disabled when running inside a container. Please refer to your host system for subscription management.
 #RUN sed -i 's/\(def in_container():\)/\1\n    return False/g' /usr/lib64/python*/*-packages/rhsm/config.py
