@@ -6,6 +6,9 @@ ARG USERNAME
 ARG PASSWORD
 ENV USERNAME=$USERNAME
 ENV PASSWORD=$PASSWORD
+# These should be removed after testing the recipe
+ENV SERVERURL=$SERVERURL
+ENV BASEURL=$BASEURL
 
 LABEL name="odh-notebook-rstudio-rhel9-python-3.9" \
       summary="R Studio image with python 3.9 based on Red Hat Enterprise Linux 9" \
@@ -27,8 +30,7 @@ RUN echo "PASSWORD: $PASSWORD"
 #RUN sed -i 's/\(def in_container():\)/\1\n    return False/g' /usr/lib64/python*/*-packages/rhsm/config.py
 
 # Run the subscription manager command using the provided credentials
-# RUN subscription-manager register --username=$USERNAME --password=$PASSWORD --auto-attach
-
+RUN subscription-manager register --serverurl=$SERVERURL --baseurl=$BASEURL --username=$USERNAME --password=$PASSWORD --force --auto-attach
 
 ENV R_VERSION=4.3.1
 
