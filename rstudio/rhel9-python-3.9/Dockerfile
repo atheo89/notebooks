@@ -1,7 +1,7 @@
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
-# Access the secret from the environment variable
+# Access the client's secret for the subscription manager from the environment variable
 ARG USERNAME
 ARG PASSWORD
 ENV USERNAME=$USERNAME
@@ -23,15 +23,21 @@ USER 0
 RUN echo "USERNAME: $USERNAME"
 RUN echo "PASSWORD: $PASSWORD"
 
+# uncomment the bellow line if you fall on this error: subscription-manager is disabled when running inside a container. Please refer to your host system for subscription management.
+#RUN sed -i 's/\(def in_container():\)/\1\n    return False/g' /usr/lib64/python*/*-packages/rhsm/config.py
+
 # Run the subscription manager command using the provided credentials
-RUN subscription-manager register --username=$USERNAME --password=$PASSWORD
+RUN subscription-manager register --username=$USERNAME --password=$PASSWORD --auto-attach
+
+subscription-manager repos --enable codeready-builder-for-rhel-9-$(arch)-rpms
+dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
 
 ENV R_VERSION=4.3.1
 
 # Install R
 RUN yum install -y yum-utils && \
-    yum-config-manager --enable crb && \
-    yum install -y https://download.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
+    subscription-manager repos --enable codeready-builder-for-rhel-9-x86_64-rpms && \
+    yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
     INSTALL_PKGS="R-core R-core-devel R-java R-Rcpp R-highlight \
     R-littler R-littler-examples openssl-libs compat-openssl11" && \
     yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS && \
@@ -56,7 +62,7 @@ RUN wget https://download2.rstudio.org/server/rhel9/x86_64/rstudio-server-rhel-2
 # Specific RStudio config and fixes
 RUN chmod 1777 /var/run/rstudio-server && \
     mkdir -p /usr/share/doc/R
-COPY rsession.conf /etc/rstudio/rsession.conf
+COPY rstudio/rhel9-python-3.9/rsession.conf /etc/rstudio/rsession.conf
 
 # Install NGINX to proxy RStudio and pass probes check
 ENV NGINX_VERSION=1.22 \
@@ -80,7 +86,7 @@ RUN yum -y module enable nginx:$NGINX_VERSION && \
     yum -y clean all --enablerepo='*'
 
 # Copy extra files to the image.
-COPY nginx/root/ /
+COPY rstudio/rhel9-python-3.9/nginx/root/ /
 
 # Changing ownership and user rights to support following use-cases:
 # 1) running container on OpenShift, whose default security model
@@ -111,15 +117,15 @@ RUN sed -i -f ${NGINX_APP_ROOT}/nginxconf.sed ${NGINX_CONF_PATH} && \
     rpm-file-permissions
 
 # Configure nginx
-COPY nginx/serverconf/ /opt/app-root/etc/nginx.default.d/
-COPY nginx/httpconf/ /opt/app-root/etc/nginx.d/
-COPY nginx/api/ /opt/app-root/api/
+COPY rstudio/rhel9-python-3.9/nginx/serverconf/ /opt/app-root/etc/nginx.default.d/
+COPY rstudio/rhel9-python-3.9/nginx/httpconf/ /opt/app-root/etc/nginx.d/
+COPY rstudio/rhel9-python-3.9/nginx/api/ /opt/app-root/api/
 
 # Launcher
 WORKDIR /opt/app-root/bin
 
-COPY utils utils/
-COPY run-rstudio.sh setup_rstudio.py rsession.sh run-nginx.sh ./
+COPY rstudio/rhel9-python-3.9/utils utils/
+COPY rstudio/rhel9-python-3.9/run-rstudio.sh rstudio/rhel9-python-3.9/setup_rstudio.py rstudio/rhel9-python-3.9/rsession.sh rstudio/rhel9-python-3.9/run-nginx.sh ./
 
 WORKDIR /opt/app-root/src
 
