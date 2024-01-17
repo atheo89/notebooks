@@ -27,7 +27,9 @@ RUN echo "PASSWORD: $PASSWORD"
 #RUN sed -i 's/\(def in_container():\)/\1\n    return False/g' /usr/lib64/python*/*-packages/rhsm/config.py
 
 # Run the subscription manager command using the provided credentials
-RUN subscription-manager register --username=$USERNAME --password=$PASSWORD --auto-attach
+# RUN subscription-manager register --username=$USERNAME --password=$PASSWORD --auto-attach
+
+RUN subscription-manager register --serverurl=subscription.rhsm.stage.redhat.com:443/subscription --baseurl=cdn.redhat.com --username=entmqcl --password=redhatqa --force --auto-attach
 
 ENV R_VERSION=4.3.1
 
