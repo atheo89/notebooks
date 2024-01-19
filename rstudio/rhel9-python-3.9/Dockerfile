@@ -7,8 +7,8 @@ ARG PASSWORD
 ENV USERNAME=$USERNAME
 ENV PASSWORD=$PASSWORD
 # These should be removed after testing the recipe
-ENV SERVERURL=$SERVERURL
-ENV BASEURL=$BASEURL
+#ENV SERVERURL=$SERVERURL
+#ENV BASEURL=$BASEURL
 
 LABEL name="odh-notebook-rstudio-rhel9-python-3.9" \
       summary="R Studio image with python 3.9 based on Red Hat Enterprise Linux 9" \
@@ -25,14 +25,18 @@ USER 0
 # Print the values for debugging (remove in production)
 RUN echo "USERNAME: $USERNAME"
 RUN echo "PASSWORD: $PASSWORD"
-RUN echo "SERVERURL: $SERVERURL"
-RUN echo "BASEURL: $BASEURL"
+#RUN echo "SERVERURL: $SERVERURL"
+#RUN echo "BASEURL: $BASEURL"
 
 # uncomment the bellow line if you fall on this error: subscription-manager is disabled when running inside a container. Please refer to your host system for subscription management.
 #RUN sed -i 's/\(def in_container():\)/\1\n    return False/g' /usr/lib64/python*/*-packages/rhsm/config.py
 
 # Run the subscription manager command using the provided credentials
-RUN subscription-manager register --serverurl=$SERVERURL --baseurl=$BASEURL --username=$USERNAME --password=$PASSWORD --force --auto-attach
+#RUN subscription-manager register --serverurl=$SERVERURL --baseurl=$BASEURL --username=$USERNAME --password=$PASSWORD --force --auto-attach
+
+# Run the subscription manager command using the provided credentials
+RUN subscription-manager register --username=$USERNAME --password=$PASSWORD --force --auto-attach
+
 
 ENV R_VERSION=4.3.1
 
