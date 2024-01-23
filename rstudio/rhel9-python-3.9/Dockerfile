@@ -138,6 +138,4 @@ RUN subscription-manager remove --all && subscription-manager unregister && subs
 
 WORKDIR /opt/app-root/src
 
-USER 1001
-
 CMD /opt/app-root/bin/run-rstudio.sh
