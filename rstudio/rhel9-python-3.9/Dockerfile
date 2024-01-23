@@ -7,8 +7,8 @@ ARG PASSWORD
 ENV USERNAME=$USERNAME
 ENV PASSWORD=$PASSWORD
 # These should be removed after testing the recipe
-#ENV SERVERURL=$SERVERURL
-#ENV BASEURL=$BASEURL
+ENV SERVERURL=$SERVERURL
+ENV BASEURL=$BASEURL
 
 LABEL name="odh-notebook-rstudio-rhel9-python-3.9" \
       summary="R Studio image with python 3.9 based on Red Hat Enterprise Linux 9" \
@@ -20,7 +20,7 @@ LABEL name="odh-notebook-rstudio-rhel9-python-3.9" \
       io.openshift.build.source-location="https://github.com/opendatahub-io/notebooks/tree/main/rstudio/rhel9-python-3.9" \
       io.openshift.build.image="quay.io/opendatahub/workbench-images:rstudio-rhel9-python-3.9"
 
-USER 0
+USER root
 
 # Print the values for debugging (remove in production)
 RUN echo "USERNAME: $USERNAME"
