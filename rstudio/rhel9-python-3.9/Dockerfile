@@ -27,10 +27,10 @@ USER root
 
 # Run the subscription manager command using the provided credentials. Only include --serverurl and --baseurl if they are provided
 RUN subscription-manager register \
-    ${SERVERURL:+--serverurl=$SERVERURL} \
-    ${BASEURL:+--baseurl=$BASEURL} \
-    --username=$USERNAME \
-    --password=$PASSWORD \
+    ${SERVERURL:+--serverurl=$(cat $SECRET_DIR/SERVERURL)} \
+    ${BASEURL:+--baseurl=$(cat $SECRET_DIR/BASEURL)} \
+    --username=$(cat $SECRET_DIR/USERNAME) \
+    --password=$(cat $SECRET_DIR/PASSWORD) \
     --force \
     --auto-attach
 
