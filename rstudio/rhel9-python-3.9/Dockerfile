@@ -2,13 +2,12 @@ ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
 # Access the client's secret for the subscription manager from the environment variable
-#ARG USERNAME
-#ARG PASSWORD
-#ENV USERNAME=$USERNAME
-#ENV PASSWORD=$PASSWORD
-# These should be removed after testing the recipe
-#ENV SERVERURL=$SERVERURL
-#ENV BASEURL=$BASEURL
+# Access the secret
+ARG SECRET_DIR=/opt/app-root/sec
+
+# Use the secret in your build process
+RUN echo "Username: $(cat $SECRET_DIR/USERNAME)"
+RUN echo "Password: $(cat $SECRET_DIR/PASSWORD)"
 
 LABEL name="odh-notebook-rstudio-rhel9-python-3.9" \
       summary="R Studio image with python 3.9 based on Red Hat Enterprise Linux 9" \
@@ -22,23 +21,10 @@ LABEL name="odh-notebook-rstudio-rhel9-python-3.9" \
 
 USER root
 
-# Print the values for debugging (remove in production)
-RUN echo "USERNAME: $USERNAME"
-RUN echo "PASSWORD: $PASSWORD"
-RUN echo "SERVERURL: $SERVERURL"
-RUN echo "BASEURL: $BASEURL"
-
 # uncomment the bellow line if you fall on this error: subscription-manager is disabled when running inside a container. Please refer to your host system for subscription management.
 #RUN sed -i 's/\(def in_container():\)/\1\n    return False/g' /usr/lib64/python*/*-packages/rhsm/config.py
 
-# Run the subscription manager command using the provided credentials
-# Define variables
-ARG SERVERURL
-ARG BASEURL
-ARG USERNAME
-ARG PASSWORD
-
-# Only include --serverurl and --baseurl if they are provided
+# Run the subscription manager command using the provided credentials. Only include --serverurl and --baseurl if they are provided
 RUN subscription-manager register \
     ${SERVERURL:+--serverurl=$SERVERURL} \
     ${BASEURL:+--baseurl=$BASEURL} \
@@ -46,10 +32,6 @@ RUN subscription-manager register \
     --password=$PASSWORD \
     --force \
     --auto-attach
-
-# Run the subscription manager command using the provided credentials
-#RUN subscription-manager register --username=$USERNAME --password=$PASSWORD --force --auto-attach
-
 
 ENV R_VERSION=4.3.1
 
