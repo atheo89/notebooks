@@ -3,7 +3,7 @@ FROM ${BASE_IMAGE}
 
 # Access the client's secret for the subscription manager from the environment variable
 # Access the secret
-RUN ls -a
+RUN pwd
 ARG SECRET_DIR=/opt/app-root/src/sec
 
 # Use the secret in your build process
