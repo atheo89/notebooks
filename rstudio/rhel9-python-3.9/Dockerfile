@@ -3,7 +3,7 @@ FROM ${BASE_IMAGE}
 
 # Access the client's secret for the subscription manager from the environment variable
 # Access the secret
-ARG SECRET_DIR=.sec
+ARG SECRET_DIR=/opt/app-root/src/.sec
 
 # Use the secret in your build process
 RUN echo "Username: $(cat $SECRET_DIR/USERNAME)"
