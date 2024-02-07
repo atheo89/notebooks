@@ -7,9 +7,8 @@ RUN pwd
 ARG SECRET_DIR=/opt/app-root/src/.sec
 
 RUN echo $(cat $SECRET_DIR/SERVERURL)
-RUN echo $(cat $SECRET_DIR/BASEURL)
-RUN echo $(cat $SECRET_DIR/USERNAME)
-RUN echo $(cat $SECRET_DIR/PASSWORD)
+RUN echo SERVERURL=$(cat ${SECRET_DIR}/SERVERURL)
+
 
 LABEL name="odh-notebook-rstudio-rhel9-python-3.9" \
       summary="R Studio image with python 3.9 based on Red Hat Enterprise Linux 9" \
