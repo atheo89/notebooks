@@ -9,6 +9,10 @@ ARG SECRET_DIR=/opt/app-root/src/.sec
 RUN echo $(cat $SECRET_DIR/SERVERURL)
 RUN echo SERVERURL=$(cat ${SECRET_DIR}/SERVERURL)
 
+ARG SERVERURL_DEFAULT=""
+ARG BASEURL_DEFAULT=""
+
+
 
 LABEL name="odh-notebook-rstudio-rhel9-python-3.9" \
       summary="R Studio image with python 3.9 based on Red Hat Enterprise Linux 9" \
@@ -34,8 +38,8 @@ USER root
     #--force \
     #--auto-attach
 
-RUN SERVERURL=$(cat ${SECRET_DIR}/SERVERURL) && \
-    BASEURL=$(cat ${SECRET_DIR}/BASEURL) && \
+RUN SERVERURL=$(cat ${SECRET_DIR}/SERVERURL 2>/dev/null || echo ${SERVERURL_DEFAULT}) && \
+    BASEURL=$(cat ${SECRET_DIR}/BASEURL) 2>/dev/null || echo ${BASEURL_DEFAULT}) && \
     USERNAME=$(cat ${SECRET_DIR}/USERNAME) && \
     PASSWORD=$(cat ${SECRET_DIR}/PASSWORD) && \
     subscription-manager register \
