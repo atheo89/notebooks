@@ -39,7 +39,7 @@ USER root
     #--auto-attach
 
 RUN SERVERURL=$(cat ${SECRET_DIR}/SERVERURL 2>/dev/null || echo ${SERVERURL_DEFAULT}) && \
-    BASEURL=$(cat ${SECRET_DIR}/BASEURL) 2>/dev/null || echo ${BASEURL_DEFAULT}) && \
+    BASEURL=$(cat ${SECRET_DIR}/BASEURL 2>/dev/null || echo ${BASEURL_DEFAULT}) && \
     USERNAME=$(cat ${SECRET_DIR}/USERNAME) && \
     PASSWORD=$(cat ${SECRET_DIR}/PASSWORD) && \
     subscription-manager register \
