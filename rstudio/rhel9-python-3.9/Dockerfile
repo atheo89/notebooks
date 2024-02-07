@@ -38,8 +38,8 @@ USER root
     #--force \
     #--auto-attach
 
-RUN SERVERURL=$(cat ${SECRET_DIR}/SERVERURL 2>/dev/null || echo ${SERVERURL_DEFAULT}) && \
-    BASEURL=$(cat ${SECRET_DIR}/BASEURL 2>/dev/null || echo ${BASEURL_DEFAULT}) && \
+RUN SERVERURL=$(if test -f "${SECRET_DIR}/SERVERURL"; then cat "${SECRET_DIR}/SERVERURL"; else echo ""; fi)  && \
+    BASEURL=$(if test -f "${SECRET_DIR}/BASEURL"; then cat "${SECRET_DIR}/BASEURL"; else echo ""; fi) && \
     USERNAME=$(cat ${SECRET_DIR}/USERNAME) && \
     PASSWORD=$(cat ${SECRET_DIR}/PASSWORD) && \
     subscription-manager register \
