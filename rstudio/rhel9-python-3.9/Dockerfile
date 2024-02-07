@@ -6,13 +6,12 @@ FROM ${BASE_IMAGE}
 RUN pwd
 ARG SECRET_DIR=/opt/app-root/src/.sec
 
-RUN echo $(cat $SECRET_DIR/SERVERURL)
 RUN echo SERVERURL=$(cat ${SECRET_DIR}/SERVERURL)
 
 ARG SERVERURL_DEFAULT=""
 ARG BASEURL_DEFAULT=""
 
-RUN echo SERVERURL=$(SERVERURL_DEFAULT)
+RUN echo default=${SERVERURL_DEFAULT}
 
 
 LABEL name="odh-notebook-rstudio-rhel9-python-3.9" \
