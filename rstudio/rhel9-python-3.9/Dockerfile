@@ -27,11 +27,23 @@ USER root
 #RUN sed -i 's/\(def in_container():\)/\1\n    return False/g' /usr/lib64/python*/*-packages/rhsm/config.py
 
 # Run the subscription manager command using the provided credentials. Only include --serverurl and --baseurl if they are provided
-RUN subscription-manager register \
-    ${SERVERURL:+--serverurl=$(cat $SECRET_DIR/SERVERURL)} \
-    ${BASEURL:+--baseurl=$(cat $SECRET_DIR/BASEURL)} \
-    --username=$(cat $SECRET_DIR/USERNAME) \
-    --password=$(cat $SECRET_DIR/PASSWORD) \
+#RUN subscription-manager register \
+#    ${SERVERURL:+--serverurl=$(cat $SECRET_DIR/SERVERURL)} \
+ #   ${BASEURL:+--baseurl=$(cat $SECRET_DIR/BASEURL)} \
+  #  --username=$(cat $SECRET_DIR/USERNAME) \
+   # --password=$(cat $SECRET_DIR/PASSWORD) \
+    #--force \
+    #--auto-attach
+
+RUN SERVERURL=$(cat ${SECRET_DIR}/SERVERURL) && \
+    BASEURL=$(cat ${SECRET_DIR}/BASEURL) && \
+    USERNAME=$(cat ${SECRET_DIR}/USERNAME) && \
+    PASSWORD=$(cat ${SECRET_DIR}/PASSWORD) && \
+    subscription-manager register \
+    ${SERVERURL:+--serverurl=$SERVERURL} \
+    ${BASEURL:+--baseurl=$BASEURL} \
+    --username=$USERNAME \
+    --password=$PASSWORD \
     --force \
     --auto-attach
 
