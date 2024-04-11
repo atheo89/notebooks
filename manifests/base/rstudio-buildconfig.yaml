@@ -29,14 +29,21 @@ spec:
   source:
     type: Git
     git:
-      uri: "https://github.com/red-hat-data-services/notebooks"
-      ref: main
+      uri: "https://github.com/atheo89/notebooks"
+      ref: check-r-arg-conf
   strategy:
     type: Docker
     dockerStrategy:
       from:
         kind: "DockerImage"
         name: "quay.io/modh/odh-base-rhel9:base-rhel9-python-3.9-20240131-378dafd"
+      env:
+        - name: INSTALL_ADD_PKGS
+          valueFrom:
+            configMapKeyRef:
+              name: rstudio-req
+              key: INSTALL_ADD_PKGS
+              optional: true
       dockerfilePath: "rstudio/rhel9-python-3.9/Dockerfile"
       volumes:
         - name: secret-mvn

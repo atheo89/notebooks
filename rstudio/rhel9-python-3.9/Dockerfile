@@ -6,6 +6,8 @@ ARG SECRET_DIR=/opt/app-root/src/.sec
 ARG SERVERURL_DEFAULT=""
 ARG BASEURL_DEFAULT=""
 
+ARG INSTALL_ADD_PKGS=""
+
 LABEL name="odh-notebook-rstudio-server-rhel9-python-3.9" \
       summary="RStudio Server image with python 3.9 based on Red Hat Enterprise Linux 9" \
       description="RStudio Server image with python 3.9 based on Red Hat Enterprise Linux 9" \
@@ -71,6 +73,13 @@ COPY rstudio/rhel9-python-3.9/rsession.conf /etc/rstudio/rsession.conf
 # package installation
 RUN dnf install -y libsodium-devel.x86_64 libgit2-devel.x86_64 libcurl-devel harfbuzz-devel.x86_64 fribidi-devel.x86_64 cmake "flexiblas-*"
 RUN R -e "install.packages('Rcpp')"
+RUN R -e "install.packages('remotes')"
+RUN if [ -n "INSTALL_ADD_PKGS" ]; then R -e "require('remotes'); \
+    remotes::install_version('tidyverse','2.0.0'); \
+    remotes::install_version('tidymodels','1.1.1'); \
+    remotes::install_version('plumber','1.2.1'); \
+    remotes::install_version('vetiver','0.2.5'); \
+    remotes::install_version('devtools','2.4.5');" ; else echo "The variable INSTALL_ADD_PKGS not set -> skipping installation of extra R packages"; fi
 
 # Install NGINX to proxy RStudio and pass probes check
 ENV NGINX_VERSION=1.22 \
