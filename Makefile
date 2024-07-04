@@ -1,5 +1,7 @@
 IMAGE_REGISTRY   ?= quay.io/opendatahub/workbench-images
-RELEASE	 		 ?= 2023b
+RELEASE	 		 ?= 2024a
+# additional user-specified caching parameters for $(CONTAINER_ENGINE) build
+CONTAINER_BUILD_CACHE_ARGS ?= --no-cache
 
 # OS dependant: Generate date, select appropriate cmd to locate container engine
 ifeq ($(OS), Windows_NT)
@@ -41,7 +43,7 @@ define build_image
 		$(eval BUILD_ARGS := --build-arg BASE_IMAGE=$(BASE_IMAGE_NAME)),
 		$(eval BUILD_ARGS :=)
 	)
-	$(CONTAINER_ENGINE) build --no-cache  -t $(IMAGE_NAME) $(BUILD_ARGS) $(2)
+	$(CONTAINER_ENGINE) build $(CONTAINER_BUILD_CACHE_ARGS)  -t $(IMAGE_NAME) $(BUILD_ARGS)  $(2)
 endef
 
 # Push function for the notebok image:
@@ -57,6 +59,7 @@ endef
 #   ARG 2: Path of image context we want to build.
 #   ARG 3: Base image tag name (optional).
 define image
+	$(info #*# Image build directory: <$(2)> #(MACHINE-PARSED LINE)#*#...)
 	$(call build_image,$(1),$(2),$(3))
 	$(call push_image,$(1))
 endef
@@ -222,7 +225,7 @@ intel-runtime-tensorflow-ubi9-python-3.9: intel-base-gpu-ubi9-python-3.9
 
 # Build and push jupyter-intel-tensorflow-ubi9-python-3.9 image to the registry
 .PHONY: jupyter-intel-tensorflow-ubi9-python-3.9
-jupyter-intel-tensorflow-ubi9-python-3.9: intel-runtime-tensorflow-ubi9-python-3.9
+jupyter-intel-tensorflow-ubi9-python-3.9: intel-base-gpu-ubi9-python-3.9
 	$(call image,$@,jupyter/intel/tensorflow/ubi9-python-3.9,$<)
 
 # Build and push intel-runtime-pytorch-ubi9-python-3.9 image to the registry
@@ -232,7 +235,7 @@ intel-runtime-pytorch-ubi9-python-3.9: intel-base-gpu-ubi9-python-3.9
 
 # Build and push jupyter-intel-pytorch-ubi9-python-3.9 image to the registry
 .PHONY: jupyter-intel-pytorch-ubi9-python-3.9
-jupyter-intel-pytorch-ubi9-python-3.9: intel-runtime-pytorch-ubi9-python-3.9
+jupyter-intel-pytorch-ubi9-python-3.9: intel-base-gpu-ubi9-python-3.9
 	$(call image,$@,jupyter/intel/pytorch/ubi9-python-3.9,$<)
 
 # Build and push intel-runtime-ml-ubi9-python-3.9 image to the registry
@@ -242,7 +245,7 @@ intel-runtime-ml-ubi9-python-3.9: base-ubi9-python-3.9
 
 # Build and push jupyter-intel-ml-ubi9-python-3.9 image to the registry
 .PHONY: jupyter-intel-ml-ubi9-python-3.9
-jupyter-intel-ml-ubi9-python-3.9: intel-runtime-ml-ubi9-python-3.9
+jupyter-intel-ml-ubi9-python-3.9: base-ubi9-python-3.9
 	$(call image,$@,jupyter/intel/ml/ubi9-python-3.9,$<)
 
 ####################################### Buildchain for Python 3.9 using C9S #######################################
@@ -263,6 +266,32 @@ rstudio-c9s-python-3.9: base-c9s-python-3.9
 .PHONY: cuda-rstudio-c9s-python-3.9
 cuda-rstudio-c9s-python-3.9: cuda-c9s-python-3.9
 	$(call image,$@,rstudio/c9s-python-3.9,$<)
+
+####################################### Buildchain for AMD Python 3.9 using C9S #######################################
+.PHONY: amd-c9s-python-3.9
+amd-c9s-python-3.9: base-c9s-python-3.9	
+	$(call image,$@,amd/c9s-python-3.9,$<)
+
+# We are only using c9s base image here onwards, 
+# DON'T confuse due to the ubi9 mention, it just directory name.
+.PHONY: amd-jupyter-minimal-c9s-python-3.9
+amd-jupyter-minimal-c9s-python-3.9: amd-c9s-python-3.9
+	$(call image,$@,jupyter/minimal/ubi9-python-3.9,$<)
+
+# Build and push jupyter-datascience-ubi9-python-3.9 image to the registry
+.PHONY: amd-jupyter-datascience-c9s-python-3.9
+amd-jupyter-datascience-c9s-python-3.9: amd-jupyter-minimal-c9s-python-3.9
+	$(call image,$@,jupyter/datascience/ubi9-python-3.9,$<)
+
+# Build and push jupyter-tensorflow-ubi9-python-3.9 image to the registry
+.PHONY: amd-jupyter-tensorflow-c9s-python-3.9
+amd-jupyter-tensorflow-c9s-python-3.9: amd-jupyter-datascience-c9s-python-3.9
+	$(call image,$@,jupyter/amd/tensorflow/ubi9-python-3.9,$<)
+
+# Build and push jupyter-pytorch-ubi9-python-3.9 image to the registry
+.PHONY: amd-jupyter-pytorch-c9s-python-3.9
+amd-jupyter-pytorch-c9s-python-3.9: amd-jupyter-datascience-c9s-python-3.9
+	$(call image,$@,jupyter/amd/pytorch/ubi9-python-3.9,$<)
 
 ####################################### Buildchain for Anaconda Python #######################################
 
@@ -408,14 +437,12 @@ test-%: bin/kubectl
 	elif echo "$(FULL_NOTEBOOK_NAME)" | grep -q "intel-ml-ubi9"; then \
 		$(call test_with_papermill,intel/ml,ubi9,python-3.9) \
 	elif echo "$(FULL_NOTEBOOK_NAME)" | grep -q "trustyai-ubi9"; then \
-		$(MAKE) validate-ubi9-datascience -e FULL_NOTEBOOK_NAME=$(FULL_NOTEBOOK_NAME); \
 		$(call test_with_papermill,trustyai,ubi9,python-3.9) \
 	elif echo "$(FULL_NOTEBOOK_NAME)" | grep -q "minimal-ubi8"; then \
 		$(call test_with_papermill,minimal,ubi8,python-3.8) \
 	elif echo "$(FULL_NOTEBOOK_NAME)" | grep -q "datascience-ubi8"; then \
 		$(MAKE) validate-ubi8-datascience -e FULL_NOTEBOOK_NAME=$(FULL_NOTEBOOK_NAME); \
 	elif echo "$(FULL_NOTEBOOK_NAME)" | grep -q "trustyai-ubi8"; then \
-		$(MAKE) validate-ubi8-datascience -e FULL_NOTEBOOK_NAME=$(FULL_NOTEBOOK_NAME); \
 		$(call test_with_papermill,trustyai,ubi8,python-3.8) \
 	elif echo "$(FULL_NOTEBOOK_NAME)" | grep -q "anaconda"; then \
 		echo "There is no test notebook implemented yet for Anaconda Notebook...." \

@@ -20,22 +20,24 @@
 
 # ----------------------------- GLOBAL VARIABLES ----------------------------- #
 
+COMMIT_ENV_PATH="manifests/base/commit.env"
 PARAMS_ENV_PATH="manifests/base/params.env"
 
 # This value needs to be updated everytime we deliberately change number of the
 # images we want to have in the `params.env` file.
-EXPECTED_NUM_RECORDS=19
+EXPECTED_NUM_RECORDS=20
 
 # ---------------------------- DEFINED FUNCTIONS ----------------------------- #
 
 function check_variables_uniq() {
-    local params_env_path="${1}"
+    local env_file_path="${1}"
+    local allow_value_duplicity="${2:=false}"
     local ret_code=0
 
-    echo "Checking that all variables in the file '${params_env_path}' are unique and expected"
+    echo "Checking that all variables in the file '${env_file_path}' are unique and expected"
 
     local content
-    content=$(sed 's#\(.*\)=.*#\1#' "${params_env_path}" | sort)
+    content=$(sed 's#\(.*\)=.*#\1#' "${env_file_path}" | sort)
 
     local num_records
     num_records=$(echo "${content}" | wc -l)
@@ -44,9 +46,30 @@ function check_variables_uniq() {
     num_uniq_records=$(echo "${content}" | uniq | wc -l)
 
     test "${num_records}" -eq "${num_uniq_records}" || {
-        echo "Some of the records in the file aren't unique!"
+        echo "Some of the variables in the file aren't unique!"
         ret_code=1
     }
+
+    # ----
+    if test "${allow_value_duplicity}" = "false"; then
+        echo "Checking that all values assigned to variables in the file '${env_file_path}' are unique and expected"
+
+        content=$(sed 's#.*=\(.*\)#\1#' "${env_file_path}" | sort)
+
+        local num_values
+        num_values=$(echo "${content}" | wc -l)
+
+        local num_uniq_values
+        num_uniq_values=$(echo "${content}" | uniq | wc -l)
+
+        test "${num_values}" -eq "${num_uniq_values}" || {
+            echo "Some of the values in the file aren't unique!"
+            ret_code=1
+        }
+    fi
+
+    # ----
+    echo "Checking that there are expected number of records in the file '${env_file_path}'"
 
     test "${num_records}" -eq "${EXPECTED_NUM_RECORDS}" || {
         echo "Number of records in the file is incorrect - expected '${EXPECTED_NUM_RECORDS}' but got '${num_records}'!"
@@ -128,27 +151,31 @@ function check_image_variable_matches_name_and_commitref() {
             expected_build_name="jupyter-trustyai-ubi9-python-3.9-amd64"
             ;;
         odh-habana-notebook-image-n)
-            expected_name="odh-notebook-habana-jupyter-1.10.0-ubi8-python-3.8"
-            # expected_commitref="2024a"
-            expected_commitref="main"
-            expected_build_name="habana-jupyter-1.10.0-ubi8-python-3.8"
+            expected_name="odh-notebook-habana-jupyter-1.13.0-ubi8-python-3.8"
+            expected_commitref="2024a"
+            expected_build_name="habana-jupyter-1.13.0-ubi8-python-3.8-amd64"
             ;;
-        odh-codeserver-notebook-n)
+        odh-habana-notebook-image-n-1)
+            expected_name="odh-notebook-habana-jupyter-1.10.0-ubi8-python-3.8"
+            expected_commitref="2023b"
+            expected_build_name="habana-jupyter-1.10.0-ubi8-python-3.8-amd64"
+            ;;
+        odh-codeserver-notebook-image-n)
             expected_name="odh-notebook-code-server-ubi9-python-3.9"
             expected_commitref="2024a"
             expected_build_name="codeserver-ubi9-python-3.9-amd64"
             ;;
-        odh-codeserver-notebook-n-1)
+        odh-codeserver-notebook-image-n-1)
             expected_name="odh-notebook-code-server-ubi9-python-3.9"
             expected_commitref="2023b"
             expected_build_name="codeserver-ubi9-python-3.9-amd64"
             ;;
-        odh-rstudio-notebook-n)
+        odh-rstudio-notebook-image-n)
             expected_name="odh-notebook-rstudio-server-c9s-python-3.9"
             expected_commitref="2024a"
             expected_build_name="rstudio-c9s-python-3.9-amd64"
             ;;
-        odh-rstudio-notebook-n-1)
+        odh-rstudio-notebook-image-n-1)
             expected_name="odh-notebook-rstudio-server-c9s-python-3.9"
             expected_commitref="2023b"
             expected_build_name="rstudio-c9s-python-3.9-amd64"
@@ -156,12 +183,12 @@ function check_image_variable_matches_name_and_commitref() {
         # For both RStudio GPU workbenches - the final name labels are identical to plain RStudio ones
         # This is because the very same RStudio Dockerfile is used but different base images in both cases
         # We should consider what to do with this - in ideal case, we should have different labels for these cases.
-        odh-rstudio-gpu-notebook-n)
+        odh-rstudio-gpu-notebook-image-n)
             expected_name="odh-notebook-rstudio-server-c9s-python-3.9"
             expected_commitref="2024a"
             expected_build_name="cuda-rstudio-c9s-python-3.9-amd64"
             ;;
-        odh-rstudio-gpu-notebook-n-1)
+        odh-rstudio-gpu-notebook-image-n-1)
             expected_name="odh-notebook-rstudio-server-c9s-python-3.9"
             expected_commitref="2023b"
             expected_build_name="cuda-rstudio-c9s-python-3.9-amd64"
@@ -187,6 +214,30 @@ function check_image_variable_matches_name_and_commitref() {
     }
 }
 
+function check_image_commit_id_matches_metadata() {
+    local image_variable="${1}"
+    local image_commit_id="${2}"
+
+    local short_image_commit_id
+    # We're interested only in the first 7 characters of the commit ID
+    short_image_commit_id=${image_commit_id:0:7}
+
+    local file_image_commit_id
+
+    file_image_commit_id=$(sed 's#-commit##' "${COMMIT_ENV_PATH}" | grep "${image_variable}=" | cut --delimiter "=" --field 2)
+    test -n "${file_image_commit_id}" || {
+        echo "Couldn't retrieve commit id for image variable '${image_variable}' in '${COMMIT_ENV_PATH}'!"
+        return 1
+    }
+
+    test "${short_image_commit_id}" = "${file_image_commit_id}" || {
+        echo "Image commit IDs for image variable '${image_variable}' don't equal!"
+        echo "Image commit ID gathered from image: '${short_image_commit_id}'"
+        echo "Image commit ID in '${COMMIT_ENV_PATH}': '${file_image_commit_id}'"
+        return 1
+    }
+}
+
 function check_image() {
     local image_variable="${1}"
     local image_url="${2}"
@@ -195,7 +246,9 @@ function check_image() {
 
     local image_metadata
     local image_name
+    local image_commit_id
     local image_commitref
+    local image_created
 
     image_metadata="$(skopeo inspect --config "docker://${image_url}")" || {
         echo "Couldn't download image metadata with skopeo tool!"
@@ -205,8 +258,16 @@ function check_image() {
         echo "Couldn't parse '.config.Labels.name' from image metadata!"
         return 1
     }
+    image_commit_id=$(echo "${image_metadata}" | jq --raw-output '.config.Labels."io.openshift.build.commit.id"') ||  {
+        echo "Couldn't parse '.config.Labels."io.openshift.build.commit.id"' from image metadata!"
+        return 1
+    }
     image_commitref=$(echo "${image_metadata}" | jq --raw-output '.config.Labels."io.openshift.build.commit.ref"') ||  {
         echo "Couldn't parse '.config.Labels."io.openshift.build.commit.ref"' from image metadata!"
+        return 1
+    }
+    image_created=$(echo "${image_metadata}" | jq --raw-output '.created') ||  {
+        echo "Couldn't parse '.created' from image metadata!"
         return 1
     }
 
@@ -233,8 +294,11 @@ function check_image() {
     }
 
     echo "Image name retrieved: '${image_name}'"
+    echo "Image created: '${image_created}'"
 
     check_image_variable_matches_name_and_commitref "${image_variable}" "${image_name}" "${image_commitref}" "${openshift_build_name}" || return 1
+
+    check_image_commit_id_matches_metadata "${image_variable}" "${image_commit_id}" || return 1
 
     echo "---------------------------------------------"
 }
@@ -243,11 +307,17 @@ function check_image() {
 
 ret_code=0
 
-echo "Starting check for file: '${PARAMS_ENV_PATH}'"
+echo "Starting check of image references in files: '${COMMIT_ENV_PATH}' and '${PARAMS_ENV_PATH}'"
 echo "---------------------------------------------"
 
-check_variables_uniq "${PARAMS_ENV_PATH}" || {
-    echo "ERROR: Variable names in the file failed validation!"
+check_variables_uniq "${COMMIT_ENV_PATH}" "true" || {
+    echo "ERROR: Variable names in the '${COMMIT_ENV_PATH}' file failed validation!"
+    echo "----------------------------------------------------"
+    ret_code=1
+}
+
+check_variables_uniq "${PARAMS_ENV_PATH}" "false" || {
+    echo "ERROR: Variable names in the '${PARAMS_ENV_PATH}' file failed validation!"
     echo "----------------------------------------------------"
     ret_code=1
 }

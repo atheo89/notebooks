@@ -19,13 +19,13 @@ RUN dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.n
 
 RUN echo "[appstream]" > /etc/yum.repos.d/CentOS-Linux-AppStream.repo && \
     echo "name=CentOS Linux 8 - AppStream" >> /etc/yum.repos.d/CentOS-Linux-AppStream.repo && \
-    echo "mirrorlist=http://mirrorlist.centos.org/?release=\$releasever-stream&arch=\$basearch&repo=AppStream&infra=\$infra" >> /etc/yum.repos.d/CentOS-Linux-AppStream.repo && \
+    echo "baseurl=https://vault.centos.org/\$releasever-stream/AppStream/\$basearch/os/" >> /etc/yum.repos.d/CentOS-Linux-AppStream.repo && \
     echo "gpgcheck=0" >> /etc/yum.repos.d/CentOS-Linux-AppStream.repo
 
 
 RUN echo "[BaseOS]" > /etc/yum.repos.d/CentOS-Linux-BaseOS.repo && \
     echo "name=CentOS Linux 8 - BaseOS" >> /etc/yum.repos.d/CentOS-Linux-BaseOS.repo && \
-    echo "mirrorlist=http://mirrorlist.centos.org/?release=\$releasever-stream&arch=\$basearch&repo=BaseOS&infra=\$infra" >> /etc/yum.repos.d/CentOS-Linux-BaseOS.repo && \
+    echo "baseurl=https://vault.centos.org/\$releasever-stream/BaseOS/\$basearch/os/" >> /etc/yum.repos.d/CentOS-Linux-BaseOS.repo && \
     echo "gpgcheck=0" >> /etc/yum.repos.d/CentOS-Linux-BaseOS.repo
 
 RUN dnf install -y \
@@ -67,7 +67,7 @@ RUN echo "[habanalabs]" > /etc/yum.repos.d/habanalabs.repo && \
 
 RUN echo "[powertools]" > /etc/yum.repos.d/powertools.repo && \
     echo "name=powertools" >> /etc/yum.repos.d/powertools.repo && \
-    echo "baseurl=http://mirror.centos.org/centos/8-stream/PowerTools/x86_64/os/"  >> /etc/yum.repos.d/powertools.repo && \
+    echo "baseurl=https://vault.centos.org/\$releasever-stream/PowerTools/\$basearch/os/"  >> /etc/yum.repos.d/powertools.repo && \
     echo "gpgcheck=0" >> /etc/yum.repos.d/powertools.repo
 
 RUN dnf install -y habanalabs-rdma-core-"$VERSION"-"$REVISION".el8 \
@@ -146,7 +146,7 @@ ENV TCMALLOC_LARGE_ALLOC_REPORT_THRESHOLD=7516192768
 RUN dnf clean all && rm -rf /var/cache/dnf && rm -rf /tmp/*
 
 ## Label the image with details required by ODH
-LABEL name="odh-notebook-habana-jupyter-1.3.0-ubi8-python-3.8" \
+LABEL name="odh-notebook-habana-jupyter-1.13.0-ubi8-python-3.8" \
     summary="Jupyter HabanaAI 1.13.0 notebook image for ODH notebooks" \
     description="Jupyter HabanaAI 1.13.0 notebook image with base Python 3.8 builder image based on ubi8 for ODH notebooks" \
     io.k8s.display-name="Jupyter HabanaAI 1.13.0 notebook image for ODH notebooks" \
