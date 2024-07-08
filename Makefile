@@ -1,4 +1,4 @@
-IMAGE_REGISTRY   ?= quay.io/opendatahub/workbench-images
+IMAGE_REGISTRY   ?= quay.io/rh_ee_atheodor/workbench-images
 RELEASE	 		 ?= 2024a
 # additional user-specified caching parameters for $(CONTAINER_ENGINE) build
 CONTAINER_BUILD_CACHE_ARGS ?= --no-cache

@@ -29,11 +29,18 @@ RUN dnf install -y mesa-libGL && dnf clean all && rm -rf /var/cache/yum
 # Other apps and tools installed as default user
 USER 1001
 
+# # Install the oc client
+# RUN curl -L https://mirror.openshift.com/pub/openshift-v4/$(uname -m)/clients/ocp/stable/openshift-client-linux.tar.gz \
+#         -o /tmp/openshift-client-linux.tar.gz && \
+#     tar -xzvf /tmp/openshift-client-linux.tar.gz oc && \
+#     rm -f /tmp/openshift-client-linux.tar.gz
+
 # Install the oc client
-RUN curl -L https://mirror.openshift.com/pub/openshift-v4/$(uname -m)/clients/ocp/stable/openshift-client-linux.tar.gz \
+RUN curl -L https://mirror.openshift.com/pub/openshift-v4/$(uname -m)/clients/ocp/stable/openshift-client-linux-amd64-rhel9-4.16.0.tar.gz \
         -o /tmp/openshift-client-linux.tar.gz && \
     tar -xzvf /tmp/openshift-client-linux.tar.gz oc && \
     rm -f /tmp/openshift-client-linux.tar.gz
+
 
 # Fix permissions to support pip in Openshift environments
 RUN chmod -R g+w /opt/app-root/lib/python3.9/site-packages && \
