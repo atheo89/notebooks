@@ -6,7 +6,7 @@
 
 Welcome to the OpenDataHub Notebooks repository! This repository provides a collection of notebooks tailored for data analysis, machine learning, research and coding within the OpenDataHub ecosystem. Designed to streamline data science workflows, these notebooks offer an integrated environment equipped with the latest tools and libraries. These notebooks were created to be used with OpenDataHub ecosystem with the ODH Notebook Controller as the launcher.
 
-These workbenches are available at: [quay.io/opendatahub/workbench-images](https://quay.io/opendatahub/workbench-images)
+These workbenches are available at: [quay.io/repository/opendatahub/workbench-images](https://quay.io/repository/opendatahub/workbench-images)
 
 ## Getting Started
 For a deeper understanding of the architecture underlying this repository, please explore our wiki page [Wiki](https://github.com/opendatahub-io/notebooks/wiki/Workbenches)
@@ -37,7 +37,9 @@ To build a workbench image, you can execute the following command:
 make ${WORKBENCH_NAME} -e  IMAGE_REGISTRY=quay.io/${YOUR_USER}/workbench-images  -e  RELEASE=2023x
 ```
 
-Using  `IMAGE_REGISTRY` and `RELEASE` variables  you can overwrite the default values and use a different registry or release tag
+Using  `IMAGE_REGISTRY` and `RELEASE` variables you can overwrite the default values and use a different registry or release tag
+
+Using `CONTAINER_BUILD_CACHE_ARGS` (default: `--no-cache`), `BUILD_DEPENDENT_IMAGES`, and `PUSH_IMAGES` variables you can further customize the build process.
 
 ### Local Execution
 
@@ -50,6 +52,17 @@ podman  run -it -p  8888:8888  quay.io/opendatahub/workbench-images:jupyter-mini
 ```
 
 ### Deploy & Test
+
+#### Running Python selftests in Pytest
+
+```shell
+pip install poetry
+poetry env use /usr/bin/python3.12
+poetry config virtualenvs.in-project true
+poetry install --sync
+
+poetry run pytest
+```
 
 #### Notebooks
 

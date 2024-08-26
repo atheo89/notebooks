@@ -175,9 +175,13 @@ def main() -> None:
 
     print("leafs", leafs)
     print(*output, sep="\n")
-    with open(os.environ["GITHUB_OUTPUT"], "at") as f:
-        for line in output:
-            print(line, file=f)
+
+    if "GITHUB_ACTIONS" in os.environ:
+        with open(os.environ["GITHUB_OUTPUT"], "at") as f:
+            for line in output:
+                print(line, file=f)
+    else:
+        logging.info(f"Not running on Github Actions, won't produce GITHUB_OUTPUT")
 
 
 if __name__ == '__main__':
@@ -194,8 +198,8 @@ class SelfTests(unittest.TestCase):
         changed_files = ["jupyter/datascience/ubi9-python-3.9/Dockerfile"]
 
         leafs = gha_pr_changed_files.filter_out_unchanged(leafs, changed_files)
-        assert set(leafs) == {'amd-jupyter-pytorch-c9s-python-3.9',
-                              'amd-jupyter-tensorflow-c9s-python-3.9',
+        assert set(leafs) == {'rocm-jupyter-pytorch-ubi9-python-3.9',
+                              'rocm-jupyter-tensorflow-ubi9-python-3.9',
                               'cuda-jupyter-tensorflow-ubi9-python-3.9',
                               'jupyter-trustyai-ubi9-python-3.9',
                               'jupyter-pytorch-ubi9-python-3.9'}
