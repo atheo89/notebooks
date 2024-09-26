@@ -738,12 +738,12 @@ validate-rstudio-image: bin/kubectl
 # This is only for the workflow action
 .PHONY: refresh-pipfilelock-files
 refresh-pipfilelock-files:
-	 cd runtimes/minimal/ubi9-python-3.11 && pipenv lock
+	# cd runtimes/minimal/ubi9-python-3.11 && pipenv lock
 	 cd runtimes/datascience/ubi9-python-3.11 && pipenv lock
-	 cd runtimes/pytorch/ubi9-python-3.11 && pipenv lock
-	 cd runtimes/tensorflow/ubi9-python-3.11 && pipenv lock
-	 cd runtimes/rocm-tensorflow/ubi9-python-3.11 && pipenv lock
-	 cd runtimes/rocm-pytorch/ubi9-python-3.11 && pipenv lock
+	# cd runtimes/pytorch/ubi9-python-3.11 && pipenv lock
+	# cd runtimes/tensorflow/ubi9-python-3.11 && pipenv lock
+	# cd runtimes/rocm-tensorflow/ubi9-python-3.11 && pipenv lock
+	# cd runtimes/rocm-pytorch/ubi9-python-3.11 && pipenv lock
 
 
 
