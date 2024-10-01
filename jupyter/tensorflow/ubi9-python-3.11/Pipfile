@@ -8,12 +8,14 @@ name = "pypi"
 [packages]
 # TensorFlow packages
 tensorflow = "~=2.17.0"
+tensorflow[and-cuda]
 tensorboard = "~=2.17.1"
 tf2onnx = "~= 1.16.1"
 
 # Datascience and useful extensions
 boto3 = "~=1.35.14"
 kafka-python-ng = "~=2.2.2"
+kfp = "~=2.5.0"
 matplotlib = "~=3.9.2"
 numpy = "~=1.26.4"
 pandas = "~=2.2.2"
@@ -31,7 +33,7 @@ pyodbc = "~=5.1.0"
 mysql-connector-python = "~=9.0.0"
 
 # JupyterLab packages
-#odh-elyra = ">=3.16.7" # For the phase 1, exclude elyra installation. Till this Jira ticket is resolved. https://issues.redhat.com/browse/RHOAIENG-10143
+odh-elyra = "==4.0.0.dev1"
 
 jupyterlab = "~=4.2.4"
 jupyter-bokeh = "~=4.0.5"
