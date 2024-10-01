@@ -739,7 +739,7 @@ validate-rstudio-image: bin/kubectl
 .PHONY: refresh-pipfilelock-files
 refresh-pipfilelock-files:
 	# cd runtimes/minimal/ubi9-python-3.11 && pipenv lock
-	 cd jupyter/datascience/ubi9-python-3.11 && pipenv lock
+	 cd jupyter/tensorflow/ubi9-python-3.11 && pipenv lock
 	# cd runtimes/pytorch/ubi9-python-3.11 && pipenv lock
 	# cd runtimes/tensorflow/ubi9-python-3.11 && pipenv lock
 	# cd runtimes/rocm-tensorflow/ubi9-python-3.11 && pipenv lock
