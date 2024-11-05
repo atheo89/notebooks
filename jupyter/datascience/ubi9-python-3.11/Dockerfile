@@ -13,6 +13,7 @@ LABEL name="odh-notebook-jupyter-datascience-ubi9-python-3.11" \
 
 WORKDIR /opt/app-root/bin
 
+
 # Install Python packages and Jupyterlab extensions from Pipfile.lock
 COPY Pipfile.lock ./
 
