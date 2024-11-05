@@ -15,6 +15,7 @@ WORKDIR /opt/app-root/bin
 
 COPY utils utils/
 
+
 COPY Pipfile.lock start-notebook.sh ./
 
 # Install Python dependencies from Pipfile.lock file

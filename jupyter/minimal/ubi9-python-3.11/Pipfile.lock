@@ -24,6 +24,7 @@
             "markers": "python_version >= '3.8'",
             "version": "==2.4.0"
         },
+        
         "aiohttp": {
             "hashes": [
                 "sha256:02594361128f780eecc2a29939d9dfc870e17b45178a867bf61a11b2a4367277",
