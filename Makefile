@@ -670,6 +670,43 @@ refresh-pipfilelock-files:
 	cd runtimes/rocm-pytorch/ubi9-python-3.11 && pipenv lock
 
 
+# Default Python version (can be overridden by passing `PYTHON_VERSION=3.9` or `PYTHON_VERSION=3.11`)
+PYTHON_VERSION ?= 3.11
+
+# List of directory paths for the given Python version
+DIRS := base/c9s-python-$(PYTHON_VERSION) \
+        base/ubi9-python-$(PYTHON_VERSION) \
+        jupyter/minimal/ubi9-python-$(PYTHON_VERSION) \
+        jupyter/datascience/ubi9-python-$(PYTHON_VERSION) \
+        jupyter/pytorch/ubi9-python-$(PYTHON_VERSION) \
+        jupyter/tensorflow/ubi9-python-$(PYTHON_VERSION) \
+        jupyter/trustyai/ubi9-python-$(PYTHON_VERSION) \
+        jupyter/rocm/tensorflow/ubi9-python-$(PYTHON_VERSION) \
+        jupyter/rocm/pytorch/ubi9-python-$(PYTHON_VERSION) \
+        runtimes/minimal/ubi9-python-$(PYTHON_VERSION) \
+        runtimes/datascience/ubi9-python-$(PYTHON_VERSION) \
+        runtimes/pytorch/ubi9-python-$(PYTHON_VERSION) \
+        runtimes/tensorflow/ubi9-python-$(PYTHON_VERSION) \
+        runtimes/rocm-tensorflow/ubi9-python-$(PYTHON_VERSION) \
+        runtimes/rocm-pytorch/ubi9-python-$(PYTHON_VERSION)
+
+.PHONY: refresh-pipfilelock-files
+refresh-pipfilelock-files:
+ifeq ($(PYTHON_VERSION), 3.9)
+	@echo "Updating Pipfile.lock files for Python 3.9"
+else ifeq ($(PYTHON_VERSION), 3.11)
+	@echo "Updating Pipfile.lock files for Python 3.11"
+else
+	$(error Invalid Python version specified. Use 3.9 or 3.11.)
+endif
+
+# Run `pipenv lock` for each directory in the list
+	for dir in $(DIRS); do \
+		echo "Updating $(PYTHON_VERSION) Pipfile.lock in $$dir"; \
+		cd $$dir && pipenv lock; \
+	done
+
+
 	
 
 # This is only for the workflow action
