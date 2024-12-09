@@ -1,47 +1,50 @@
----
-# This GitHub action is meant to be triggered weekly in order to update the pipfile.locks
-
 name: Weekly Pipfile.locks renewal on [main] branch
 
-on:  # yamllint disable-line rule:truthy
-  # Triggers the workflow every Monday at 22pm UTC am 0 22 * * 1
+on:
   schedule:
-    - cron: "0 22 * * 1"
-  workflow_dispatch:  # for manual trigger workflow from GH Web UI
+    - cron: "0 22 * * 1"  # Triggers the workflow every Monday at 22:00 UTC
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Specify the branch to run this workflow'
+        required: false
+        default: 'main'
+      python_version:
+        description: 'Specify Python version to use'
+        required: false
+        default: '3.11'
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     permissions:
-      # Give the default GITHUB_TOKEN write permission to commit and push the
-      # added or changed files to the repository.
-      contents: write
+      contents: write  # Allows the GitHub Actions bot to commit and push changes
 
     steps:
-      # Checkout the paricular branch
-      - name: Checkout code from the release branch
+      # Checkout the specified branch (or default to 'main')
+      - name: Checkout code from the specified branch
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.event.inputs.branch }}
           token: ${{ secrets.GH_ACCESS_TOKEN }}
 
-      # Setup Python environment
+      # Setup Python environment with the specified version (or default to '3.11')
       - name: Setup Python environment
         uses: actions/setup-python@v5
         with:
-          python-version: |
-            3.9
-            3.11
+          python-version: ${{ github.event.inputs.python_version }}
+
+      # Install pipenv
       - name: Install pipenv
         run: pip install pipenv
 
-      # Runs the makefile recipe `refresh-pipfilelock-files` and push the chances back to the branch
-      - name: Run make refresh-pipfilelock-files and push the chances back to the branch
+      # Run makefile recipe to refresh Pipfile.lock and push changes back to the branch
+      - name: Run make refresh-pipfilelock-files and push the changes
         run: |
           make refresh-pipfilelock-files
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "GitHub Actions"
           git add .
-          git commit -m "Update the pipfile.lock via the weekly workflow action"
-          git push
+          git commit -m "Update the Pipfile.lock via the weekly workflow action"
+          git push origin ${{ github.event.inputs.branch }}
