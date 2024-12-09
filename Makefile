@@ -659,18 +659,14 @@ DIRS := base/c9s-python-$(PYTHON_VERSION) \
 
 .PHONY: refresh-pipfilelock-files
 refresh-pipfilelock-files:
-ifeq ($(PYTHON_VERSION), 3.9)
-	@echo "Updating Pipfile.lock files for Python 3.9"
-else ifeq ($(PYTHON_VERSION), 3.11)
-	@echo "Updating Pipfile.lock files for Python 3.11"
-else
-	$(error Invalid Python version specified. Use 3.9 or 3.11.)
-endif
-
-# Run `pipenv lock` for each directory in the list
-	for dir in $(DIRS); do \
-		echo "Updating $(PYTHON_VERSION) Pipfile.lock in $$dir"; \
-		cd $$dir && pipenv lock; \
+	@echo "Updating Pipfile.lock files for Python $(PYTHON_VERSION)"
+	@for dir in $(DIRS); do \
+		if [ -d "$$dir" ]; then \
+			echo "Updating $(PYTHON_VERSION) Pipfile.lock in $$dir"; \
+			cd $$dir && pipenv lock; \
+		else \
+			echo "Skipping $$dir as it does not exist"; \
+		fi; \
 	done
 
 
