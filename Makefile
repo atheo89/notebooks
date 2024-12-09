@@ -636,39 +636,6 @@ validate-rstudio-image: bin/kubectl
 		continue; \
 	fi; \
 
-# This is only for the workflow action
-.PHONY: refresh-pipfilelock-files
-refresh-pipfilelock-files:
-	cd base/ubi9-python-3.9 && pipenv lock
-	cd base/c9s-python-3.9 && pipenv lock
-	cd jupyter/minimal/ubi9-python-3.9 && pipenv lock
-	cd jupyter/datascience/ubi9-python-3.9 && pipenv lock
-	cd jupyter/pytorch/ubi9-python-3.9 && pipenv lock
-	cd jupyter/tensorflow/ubi9-python-3.9 && pipenv lock
-	cd jupyter/trustyai/ubi9-python-3.9 && pipenv lock
-	cd runtimes/minimal/ubi9-python-3.9 && pipenv lock
-	cd runtimes/datascience/ubi9-python-3.9 && pipenv lock
-	cd runtimes/pytorch/ubi9-python-3.9 && pipenv lock
-	cd runtimes/tensorflow/ubi9-python-3.9 && pipenv lock
-	cd runtimes/rocm-tensorflow/ubi9-python-3.9 && pipenv lock
-	cd runtimes/rocm-pytorch/ubi9-python-3.9 && pipenv lock
-	cd base/c9s-python-3.11 && pipenv lock
-	cd base/ubi9-python-3.11 && pipenv lock
-	cd codeserver/ubi9-python-3.11 && pipenv lock
-	cd jupyter/minimal/ubi9-python-3.11 && pipenv lock
-	cd jupyter/datascience/ubi9-python-3.11 && pipenv lock
-	cd jupyter/pytorch/ubi9-python-3.11 && pipenv lock
-	cd jupyter/tensorflow/ubi9-python-3.11 && pipenv lock
-	cd jupyter/trustyai/ubi9-python-3.11 && pipenv lock
-	cd jupyter/rocm/tensorflow/ubi9-python-3.11 && pipenv lock
-	cd jupyter/rocm/pytorch/ubi9-python-3.11 && pipenv lock
-	cd runtimes/minimal/ubi9-python-3.11 && pipenv lock
-	cd runtimes/datascience/ubi9-python-3.11 && pipenv lock
-	cd runtimes/pytorch/ubi9-python-3.11 && pipenv lock
-	cd runtimes/tensorflow/ubi9-python-3.11 && pipenv lock
-	cd runtimes/rocm-tensorflow/ubi9-python-3.11 && pipenv lock
-	cd runtimes/rocm-pytorch/ubi9-python-3.11 && pipenv lock
-
 
 # Default Python version (can be overridden by passing `PYTHON_VERSION=3.9` or `PYTHON_VERSION=3.11`)
 PYTHON_VERSION ?= 3.11
