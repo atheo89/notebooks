@@ -13,6 +13,7 @@ on:
         description: 'Python version to update Pipfile.lock'
         required: false
         default: '3.11'  # Set a default if needed
+        type: choice
         options:
           - '3.9'
           - '3.11'
