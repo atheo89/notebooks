@@ -637,10 +637,13 @@ validate-rstudio-image: bin/kubectl
 	fi; \
 
 
-# Default Python version (can be overridden by passing `PYTHON_VERSION=3.9` or `PYTHON_VERSION=3.11`)
+# Default Python version (can be overridden)
 PYTHON_VERSION ?= 3.11
 
-# List of directory paths for the given Python version
+# Root directory for safety
+ROOT_DIR := $(shell pwd)
+
+# List of directories for the given Python version
 DIRS := base/c9s-python-$(PYTHON_VERSION) \
         base/ubi9-python-$(PYTHON_VERSION) \
         jupyter/minimal/ubi9-python-$(PYTHON_VERSION) \
@@ -661,6 +664,8 @@ DIRS := base/c9s-python-$(PYTHON_VERSION) \
 refresh-pipfilelock-files:
 	@echo "Updating Pipfile.lock files for Python $(PYTHON_VERSION)"
 	@for dir in $(DIRS); do \
+		echo "Processing directory: $$dir"; \
+		cd $(ROOT_DIR); \
 		if [ -d "$$dir" ]; then \
 			echo "Updating $(PYTHON_VERSION) Pipfile.lock in $$dir"; \
 			cd $$dir && pipenv lock; \
@@ -668,8 +673,6 @@ refresh-pipfilelock-files:
 			echo "Skipping $$dir as it does not exist"; \
 		fi; \
 	done
-
-
 	
 
 # This is only for the workflow action
