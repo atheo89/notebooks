@@ -10,9 +10,12 @@ on:
         required: false
         default: 'main'
       python_version:
-        description: 'Specify Python version to use'
+        description: 'Python version to update Pipfile.lock'
         required: false
-        default: '3.11'
+        default: '3.11'  # Set a default if needed
+        options:
+          - '3.9'
+          - '3.11'
 
 jobs:
   build:
