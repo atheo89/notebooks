@@ -640,8 +640,7 @@ validate-rstudio-image: bin/kubectl
 # Default Python version
 PYTHON_VERSION ?= 3.11
 ROOT_DIR := $(shell pwd)
-DIRS := base/c9s-python-$(PYTHON_VERSION) \
-        base/ubi9-python-$(PYTHON_VERSION) \
+DIRS := base/ubi9-python-$(PYTHON_VERSION) \
         jupyter/minimal/ubi9-python-$(PYTHON_VERSION) \
 
 OPT_DIRS := jupyter/intel/ml/ubi9-python-$(PYTHON_VERSION) \
