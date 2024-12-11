@@ -637,32 +637,40 @@ validate-rstudio-image: bin/kubectl
 	fi; \
 
 
-# Default Python version
+# Default Python version is 3.11, can be overiden
 PYTHON_VERSION ?= 3.11
 ROOT_DIR := $(shell pwd)
-DIRS := base/ubi9-python-$(PYTHON_VERSION) \
-        jupyter/minimal/ubi9-python-$(PYTHON_VERSION)
-INCLUDE_OPT_DIRS ?= false
+BASE_DIRS := base/ubi9-python-$(PYTHON_VERSION) \
+             jupyter/minimal/ubi9-python-$(PYTHON_VERSION)
+
+# Default value is false, can be overiden
+INCLUDE_OPT_DIRS ?=false
 OPT_DIRS := jupyter/intel/ml/ubi9-python-$(PYTHON_VERSION)
 
-.PHONY: refresh-pipfilelock-files
 refresh-pipfilelock-files:
 	@echo "Updating Pipfile.lock files for Python $(PYTHON_VERSION)"
 	@if [ "$(INCLUDE_OPT_DIRS)" = "true" ]; then \
 		echo "Including optional directories"; \
-		DIRS="$(DIRS) $(OPT_DIRS)"; \
+		ALL_DIRS="$(BASE_DIRS) $(OPT_DIRS)"; \
+	else \
+		ALL_DIRS="$(BASE_DIRS)"; \
 	fi; \
-	for dir in $$DIRS; do \
+	for dir in $$ALL_DIRS; do \
 		echo "Processing directory: $$dir"; \
 		cd $(ROOT_DIR); \
 		if [ -d "$$dir" ]; then \
 			echo "Updating $(PYTHON_VERSION) Pipfile.lock in $$dir"; \
-			cd $$dir && pipenv lock; \
+			cd $$dir; \
+			if [ -f "Pipfile" ]; then \
+				pipenv lock; \
+			else \
+				echo "No Pipfile found in $$dir, skipping."; \
+			fi; \
 		else \
 			echo "Skipping $$dir as it does not exist"; \
 		fi; \
 	done
-	
+
 
 # This is only for the workflow action
 # For running manually, set the required environment variables
