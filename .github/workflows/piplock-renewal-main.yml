@@ -34,7 +34,7 @@ jobs:
       - name: Checkout code from the specified branch
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.event.inputs.organization }}/${{ github.repository }}
+          repository: ${{ github.event.inputs.organization }}/$(basename ${{ github.repository }})
           ref: ${{ github.event.inputs.branch }}
           token: ${{ secrets.GH_ACCESS_TOKEN }}
 
