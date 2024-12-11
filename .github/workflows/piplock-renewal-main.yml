@@ -48,6 +48,6 @@ jobs:
       - name: Run make refresh-pipfilelock-files and push the changes
         run: |
           make refresh-pipfilelock-files PYTHON_VERSION=${{ github.event.inputs.python_version }}
-          git add .
+          git add -f .
           git commit -m "Update Pipfile.lock files via the workflow action"
           git push origin ${{ github.event.inputs.branch }}
