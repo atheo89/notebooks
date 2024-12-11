@@ -641,10 +641,9 @@ validate-rstudio-image: bin/kubectl
 PYTHON_VERSION ?= 3.11
 ROOT_DIR := $(shell pwd)
 DIRS := base/ubi9-python-$(PYTHON_VERSION) \
-        jupyter/minimal/ubi9-python-$(PYTHON_VERSION) \
-
-OPT_DIRS := jupyter/intel/ml/ubi9-python-$(PYTHON_VERSION) \
-
+        jupyter/minimal/ubi9-python-$(PYTHON_VERSION)
+INCLUDE_OPT_DIRS ?= false
+OPT_DIRS := jupyter/intel/ml/ubi9-python-$(PYTHON_VERSION)
 
 .PHONY: refresh-pipfilelock-files
 refresh-pipfilelock-files:

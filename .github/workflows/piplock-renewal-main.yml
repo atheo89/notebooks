@@ -14,6 +14,14 @@ on:
         options:
           - '3.9'
           - '3.11'
+      update_optional_dirs:
+        description: 'Include optional directories in update'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
 jobs:
   build:
@@ -47,7 +55,7 @@ jobs:
       # Run makefile recipe to refresh Pipfile.lock and push changes back to the branch
       - name: Run make refresh-pipfilelock-files and push the changes
         run: |
-          make refresh-pipfilelock-files PYTHON_VERSION=${{ github.event.inputs.python_version }}
+          make refresh-pipfilelock-files PYTHON_VERSION=${{ github.event.inputs.python_version }} INCLUDE_OPT_DIRS=${{ github.event.inputs.update_optional_dirs }}
           git add -f .
           git commit -m "Update Pipfile.lock files via the workflow action"
           git push origin ${{ github.event.inputs.branch }}
