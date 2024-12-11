@@ -6,13 +6,17 @@ on:
   workflow_dispatch:
     inputs:
       branch:
-        description: 'Specify the branch to run this workflow'
+        description: 'Specify branch'
         required: false
         default: 'main'
-      python_version:
-        description: 'Python version to update Pipfile.lock'
+      organization:
         required: false
-        default: '3.11'  # Set a default if needed
+        description: "Specify organization"
+        default: "atheo89"
+      python_version:
+        description: 'Select Python version to update Pipfile.lock'
+        required: false
+        default: '3.11'
         type: choice
         options:
           - '3.9'
@@ -26,10 +30,11 @@ jobs:
       contents: write  # Allows the GitHub Actions bot to commit and push changes
 
     steps:
-      # Checkout the specified branch (or default to 'main')
+      # Checkout the specified branch from the specified organization
       - name: Checkout code from the specified branch
         uses: actions/checkout@v4
         with:
+          repository: ${{ github.event.inputs.organization }}/$(echo ${{ github.event.repository.name }})
           ref: ${{ github.event.inputs.branch }}
           token: ${{ secrets.GH_ACCESS_TOKEN }}
 
@@ -49,6 +54,7 @@ jobs:
           make refresh-pipfilelock-files PYTHON_VERSION=${{ github.event.inputs.python_version }}
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "GitHub Actions"
+          git remote set-url origin https://github.com/${{ github.event.inputs.organization }}/${{ github.event.repository.name }}.git
           git add .
           git commit -m "Update the Pipfile.lock via the weekly workflow action"
           git push origin ${{ github.event.inputs.branch }}
