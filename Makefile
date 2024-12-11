@@ -641,9 +641,7 @@ validate-rstudio-image: bin/kubectl
 PYTHON_VERSION ?= 3.11
 ROOT_DIR := $(shell pwd)
 BASE_DIRS := base/ubi9-python-$(PYTHON_VERSION) \
-             jupyter/minimal/ubi9-python-$(PYTHON_VERSION) \
-	     codeserver/ubi9-python-$(PYTHON_VERSION) \
-
+             jupyter/minimal/ubi9-python-$(PYTHON_VERSION) 
 
 # Default value is false, can be overiden
 INCLUDE_OPT_DIRS ?=false
