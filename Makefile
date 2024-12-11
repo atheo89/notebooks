@@ -637,33 +637,24 @@ validate-rstudio-image: bin/kubectl
 	fi; \
 
 
-# Default Python version (can be overridden)
+# Default Python version
 PYTHON_VERSION ?= 3.11
-
-# Root directory for safety
 ROOT_DIR := $(shell pwd)
-
-# List of directories for the given Python version
 DIRS := base/c9s-python-$(PYTHON_VERSION) \
         base/ubi9-python-$(PYTHON_VERSION) \
         jupyter/minimal/ubi9-python-$(PYTHON_VERSION) \
-        jupyter/datascience/ubi9-python-$(PYTHON_VERSION) \
-        jupyter/pytorch/ubi9-python-$(PYTHON_VERSION) \
-        jupyter/tensorflow/ubi9-python-$(PYTHON_VERSION) \
-        jupyter/trustyai/ubi9-python-$(PYTHON_VERSION) \
-        jupyter/rocm/tensorflow/ubi9-python-$(PYTHON_VERSION) \
-        jupyter/rocm/pytorch/ubi9-python-$(PYTHON_VERSION) \
-        runtimes/minimal/ubi9-python-$(PYTHON_VERSION) \
-        runtimes/datascience/ubi9-python-$(PYTHON_VERSION) \
-        runtimes/pytorch/ubi9-python-$(PYTHON_VERSION) \
-        runtimes/tensorflow/ubi9-python-$(PYTHON_VERSION) \
-        runtimes/rocm-tensorflow/ubi9-python-$(PYTHON_VERSION) \
-        runtimes/rocm-pytorch/ubi9-python-$(PYTHON_VERSION)
+
+OPT_DIRS := jupyter/intel/ml/ubi9-python-$(PYTHON_VERSION) \
+
 
 .PHONY: refresh-pipfilelock-files
 refresh-pipfilelock-files:
 	@echo "Updating Pipfile.lock files for Python $(PYTHON_VERSION)"
-	@for dir in $(DIRS); do \
+	@if [ "$(INCLUDE_OPT_DIRS)" = "true" ]; then \
+		echo "Including optional directories"; \
+		DIRS="$(DIRS) $(OPT_DIRS)"; \
+	fi; \
+	for dir in $$DIRS; do \
 		echo "Processing directory: $$dir"; \
 		cd $(ROOT_DIR); \
 		if [ -d "$$dir" ]; then \
