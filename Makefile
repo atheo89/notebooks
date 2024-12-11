@@ -641,21 +641,26 @@ validate-rstudio-image: bin/kubectl
 PYTHON_VERSION ?= 3.11
 ROOT_DIR := $(shell pwd)
 BASE_DIRS := base/ubi9-python-$(PYTHON_VERSION) \
-             jupyter/minimal/ubi9-python-$(PYTHON_VERSION)
+             jupyter/minimal/ubi9-python-$(PYTHON_VERSION) \
+	     codeserver/ubi9-python-$(PYTHON_VERSION) \
+
 
 # Default value is false, can be overiden
 INCLUDE_OPT_DIRS ?=false
 OPT_DIRS := jupyter/intel/ml/ubi9-python-$(PYTHON_VERSION)
 
+# This recipe gets args, can be used like
+# make refresh-pipfilelock-files PYTHON_VERSION=3.11 INCLUDE_OPT_DIRS=false
+.PHONY: refresh-pipfilelock-files
 refresh-pipfilelock-files:
 	@echo "Updating Pipfile.lock files for Python $(PYTHON_VERSION)"
 	@if [ "$(INCLUDE_OPT_DIRS)" = "true" ]; then \
 		echo "Including optional directories"; \
-		ALL_DIRS="$(BASE_DIRS) $(OPT_DIRS)"; \
+		DIRS="$(BASE_DIRS) $(OPT_DIRS)"; \
 	else \
-		ALL_DIRS="$(BASE_DIRS)"; \
+		DIRS="$(BASE_DIRS)"; \
 	fi; \
-	for dir in $$ALL_DIRS; do \
+	for dir in $$DIRS; do \
 		echo "Processing directory: $$dir"; \
 		cd $(ROOT_DIR); \
 		if [ -d "$$dir" ]; then \
@@ -670,6 +675,7 @@ refresh-pipfilelock-files:
 			echo "Skipping $$dir as it does not exist"; \
 		fi; \
 	done
+
 
 
 # This is only for the workflow action
