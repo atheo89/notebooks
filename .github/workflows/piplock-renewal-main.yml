@@ -1,18 +1,11 @@
-name: Weekly Pipfile.locks renewal on [main] branch
-
+name: Pipfile.locks Renewal Action
 on:
-  schedule:
-    - cron: "0 22 * * 1"  # Triggers the workflow every Monday at 22:00 UTC
   workflow_dispatch:
     inputs:
       branch:
         description: 'Specify branch'
         required: false
         default: 'main'
-      organization:
-        required: false
-        description: "Specify organization"
-        default: "atheo89"
       python_version:
         description: 'Select Python version to update Pipfile.lock'
         required: false
@@ -25,19 +18,22 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     permissions:
-      contents: write  # Allows the GitHub Actions bot to commit and push changes
-
+      contents: write
     steps:
       # Checkout the specified branch from the specified organization
       - name: Checkout code from the specified branch
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.event.inputs.organization }}/$(basename ${{ github.repository }})
           ref: ${{ github.event.inputs.branch }}
           token: ${{ secrets.GH_ACCESS_TOKEN }}
-
+          
+      # Configure Git
+      - name: Configure Git
+        run: |
+         git config --global user.email "github-actions[bot]@users.noreply.github.com"
+         git config --global user.name "GitHub Actions"
+         
       # Setup Python environment with the specified version (or default to '3.11')
       - name: Setup Python environment
         uses: actions/setup-python@v5
@@ -52,9 +48,6 @@ jobs:
       - name: Run make refresh-pipfilelock-files and push the changes
         run: |
           make refresh-pipfilelock-files PYTHON_VERSION=${{ github.event.inputs.python_version }}
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "GitHub Actions"
-          git remote set-url origin https://github.com/${{ github.event.inputs.organization }}/${{ github.event.repository.name }}.git
           git add .
-          git commit -m "Update the Pipfile.lock via the weekly workflow action"
+          git commit -m "Update Pipfile.lock files via the workflow action"
           git push origin ${{ github.event.inputs.branch }}
