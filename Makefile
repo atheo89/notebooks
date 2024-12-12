@@ -641,10 +641,11 @@ validate-rstudio-image: bin/kubectl
 PYTHON_VERSION ?= 3.11
 ROOT_DIR := $(shell pwd)
 BASE_DIRS := base/ubi9-python-$(PYTHON_VERSION) \
-             jupyter/minimal/ubi9-python-$(PYTHON_VERSION) 
+             jupyter/minimal/ubi9-python-$(PYTHON_VERSION) \
+	     jupyter/datascience/ubi9-python-$(PYTHON_VERSION) 
 
 # Default value is false, can be overiden
-INCLUDE_OPT_DIRS ?=false
+INCLUDE_OPT_DIRS ?= false
 OPT_DIRS := jupyter/intel/ml/ubi9-python-$(PYTHON_VERSION)
 
 # This recipe gets args, can be used like
