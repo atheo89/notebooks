@@ -2,7 +2,7 @@ name: Pipfile.locks Renewal Action
 on:
   # Triggers the workflow every Monday at 22pm UTC am 0 22 * * 1
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "0 22 * * 1"
   workflow_dispatch:
     inputs:
       branch:
