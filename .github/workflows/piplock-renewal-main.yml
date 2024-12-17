@@ -1,5 +1,8 @@
 name: Pipfile.locks Renewal Action
 on:
+  # Triggers the workflow every Monday at 22pm UTC am 0 22 * * 1
+  schedule:
+    - cron: "*/10 * * * *"
   workflow_dispatch:
     inputs:
       branch:
@@ -28,12 +31,16 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      BRANCH: ${{ github.event.inputs.branch || 'main' }}
+      PYTHON_VERSION: ${{ github.event.inputs.python_version || '3.11' }}
+      INCLUDE_OPT_DIRS: ${{ github.event.inputs.update_optional_dirs || 'false' }}
     steps:
       # Checkout the specified branch from the specified organization
       - name: Checkout code from the specified branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.branch }}
+          ref: ${{ env.BRANCH }}
           token: ${{ secrets.GH_ACCESS_TOKEN }}
           
       # Configure Git
@@ -46,7 +53,7 @@ jobs:
       - name: Setup Python environment
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ github.event.inputs.python_version }}
+          python-version: ${{ env.PYTHON_VERSION }}
 
       # Install pipenv
       - name: Install pipenv
@@ -55,7 +62,7 @@ jobs:
       # Run makefile recipe to refresh Pipfile.lock and push changes back to the branch
       - name: Run make refresh-pipfilelock-files and push the changes
         run: |
-          make refresh-pipfilelock-files PYTHON_VERSION=${{ github.event.inputs.python_version }} INCLUDE_OPT_DIRS=${{ github.event.inputs.update_optional_dirs }}
+          make refresh-pipfilelock-files PYTHON_VERSION=${{ env.PYTHON_VERSION }} INCLUDE_OPT_DIRS=${{ env.INCLUDE_OPT_DIRS }}
           git add -f .
           git commit -m "Update Pipfile.lock files via the workflow action"
-          git push origin ${{ github.event.inputs.branch }}
+          git push origin ${{ env.BRANCH }}
