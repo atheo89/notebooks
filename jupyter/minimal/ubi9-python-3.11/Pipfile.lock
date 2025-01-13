@@ -772,12 +772,12 @@
         },
         "jupyterlab": {
             "hashes": [
-                "sha256:625f3ac19da91f9706baf66df25723b2f1307c1159fc7293035b066786d62a4a",
-                "sha256:78dd42cae5b460f377624b03966a8730e3b0692102ddf5933a2a3730c1bc0a20"
+                "sha256:7353c0704aec0e1219eb1e376c2d51f855a2522605f9ecdcab4993c006991ea3",
+                "sha256:a16a10a114360a4249c855e382b95260ebf2b91341884739dde954936096684d"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.8'",
-            "version": "==4.2.6"
+            "version": "==4.2.7"
         },
         "jupyterlab-git": {
             "hashes": [
