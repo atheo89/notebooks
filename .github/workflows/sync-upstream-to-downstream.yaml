@@ -19,6 +19,8 @@ env:
     manifests/base/commit.env
     manifests/base/params.env
   UPSTREAM_OWNER: "atheo89"
+  DOWNSTREAM_OWNER: "Org-Test-Template"
+
   BRANCH_NAME: ${{ inputs.branch_name }}
   TEMP_BRANCH: sync-ds-${{ inputs.branch_name }}-${{ github.run_id }}
 
@@ -95,10 +97,10 @@ jobs:
 
     - name: Creates PR
       run: |
-          gh pr create --repo https://github.com/$UPSTREAM_OWNER/notebooks.git \
+          gh pr create --repo https://github.com/$DOWNSTREAM_OWNER/notebooks.git \
             --title "$pr_title" \
             --body "$pr_body" \
-            --head $UPSTREAM_OWNER:${TEMP_BRANCH} \
+            --head $DOWNSTREAM_OWNER:${TEMP_BRANCH} \
             --base ${{ env.BRANCH_NAME }}
       env:
         GH_TOKEN: ${{ github.token }}
