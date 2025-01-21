@@ -19,8 +19,6 @@ env:
     manifests/base/commit.env
     manifests/base/params.env
   UPSTREAM_OWNER: "atheo89"
-  DOWNSTREAM_OWNER: "Org-Test-Template"
-
   BRANCH_NAME: ${{ inputs.branch_name }}
   TEMP_BRANCH: sync-ds-${{ inputs.branch_name }}-${{ github.run_id }}
 
@@ -51,6 +49,7 @@ jobs:
     - name: Sync and resolve conflicts
       env:
         BRANCH_NAME: ${{ inputs.branch_name }}
+        TEMP_BRANCH: ${{ env.TEMP_BRANCH }}
       run: |
         set -e
 
@@ -93,21 +92,18 @@ jobs:
         # Push the temporary branch to downstream
         git push origin ${TEMP_BRANCH}
 
-
-
     - name: Creates PR
       run: |
-          gh pr create --repo https://github.com/$DOWNSTREAM_OWNER/notebooks.git \
+          gh pr create \
             --title "$pr_title" \
             --body "$pr_body" \
-            --head $DOWNSTREAM_OWNER:${TEMP_BRANCH} \
-            --base ${{ env.BRANCH_NAME }}
+            --head "${{ github.repository_owner }}:${TEMP_BRANCH}" \
+            --base "${{ env.BRANCH_NAME }}"
       env:
-        GH_TOKEN: ${{ github.token }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         pr_title: "Sync downstream from upstream"
         pr_body: |
             :robot: This is an automated Pull Request created by `/.github/workflows/gggg.yaml`.
 
-            Have been updated the following related files:
+            Updated the following related files:
               - $FILES_TO_RESOLVE
-
