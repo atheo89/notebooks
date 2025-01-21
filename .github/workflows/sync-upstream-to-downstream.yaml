@@ -101,9 +101,9 @@ jobs:
             --head $UPSTREAM_OWNER:${TEMP_BRANCH} \
             --base ${{ env.BRANCH_NAME }}
       env:
-         GITHUB_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
-         pr_title: "Sync downstream from upstream"
-         pr_body: |
+        GH_TOKEN: ${{ github.token }}
+        pr_title: "Sync downstream from upstream"
+        pr_body: |
             :robot: This is an automated Pull Request created by `/.github/workflows/gggg.yaml`.
 
             Have been updated the following related files:
