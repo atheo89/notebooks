@@ -46,13 +46,11 @@ jobs:
     - name: Sync and resolve conflicts
       env:
         BRANCH_NAME: ${{ inputs.branch_name }}
-       # TEMP_BRANCH_ID: ${{ github.run_id }} # Unique ID for the temporary branch
       run: |
         set -e
 
         # Define branches
         DOWNSTREAM_BRANCH="origin/${BRANCH_NAME}"
-        # TEMP_BRANCH="sync-ds-${{ github.run_id }}"
 
         echo "Syncing downstream branch '${BRANCH_NAME}' from upstream branch '${BRANCH_NAME}'"
 
@@ -92,115 +90,19 @@ jobs:
 
 
 
+    - name: PR Cretation
+      run: |
+          gh pr create --repo https://github.com/${{ env.UPSTREAM_OWNER }}/notebooks.git \
+            --title "$pr_title" \
+            --body "$pr_body" \
+            --head $UPSTREAM_OWNER:${TEMP_BRANCH} \
+            --base ${{ env.BRANCH_NAME }}
+      env:
+         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+         pr_title: "Sync downstream from upstream"
+         pr_body: |
+            :robot: This is an automated Pull Request created by `/.github/workflows/gggg.yaml`.
 
-
-# name: Sync Downstream from Upstream
-
-# on:
-#   workflow_dispatch:
-#     inputs:
-#       branch_name:
-#         description: "Branch name to sync (e.g., '2024b'):"
-#         required: true
-#         type: string
-
-# env:
-#   FILES_TO_RESOLVE: |
-#     jupyter/datascience/ubi9-python-3.11/runtime-images/datascience-ubi9-py311.json
-#     jupyter/datascience/ubi9-python-3.11/runtime-images/pytorch-ubi9-py311.json
-#     jupyter/datascience/ubi9-python-3.11/runtime-images/rocm-pytorch-ubi9-py311.json
-#     jupyter/datascience/ubi9-python-3.11/runtime-images/rocm-tensorflow-ubi9-py311.json
-#     jupyter/datascience/ubi9-python-3.11/runtime-images/tensorflow-ubi9-py311.json
-#     jupyter/datascience/ubi9-python-3.11/runtime-images/ubi9-py311.json
-#     manifests/base/commit.env
-#     manifests/base/params.env
-#   UPSTREAM_OWNER: "atheo89"
-#   BRANCH_NAME: ${{ inputs.branch_name }}
-#   TEMP_BRANCH: sync-ds-${BRANCH_NAME}-${{ github.run_id }}
-
-
-# jobs:
-#   sync-branches:
-#     runs-on: ubuntu-latest
-
-#     steps:
-#     - name: Set up Git
-#       run: |
-#         git config --global user.name "github-actions[bot]"
-#         git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-#     - name: Checkout repository
-#       uses: actions/checkout@v4
-#       with:
-#         fetch-depth: 0
-
-#     - name: Add upstream and downstream remotes
-#       run: |
-#         git remote add upstream https://github.com/${{ env.UPSTREAM_OWNER }}/notebooks.git
-#         git fetch --all
-#         # Checkout new branch
-#         echo ${{ env.TEMP_BRANCH }}
-#         git checkout -b ${{ env.TEMP_BRANCH }} origin/${{ env.BRANCH_NAME }}
-#         git push --set-upstream origin ${{ env.TEMP_BRANCH }}
-
-#     - name: Sync and resolve conflicts
-#       run: |
-#         set -e
-
-#         # Define downstream branch and temporary sync branch
-#         DOWNSTREAM_BRANCH="${BRANCH_NAME}"
-
-#         echo "Syncing downstream branch '${DOWNSTREAM_BRANCH}' from upstream branch '${BRANCH_NAME}'"
-
-#         # Ensure the downstream branch exists locally
-#         # git checkout -b ${env.TEMP_BRANCH} ${DOWNSTREAM_BRANCH}
-#         git checkout ${env.TEMP_BRANCH}
-
-#         # Pull changes from the upstream branch
-#         git pull upstream ${BRANCH_NAME} --no-rebase || true
-
-#         # Resolve known conflicts
-#         echo "${FILES_TO_RESOLVE}" | while IFS= read -r FILE; do
-#           if [[ -f "$FILE" && "$(git status --porcelain=v1 2>/dev/null | grep -c "$FILE")" -gt 0 ]]; then
-#             echo "Resolving conflict for $FILE by keeping downstream changes."
-#             git checkout --ours "$FILE"
-#             git add "$FILE"
-#           fi
-#         done
-
-#         # Check for unresolved conflicts
-#         if [[ -n "$(git ls-files -u)" ]]; then
-#           echo "Unresolved conflicts detected in the following files:"
-#           git ls-files -u
-#           echo "Aborting merge due to unexpected conflicts."
-#           exit 1
-#         fi
-
-#         # Commit changes if any
-#         if [[ -n "$(git status --porcelain)" ]]; then
-#           git commit -m "Merge upstream/${BRANCH_NAME} into downstream/${BRANCH_NAME} with resolved conflicts"
-#         else
-#           echo "No changes to commit. Exiting workflow."
-#           exit 0
-#         fi
-
-#         # Push the temporary branch to downstream
-#         git push origin ${env.TEMP_BRANCH}
-
-
-    # - name: PR Cretation
-    #   run: |
-    #       gh pr create --repo https://github.com/${{ env.UPSTREAM_OWNER }}/notebooks.git \
-    #         --title "$pr_title" \
-    #         --body "$pr_body" \
-    #         --head $UPSTREAM_OWNER:${{ env.TEMP_BRANCH }} \
-    #         --base ${{ env.BRANCH_NAME }}
-    #   env:
-    #      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #      pr_title: "Sync downstream from upstream"
-    #      pr_body: |
-    #         :robot: This is an automated Pull Request created by `/.github/workflows/notebook-controller-images-updater.yaml`.
-
-    #         Have been updated the following related files:
-    #           - $FILES_TO_RESOLVE
+            Have been updated the following related files:
+              - $FILES_TO_RESOLVE
 
