@@ -1,9 +1,6 @@
 name: Sync Downstream from Upstream
 
 on:
-  permissions:
-    contents: write
-    pull-requests: write
   workflow_dispatch:
     inputs:
       branch_name:
@@ -98,7 +95,7 @@ jobs:
 
     - name: Creates PR
       run: |
-          gh pr create --repo https://github.com/${{ env.UPSTREAM_OWNER }}/notebooks.git \
+          gh pr create --repo https://github.com/$UPSTREAM_OWNER/notebooks.git \
             --title "$pr_title" \
             --body "$pr_body" \
             --head $UPSTREAM_OWNER:${TEMP_BRANCH} \
