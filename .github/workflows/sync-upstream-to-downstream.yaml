@@ -11,15 +11,10 @@ on:
 env:
   FILES_TO_RESOLVE: |
     jupyter/datascience/ubi9-python-3.11/runtime-images/datascience-ubi9-py311.json
-    jupyter/datascience/ubi9-python-3.11/runtime-images/pytorch-ubi9-py311.json
-    jupyter/datascience/ubi9-python-3.11/runtime-images/rocm-pytorch-ubi9-py311.json
-    jupyter/datascience/ubi9-python-3.11/runtime-images/rocm-tensorflow-ubi9-py311.json
-    jupyter/datascience/ubi9-python-3.11/runtime-images/tensorflow-ubi9-py311.json
-    jupyter/datascience/ubi9-python-3.11/runtime-images/ubi9-py311.json
     manifests/base/commit.env
     manifests/base/params.env
   UPSTREAM_OWNER: "atheo89"
-  DOWNSTREAM_OWNER: ${{ github.repository_owner }} # Owner of the forked repository
+  DOWNSTREAM_OWNER: ${{ github.repository_owner }}
   BRANCH_NAME: ${{ inputs.branch_name }}
   TEMP_BRANCH: sync-ds-${{ inputs.branch_name }}-${{ github.run_id }}
 
@@ -30,9 +25,6 @@ permissions:
 jobs:
   sync-branches:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
 
     steps:
     - name: Set up Git
@@ -50,6 +42,9 @@ jobs:
         git remote add upstream https://github.com/${{ env.UPSTREAM_OWNER }}/notebooks.git
         git remote add downstream https://github.com/${{ env.DOWNSTREAM_OWNER }}/notebooks.git
         git fetch --all
+
+    - name: Debug Remotes
+      run: git remote -v
 
     - name: Sync and resolve conflicts
       run: |
@@ -102,7 +97,7 @@ jobs:
             --head "${DOWNSTREAM_OWNER}:${TEMP_BRANCH}" \
             --base "${BRANCH_NAME}"
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
         pr_title: "Sync downstream from upstream"
         pr_body: |
             :robot: This is an automated Pull Request created by `/.github/workflows/gggg.yaml`.
