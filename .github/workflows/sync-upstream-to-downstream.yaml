@@ -19,9 +19,13 @@ env:
     manifests/base/commit.env
     manifests/base/params.env
   UPSTREAM_OWNER: "atheo89"
+  DOWNSTREAM_OWNER: ${{ github.repository_owner }} # Owner of the forked repository
   BRANCH_NAME: ${{ inputs.branch_name }}
   TEMP_BRANCH: sync-ds-${{ inputs.branch_name }}-${{ github.run_id }}
 
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   sync-branches:
@@ -44,12 +48,10 @@ jobs:
     - name: Add upstream and downstream remotes
       run: |
         git remote add upstream https://github.com/${{ env.UPSTREAM_OWNER }}/notebooks.git
+        git remote add downstream https://github.com/${{ env.DOWNSTREAM_OWNER }}/notebooks.git
         git fetch --all
 
     - name: Sync and resolve conflicts
-      env:
-        BRANCH_NAME: ${{ inputs.branch_name }}
-        TEMP_BRANCH: ${{ env.TEMP_BRANCH }}
       run: |
         set -e
 
@@ -90,15 +92,15 @@ jobs:
         fi
 
         # Push the temporary branch to downstream
-        git push origin ${TEMP_BRANCH}
+        git push downstream ${TEMP_BRANCH}
 
     - name: Creates PR
       run: |
           gh pr create \
             --title "$pr_title" \
             --body "$pr_body" \
-            --head "${{ github.repository_owner }}:${TEMP_BRANCH}" \
-            --base "${{ env.BRANCH_NAME }}"
+            --head "${DOWNSTREAM_OWNER}:${TEMP_BRANCH}" \
+            --base "${BRANCH_NAME}"
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         pr_title: "Sync downstream from upstream"
