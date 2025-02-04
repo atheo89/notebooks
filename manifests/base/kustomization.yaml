@@ -24,6 +24,14 @@ configMapGenerator:
     env: params.env
   - name: notebook
     env: commit.env
+  - name: pipeline-runtime-images
+    files:
+      - runtime-images/datascience-ubi9-py311.json
+      - runtime-images/pytorch-ubi9-py311.json
+      - runtime-images/rocm-pytorch-ubi9-py311.json
+      - runtime-images/rocm-tensorflow-ubi9-py311.json
+      - runtime-images/tensorflow-ubi9-py311.json
+      - runtime-images/ubi9-py311.json
 generatorOptions:
   disableNameSuffixHash: true
 vars:
