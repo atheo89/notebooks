@@ -30,9 +30,18 @@ configMapGenerator:
     env: params.env
   - name: notebook
     env: commit.env
+  - name: runtime-parameters
+    env: runtimes.env
 generatorOptions:
   disableNameSuffixHash: true
 vars:
+  - name: runtime-datascience-image
+    objref:
+      kind: ConfigMap
+      name: runtime-parameters
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.runtime-datascience-image
   - name: odh-minimal-notebook-image-n
     objref:
       kind: ConfigMap
@@ -331,3 +340,4 @@ vars:
 configurations:
   - params.yaml
   - commit.yaml
+  - runtimes.yaml
