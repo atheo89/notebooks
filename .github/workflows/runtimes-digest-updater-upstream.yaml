@@ -1,15 +1,12 @@
 ---
-# The aim of this GitHub workflow is to update the runtimes across `/jupyter/datascience/ubi*-python-*/runtime-images/*.json` paths.
-name: Update runtime images
+# The aim of this GitHub workflow is to update the runtimes ImageStreams
+name: Update runtime ImageStreams SHA digests
 on:  # yamllint disable-line rule:truthy
   workflow_dispatch:
     inputs:
       branch:
         required: true
-        description: "Provide the name of the branch you want to update ex main, vYYYYx etc: "
-        # Put the scheduler on comment until automate the full release procedure
-        # schedule:
-        #   - cron: "0 0 * * 5"  #Scheduled every Friday
+        description: "Provide branch name: "
 env:
   DIGEST_UPDATER_BRANCH: digest-updater-${{ github.run_id }}
   BRANCH_NAME: ${{ github.event.inputs.branch || 'main' }}
@@ -24,7 +21,7 @@ jobs:
         shell: bash
         run: |
           sudo apt-get -y update
-          sudo apt-get -y install skopeo
+          sudo apt-get -y install skopeo yq
 
       # Checkout the branch
       - name: Checkout branch
@@ -50,13 +47,24 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "GitHub Actions"
 
-      # Get latest build commit from the https://github.com/opendatahub-io/notebooks/${release_branch} using this as identifier for the latest tag name
-      - name: Retrive latest commit hash from the release branch
-        id: hash-n
+      # Get latest build commit from the https://github.com/opendatahub-io/notebooks/${branch} using this as identifier for the latest tag name
+      - name: Retrieve latest build commit hash from the branch
+        id: hash
         shell: bash
         run: |
-          PAYLOAD=$(curl --silent -H 'Accept: application/vnd.github.v4.raw' https://api.github.com/repos/opendatahub-io/notebooks/commits?sha=$RELEASE_VERSION_N&per_page=1)
-          echo "HASH_N=$(echo $PAYLOAD | jq -r '.[0].sha[0:7]')" >> ${GITHUB_OUTPUT}
+          PAYLOAD=$(curl --silent -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/opendatahub-io/notebooks/commits?sha=${BRANCH_NAME}&per_page=1")
+          
+          HASH=$(echo "$PAYLOAD" | jq -r '.[0].sha' | cut -c1-7)
+
+          if [[ -z "$HASH" || "$HASH" == "null" ]]; then
+            echo "Failed to retrieve commit hash. Response: $PAYLOAD"
+            exit 1
+          fi
+
+          echo "HASH=$HASH" >> "$GITHUB_ENV"
+          echo "HASH=$HASH" >> "$GITHUB_OUTPUT"
+
+          echo "Retrieved HASH: $HASH"
 
       # Checkout the release branch to apply the updates
       - name: Checkout release branch
@@ -64,44 +72,54 @@ jobs:
         with:
           ref: ${{ env.DIGEST_UPDATER_BRANCH }}
 
-      - name: Update Runtimes
+      - name: Update Runtime ImageStreams
         run: |
-            echo "Latest commit is: ${{ steps.hash-n.outputs.HASH_N }} on ${{ env.RELEASE_VERSION_N }}"
+            echo "HASH=$(echo $HASH)"
 
-            find . -name runtime-images -type d -exec find {} -type f -print \; | grep python-3.11 | while read -r path; do
-              echo "Processing the '${path}' file."
-
-              img=$(jq -r '.metadata.image_name' "${path}")
-              name=$(echo "$path" | sed 's#.*runtime-images/\(.*\)-py.*#\1#')
-              py_version=$(echo "$path" | grep -o 'python-[0-9]\.[0-9]*')
-              # Handling specific cases
-              if [[ $name == tensorflow* ]]; then
-                name="cuda-$name"
-              elif [[ $name == ubi* ]]; then
-                name="minimal-$name"
-              fi
+            # Find matching files
+            files=$(find "$GITHUB_WORKSPACE/manifests/base" -type f -name "runtime-*.yaml")
+            for file in $files; do
+              echo "Processing: $file"
+              # Extract values
+              img=$(yq e '.spec.tags[].annotations."opendatahub.io/runtime-image-metadata" | fromjson | .[].metadata.image_name' "$file" 2>/dev/null)
+              name=$(yq e '.spec.tags[].name' "$file" 2>/dev/null)
+              ubi=$(yq e '.metadata.annotations."opendatahub.io/runtime-image-name"' "$file" 2>/dev/null | grep -oE 'UBI[0-9]+' | tr '[:upper:]' '[:lower:]')
+              py_version=$(yq e '.metadata.annotations."opendatahub.io/runtime-image-name"' "$file" 2>/dev/null | grep -oE 'Python [0-9]+\.[0-9]+' | sed 's/ /-/g' | tr '[:upper:]' '[:lower:]')
               registry=$(echo "$img" | cut -d '@' -f1)
-              regex="^runtime-$name-$py_version-${{ env.RELEASE_VERSION_N }}-\d+-${{ steps.hash-n.outputs.HASH_N }}\$"
+
+              # Handling specific cases
+              [[ $name == tensorflow* ]] && name="cuda-$name"
+
+              if [[ $BRANCH_NAME == main ]]; then
+                # This should match with the runtime-image tag name as is on quay.io registry
+                regex="^runtime-$name-$ubi-$py_version-[0-9]{8}-$HASH$"
+              else
+                # This should match with the runtime-image tag name as is on quay.io registry
+                regex="^runtime-$name-$ubi-$py_version-$BRANCH_NAME-[0-9]{8}-$HASH$"
+              fi
+              echo "regex: ${regex}"
+
               latest_tag=$(skopeo inspect --retry-times 3 "docker://$img" | jq -r --arg regex "$regex" '.RepoTags | map(select(. | test($regex))) | .[0]')
               echo "CHECKING: ${latest_tag}"
-              if [[ -z "${latest_tag}" ]]; then
-                echo "No matching tag found"
-                exit 1
-              fi
+
+              # Extracts the SHA digest from the latest tag
               digest=$(skopeo inspect --retry-times 3 "docker://$registry:$latest_tag" | jq .Digest | tr -d '"')
               output="${registry}@${digest}"
               echo "NEW: ${output}"
-              jq --arg output "$output" '.metadata.image_name = $output' "$path" > "$path.tmp" && mv "$path.tmp" "$path"
+
+              # Updates the ImageStream files with the new SHAs
+              yq e -i '(.spec.tags[] | .from.name) = "'"$output"'"' "$file"
+              sed -i "s|\(\"image_name\": \"\)[^\"]*|\1${output}|" "$file"
             done
 
             if [[ $(git status --porcelain | wc -l) -gt 0 ]]; then
               git fetch origin "${{ env.DIGEST_UPDATER_BRANCH }}" && \
                 git pull origin "${{ env.DIGEST_UPDATER_BRANCH }}" && \
-                git add jupyter/datascience/* && \
+                git add manifests/base/runtime-* && \
                 git commit -m "Update file via ${{ env.DIGEST_UPDATER_BRANCH }} GitHub action" && \
                 git push origin "${{ env.DIGEST_UPDATER_BRANCH }}"
             else
-              echo "There were no changes detected in the images for the ${{ env.RELEASE_VERSION_N }}"
+              echo "There were no changes detected in the images for the ${{ env.BRANCH_NAME }}"
             fi
 
   open-pull-request:
@@ -125,7 +143,6 @@ jobs:
             :rocket: This is an automated Pull Request.
             Created by `/.github/workflows/runtimes-digest-updater-upstream.yaml`
 
-            This PR updates the following files:
-            - All the runtime images across `/jupyter/datascience/ubi*-python-*/runtime-images/*.json` paths
+            This PR updates all the runtime ImageStream files.
 
             :exclamation: **IMPORTANT NOTE**: Remember to delete the ` ${{ env.DIGEST_UPDATER_BRANCH }}` branch after merging the changes
