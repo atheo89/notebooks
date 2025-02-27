@@ -24,7 +24,7 @@ spec:
                   "pytorch"
                 ],
                 "display_name": "Pytorch with CUDA and Python 3.11 (UBI9)",
-                "image_name": "quay.io/opendatahub/workbench-images@sha256:6a2806bf3cd9b00f60f3c7fe907727fb954c9776a075d9d58df26b5119d7afe6",
+                "image_name": "quay.io/opendatahub/workbench-images@sha256:c543a09ef18f86eaa01f1ee1165271ec65dbac969341e5e6c03865f33e1314eb",
                 "pull_policy": "IfNotPresent"
               },
               "schema_name": "runtime-image"
@@ -33,7 +33,7 @@ spec:
         openshift.io/imported-from: quay.io/opendatahub/workbench-images
       from:
         kind: DockerImage
-        name: quay.io/opendatahub/workbench-images@sha256:6a2806bf3cd9b00f60f3c7fe907727fb954c9776a075d9d58df26b5119d7afe6
+        name: quay.io/opendatahub/workbench-images@sha256:c543a09ef18f86eaa01f1ee1165271ec65dbac969341e5e6c03865f33e1314eb
       name: "pytorch"
       referencePolicy:
         type: Source
