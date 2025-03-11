@@ -16,7 +16,7 @@ env:
   BRANCH_NAME: 'update-digets-updater'
 
 jobs:
-  initialize:
+  update-images:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -26,6 +26,11 @@ jobs:
         run: |
           sudo apt-get -y update
           sudo apt-get -y install skopeo
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "GitHub Actions"
 
       - name: Checkout branch
         uses: actions/checkout@v4
@@ -38,24 +43,12 @@ jobs:
          git checkout -b ${{ env.TMP_BRANCH }}
          git push --set-upstream origin ${{ env.TMP_BRANCH }}
 
-  update-n-version:
-    needs: [initialize]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Configure Git
-        run: |
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "GitHub Actions"
-
       # Checkout the release branch to apply the updates
       - name: Checkout release branch
         uses: actions/checkout@v4
         with:
           ref: ${{ env.TMP_BRANCH }}
           fetch-depth: 0
-
 
       - name: Invoke script to handle the updates
         shell: bash
@@ -77,14 +70,8 @@ jobs:
             echo "There were no changes detected in the images for the ${{ env.BRANCH_NAME }}"
           fi
 
-  open-pull-request:
-    needs: [update-n-version]
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      # - name: Checkout repo
+      #   uses: actions/checkout@v4
 
       - name: pull-request
         uses: repo-sync/pull-request@v2
@@ -103,5 +90,113 @@ jobs:
             - `manifests/base/commit.env` file with the latest commit.
 
             :exclamation: **IMPORTANT NOTE**: Remember to delete the `${{ env.TMP_BRANCH }}` branch after merging the changes
+
+
+
+
+# ---
+# # The aim of this GitHub workflow is to update the params.env and commit.env files
+# name: Update Notebook Images and commit with new SHAs
+# on:  # yamllint disable-line rule:truthy
+#   workflow_dispatch:
+#     inputs:
+#       user-hash:
+#         required: false
+#         description: "Optional: Specify a Git hash (it should exist in the provided branch's history)"
+
+# env:
+#   USER_HASH: ${{ github.event.inputs.user-hash }}
+#   REPO_ORG: ${{ github.repository_owner }}
+#   TMP_BRANCH: tmp-digest-branch-${{ github.run_id }}
+#   # BRANCH_NAME: 'main'
+#   BRANCH_NAME: 'update-digets-updater'
+
+# jobs:
+#   initialize:
+#     runs-on: ubuntu-latest
+#     permissions:
+#       contents: write
+#     steps:
+#       - name: Install Skopeo CLI
+#         shell: bash
+#         run: |
+#           sudo apt-get -y update
+#           sudo apt-get -y install skopeo
+
+#       - name: Checkout branch
+#         uses: actions/checkout@v4
+#         with:
+#           ref: ${{ env.BRANCH_NAME }}
+
+#       - name: Create a new branch
+#         run: |
+#          echo ${{ env.TMP_BRANCH }}
+#          git checkout -b ${{ env.TMP_BRANCH }}
+#          git push --set-upstream origin ${{ env.TMP_BRANCH }}
+
+#   update-n-version:
+#     needs: [initialize]
+#     runs-on: ubuntu-latest
+#     permissions:
+#       contents: write
+#     steps:
+#       - name: Configure Git
+#         run: |
+#           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+#           git config --global user.name "GitHub Actions"
+
+#       # Checkout the release branch to apply the updates
+#       - name: Checkout release branch
+#         uses: actions/checkout@v4
+#         with:
+#           ref: ${{ env.TMP_BRANCH }}
+#           fetch-depth: 0
+
+#       - name: Invoke script to handle the updates
+#         shell: bash
+#         run: |
+#           bash "${GITHUB_WORKSPACE}/ci/notebooks-digest-updater.sh" "${{ env.USER_HASH }}" "${{ env.REPO_ORG }}"
+
+#       - name: Commit Changes
+#         run: |
+
+#           if [[ $(git status --porcelain | wc -l) -gt 0 ]]; then
+#             git fetch origin ${{ env.TMP_BRANCH }} && \
+#             git pull origin ${{ env.TMP_BRANCH }} && \
+#             git add "${GITHUB_WORKSPACE}/manifests/base/params.env" && \
+#             git commit -m "Update images digest hashes via ${{ env.TMP_BRANCH }} GitHub action" && \
+#             git add ""${GITHUB_WORKSPACE}/manifests/base/commit.env"" && \
+#             git commit -m "Update image commits via ${{ env.TMP_BRANCH }} GitHub action" &&\
+#             git push origin ${{ env.TMP_BRANCH }}
+#           else
+#             echo "There were no changes detected in the images for the ${{ env.BRANCH_NAME }}"
+#           fi
+
+#   open-pull-request:
+#     needs: [update-n-version]
+#     runs-on: ubuntu-latest
+#     permissions:
+#       pull-requests: write
+#     steps:
+#       - name: Checkout repo
+#         uses: actions/checkout@v4
+
+#       - name: pull-request
+#         uses: repo-sync/pull-request@v2
+#         with:
+#           source_branch: ${{ env.TMP_BRANCH }}
+#           destination_branch: ${{ env.BRANCH_NAME }}
+#           github_token: ${{ secrets.GITHUB_TOKEN }}
+#           pr_label: "automated pr"
+#           pr_title: "[Digest Updater Action] Update Notebook Images and commit with new SHAs"
+#           pr_body: |
+#             :rocket: This is an automated Pull Request.
+#             Created by `/.github/workflows/notebooks-digest-updater-upstream.yaml`
+
+#             This PR updates the following files:
+#             - `manifests/base/params.env` file with the latest updated SHA digests of the notebooks.
+#             - `manifests/base/commit.env` file with the latest commit.
+
+#             :exclamation: **IMPORTANT NOTE**: Remember to delete the `${{ env.TMP_BRANCH }}` branch after merging the changes
 
 
