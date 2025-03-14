@@ -1,6 +1,6 @@
 ---
 # The aim of this GitHub workflow is to update the runtimes across `/jupyter/datascience/ubi*-python-*/runtime-images/*.json` paths.
-name: Update runtime images
+name: Update Runtime JSON Files
 on:  # yamllint disable-line rule:truthy
   workflow_dispatch:
     inputs:
@@ -9,8 +9,10 @@ on:  # yamllint disable-line rule:truthy
         description: "Optional: Specify a Git hash (it should exists on the main branch history)"
 
 env:
-  TMP_BRANCH: tmp-runtimes-branch-${{ github.run_id }}
-  BRANCH_NAME: 'main'
+  USER_HASH: ${{ github.event.inputs.user-hash }}
+  REPO_ORG: ${{ github.repository_owner }}
+  TMP_BRANCH: tmp-runtimes-sync-${{ github.run_id }}
+  BRANCH_NAME: 'update-digets-updater'
 
 jobs:
   update-runtimes:

@@ -1,7 +1,7 @@
 ---
 # The aim of this GitHub workflow is to update the params.env and commit.env files
 # This GHA works for both orgs and it checks for the tags generated from the main branch.
-name: Update Notebook Images and commit with new SHAs
+name: Update Notebook Images and Commits With New SHAs
 on:  # yamllint disable-line rule:truthy
   workflow_dispatch:
     inputs:
@@ -12,8 +12,8 @@ on:  # yamllint disable-line rule:truthy
 env:
   USER_HASH: ${{ github.event.inputs.user-hash }}
   REPO_ORG: ${{ github.repository_owner }}
-  TMP_BRANCH: tmp-digest-branch-${{ github.run_id }}
-  BRANCH_NAME: 'main'
+  TMP_BRANCH: tmp-digest-sync-${{ github.run_id }}
+  BRANCH_NAME: 'update-digets-updater'
 
 jobs:
   update-images:
@@ -81,7 +81,6 @@ jobs:
           pr_body: |
             :rocket: This is an automated Pull Request.
             Created by `/.github/workflows/notebooks-digest-updater-upstream.yaml`
-
             This PR updates the following files:
             - `manifests/base/params.env` file with the latest updated SHA digests of the notebooks.
             - `manifests/base/commit.env` file with the latest commit.
