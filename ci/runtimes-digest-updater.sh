@@ -85,4 +85,5 @@ elif [[ "$REPO_OWNER" == "red-hat-data-services" ]]; then
 
 else
     echo "This script runs exclusively for the 'opendatahub-io' and 'red-hat-datascience' organizations, as it verifies/updates their corresponding quay.io registries."
+    exit 1
 fi

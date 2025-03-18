@@ -1,9 +1,9 @@
 #!/bin/bash
 
 USER_HASH=$1
-REPO_OWNER=$2
+REPO_OWNER="opendatahub-io"
+BRANCH="main"
 REPO_NAME="notebooks"
-BRANCH=main
 
 # Fetch the latest commit hash (or use the user-provided one)
 fetch_latest_hash() {
