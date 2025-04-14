@@ -19,11 +19,14 @@ fetch_latest_hash() {
         echo "Extracted HASH: $HASH"
     fi
 }
-
 # Function to process runtime images
 update_runtime_images() {
     REPO_ROOT=$(git rev-parse --show-toplevel)
     MANIFEST_DIR="$REPO_ROOT/manifests/base"
+
+    # Declare image-skipping-logger.sh
+    export SKIPPED_LOG_PATH="$REPO_ROOT/skipped-images.txt"
+    source "$REPO_ROOT/ci/image-skipping-logger.sh"
 
     # Find matching files
     files=$(find "$MANIFEST_DIR" -type f -name "runtime-*.yaml")
@@ -56,13 +59,29 @@ update_runtime_images() {
         latest_tag=$(skopeo inspect --retry-times 3 "docker://$img" | jq -r --arg regex "$regex" '.RepoTags | map(select(. | test($regex))) | .[0]')
         echo "CHECKING: ${latest_tag}"
 
+        # Check for latest_tag validity (maybe the new image is not yet built)
         if [[ -z "$latest_tag" || "$latest_tag" == "null" ]]; then
             echo "No matching tag found on registry for $file. Skipping."
+            # Get relative path from REPO_ROOT/ci to the file
+            relative_path=$(echo "$file" | sed "s|$REPO_ROOT/||")
+            # calls log_skipped_image funtion from image-skipping-logger.sh script
+            log_skipped_image "../$relative_path"
             continue
         fi
 
         # Extract the digest sha from the latest tag
         digest=$(skopeo inspect --retry-times 3 "docker://$registry:$latest_tag" | jq .Digest | tr -d '"')
+
+        # Check for digest validity
+        if [[ -z "$digest" || "$digest" == "null" ]]; then
+            echo "Failed to get digest for $latest_tag. Skipping."
+            # Get relative path from REPO_ROOT/ci to the file
+            relative_path=$(echo "$file" | sed "s|$REPO_ROOT/||")
+            # calls log_skipped_image funtion from image-skipping-logger.sh script
+            log_skipped_image "../$relative_path"
+            continue
+        fi
+
         output="${registry}@${digest}"
         echo "NEW: ${output}"
 
@@ -86,5 +105,4 @@ elif [[ "$REPO_OWNER" == "red-hat-data-services" ]]; then
 else
     echo "This script runs exclusively for the 'opendatahub-io' and 'red-hat-datascience' organizations, as it verifies/updates their corresponding quay.io registries."
     exit 1
-
 fi
