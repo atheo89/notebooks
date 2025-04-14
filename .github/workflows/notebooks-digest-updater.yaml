@@ -17,7 +17,7 @@ env:
   REPO_ORG: ${{ github.repository_owner }}
   REPO_NAME: 'notebooks'
   TMP_BRANCH: tmp-digest-sync-${{ github.run_id }}
-  BRANCH_NAME: ${{ github.event.inputs.branch || 'main' }}
+  BRANCH_NAME: 'unify-gha'
 
 jobs:
   update-images:
@@ -54,10 +54,11 @@ jobs:
           ref: ${{ env.TMP_BRANCH }}
           fetch-depth: 0
 
-      - name: Invoke script to handle the updates
+      - name: Invoke nonotebooks-digest-updater and runtimes-digest-updater scripts to handle the updates
         shell: bash
         run: |
           bash "${GITHUB_WORKSPACE}/ci/notebooks-digest-updater.sh" "${{ env.USER_HASH }}" "${{ env.REPO_ORG }}" "${{ env.BRANCH_NAME }}" "${{ env.REPO_NAME }}"
+          bash "${GITHUB_WORKSPACE}/ci/runtimes-digest-updater.sh" "${{ env.USER_HASH }}" "${{ env.REPO_ORG }}" "${{ env.BRANCH_NAME }}" "${{ env.REPO_NAME }}"
 
       - name: Commit Changes
         run: |
@@ -65,22 +66,39 @@ jobs:
           if [[ $(git status --porcelain | wc -l) -gt 0 ]]; then
             git fetch origin ${{ env.TMP_BRANCH }} && \
             git pull origin ${{ env.TMP_BRANCH }} && \
-            git add "${GITHUB_WORKSPACE}/manifests/base/params.env" && \
-            git commit -m "Update images digest hashes via ${{ env.TMP_BRANCH }} GitHub action" && \
-            git add ""${GITHUB_WORKSPACE}/manifests/base/commit.env"" && \
-            git commit -m "Update image commits via ${{ env.TMP_BRANCH }} GitHub action" &&\
+            git add manifests/base/  && \
+            git commit -m "Update image-related files via ${{ env.TMP_BRANCH }} GitHub action" && \
             git push origin ${{ env.TMP_BRANCH }}
           else
             echo "There were no changes detected in the images for the ${{ env.BRANCH_NAME }}"
           fi
 
+      - name: Capture skipped images log (if any)
+        id: skipped_log
+        run: |
+          if [[ -f /tmp/skipped-images.txt && -s /tmp/skipped-images.txt ]]; then
+            echo "Found skipped images. Preparing message."
+            echo 'log<<EOF' >> $GITHUB_OUTPUT
+            cat /tmp/skipped-images.txt >> $GITHUB_OUTPUT
+            echo 'EOF' >> $GITHUB_OUTPUT
+          else
+            echo "log=" >> $GITHUB_OUTPUT
+          fi
+
       - name: pull-request
         run: |
+            body="$pr_body"
+              if [[ -n "${{ steps.skipped_log.outputs.log }}" ]]; then
+                body+="
+                ⚠️ **Note:** The following images were skipped during update:
+                ${{ steps.skipped_log.outputs.log }}"
+              fi
             gh pr create --repo https://github.com/$REPO_ORG/$REPO_NAME.git \
               --title "$pr_title" \
               --body "$pr_body" \
               --head $REPO_ORG:${{ env.TMP_BRANCH }} \
-              --base ${{ env.BRANCH_NAME }}
+              --base ${{ env.BRANCH_NAME }} \
+
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           pr_title: "[Notebooks Updater Action] Update Notebook Images and commit with new SHAs"
