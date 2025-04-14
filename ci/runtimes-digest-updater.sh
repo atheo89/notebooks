@@ -1,9 +1,9 @@
 #!/bin/bash
 
 USER_HASH=$1
-REPO_OWNER=$2
-BRANCH=$3
-REPO_NAME=$4
+REPO_OWNER=opendatahub-io
+BRANCH=main
+REPO_NAME=notebooks
 
 # Fetch the latest commit hash (or use the user-provided one)
 fetch_latest_hash() {
@@ -24,6 +24,8 @@ fetch_latest_hash() {
 update_runtime_images() {
     REPO_ROOT=$(git rev-parse --show-toplevel)
     MANIFEST_DIR="$REPO_ROOT/manifests/base"
+
+    SKIPPED_LOG="$REPO_ROOT/skipped-images.txt"
 
     # Find matching files
     files=$(find "$MANIFEST_DIR" -type f -name "runtime-*.yaml")
@@ -58,6 +60,7 @@ update_runtime_images() {
 
         if [[ -z "$latest_tag" || "$latest_tag" == "null" ]]; then
             echo "No matching tag found on registry for $file. Skipping."
+            echo "- ❌ — No matching tag for $file" >> "$SKIPPED_LOG"
             continue
         fi
 
