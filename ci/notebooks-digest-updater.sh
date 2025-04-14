@@ -1,9 +1,8 @@
 #!/bin/bash
 
 USER_HASH=$1
-REPO_OWNER=$2
-BRANCH=$3
-REPO_NAME=$4
+REPO_OWNER=opendatahub-io
+REPO_NAME=notebooks
 
 # Fetch the latest commit hash (or use the user-provided one)
 fetch_latest_hash() {
@@ -39,6 +38,11 @@ update_commits() {
 REPO_ROOT=$(git rev-parse --show-toplevel)
 PARAMS_ENV_PATH="$REPO_ROOT/manifests/base/params.env"
 
+# Declare and initialize(as the notebooks-digets-updater.sh gets in action first on the gha) the image-skipping-logger.sh 
+export SKIPPED_LOG_PATH="$REPO_ROOT/skipped-images.txt"
+source "$REPO_ROOT/ci/image-skipping-logger.sh"
+init_skipped_log
+
 # In case the digest updater function is triggered upstream.
 if [[ "$REPO_OWNER" == "opendatahub-io" ]]; then
 
@@ -61,8 +65,25 @@ if [[ "$REPO_OWNER" == "opendatahub-io" ]]; then
         # This should match like for ex: jupyter-minimal-ubi9-python-3.11-20250310-60b6ecc tag name as is on quay.io registry
         regex="^$src_tag-[0-9]{8}-$HASH$"
         latest_tag=$(echo "${skopeo_metadata}" | jq -r --arg regex "$regex" '.RepoTags | map(select(. | test($regex))) | .[0]')
+
+        # Check for latest_tag validity (maybe the new image is not yet build)
+        if [[ -z "$latest_tag" || "$latest_tag" == "null" ]]; then
+            echo "No matching tag found on registry for $file. Skipping."
+            # calls log_skipped_image funtion from image-skipping-logger.sh script
+            log_skipped_image "$image"
+            continue
+        fi
+
         # use `--no-tags` for skopeo once available in newer version
         digest=$(skopeo inspect --retry-times 3 "docker://${registry}:${latest_tag}" | jq .Digest | tr -d '"')
+
+        # Check for digest validity
+        if [[ -z "$digest" || "$digest" == "null" ]]; then
+            echo "Failed to get digest for $latest_tag. Skipping."
+            log_skipped_image "$image"
+            continue
+        fi
+
         output="${registry}@${digest}"
         echo "NEW: ${output}"
         sed -i "s|${image}=.*|${image}=${output}|" "${PARAMS_ENV_PATH}"
@@ -99,7 +120,23 @@ elif [[ "$REPO_OWNER" == "red-hat-data-services" ]]; then
         latest_tag=$(echo "${skopeo_metadata}" | jq -r --arg regex "$regex" '.RepoTags | map(select(. | test($regex))) | .[0]')
         echo "CHECKING: '${latest_tag}'"
 
+        # Check for latest_tag validity (maybe the new image is not yet built)
+        if [[ -z "$latest_tag" || "$latest_tag" == "null" ]]; then
+            echo "No matching tag found on registry for $file. Skipping."
+            # calls log_skipped_image funtion from image-skipping-logger.sh script
+            log_skipped_image "$image"
+            continue
+        fi
+
         digest=$(skopeo inspect --retry-times 3 "docker://${registry}:${latest_tag}" | jq .Digest | tr -d '"')
+
+        # Check for digest validity
+        if [[ -z "$digest" || "$digest" == "null" ]]; then
+            echo "Failed to get digest for $latest_tag. Skipping."
+            log_skipped_image "$image"
+            continue
+        fi
+
         output="${registry}@${digest}"
         echo "NEW: ${output}"
         sed -i "s|${image}=.*|${image}=${output}|" "${PARAMS_ENV_PATH}"
