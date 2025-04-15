@@ -58,7 +58,6 @@ jobs:
         shell: bash
         run: |
           bash "${GITHUB_WORKSPACE}/ci/notebooks-digest-updater.sh" "${{ env.USER_HASH }}" "${{ env.REPO_ORG }}" "${{ env.BRANCH_NAME }}" "${{ env.REPO_NAME }}"
-          bash "${GITHUB_WORKSPACE}/ci/runtimes-digest-updater.sh" "${{ env.USER_HASH }}" "${{ env.REPO_ORG }}" "${{ env.BRANCH_NAME }}" "${{ env.REPO_NAME }}"
 
       - name: Commit Changes
         run: |
