@@ -1,9 +1,9 @@
 #!/bin/bash
 
 USER_HASH=$1
-REPO_OWNER=$2
-BRANCH=$3
-REPO_NAME=$4
+REPO_OWNER=opendatahub-io
+BRANCH=main
+REPO_NAME=notebooks
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
 # Declare and initialize(as the notebooks-digets-updater.sh gets in action first on the gha) the image-skipping-logger.sh 
