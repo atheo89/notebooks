@@ -1,9 +1,9 @@
 #!/bin/bash
 
 USER_HASH=$1
-REPO_OWNER=$2
-BRANCH=$3
-REPO_NAME=$4
+REPO_OWNER=atheo89
+BRANCH=unify-gha
+REPO_NAME=notebooks
 
 # Fetch the latest commit hash (or use the user-provided one)
 fetch_latest_hash() {
