@@ -17,7 +17,7 @@ env:
   REPO_ORG: ${{ github.repository_owner }}
   REPO_NAME: 'notebooks'
   TMP_BRANCH: tmp-digest-sync-${{ github.run_id }}
-  BRANCH_NAME: ${{ github.event.inputs.branch || 'main' }}
+  BRANCH_NAME: follow-up-commit
 
 jobs:
   update-images:
