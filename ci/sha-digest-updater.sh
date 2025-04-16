@@ -1,8 +1,8 @@
 #!/bin/bash
 
 USER_HASH=$1
-REPO_OWNER=$2
-BRANCH=$3
+REPO_OWNER=opendatahub-io
+BRANCH=main
 REPO_NAME=$4
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
@@ -35,19 +35,16 @@ fetch_latest_hash() {
 }
 
 # Updates the commits in commit.env
-update_commits() {
-    local REPO_ROOT="$1"
-    local HASH="$2"
-    local COMMIT_ENV_PATH="$REPO_ROOT/manifests/base/commit.env"
+# Updates a specific image commit in commit.env
+update_image_commit() {
+    local image_name="$1"
+    local hash="$2"
+    local commit_env_path="$REPO_ROOT/manifests/base/commit.env"
 
-    # Get the complete list of commits N-version to update
-    local COMMITS
-    COMMITS=$(grep "\-n=" "$COMMIT_ENV_PATH" | cut -d "=" -f 1)
-
-    for val in $COMMITS; do
-        echo "Updating commit '${val}' to $HASH"
-        sed -i "s|${val}=.*|${val}=${HASH}|" "$COMMIT_ENV_PATH"
-    done
+    # Convert image name to commit variable name
+    local commit_var="${image_name/-n=/-commit-n=}"
+    echo "Updating commit '${commit_var}' to $hash"
+    sed -i "s|^${commit_var}=.*|${commit_var}=${hash}|" "$commit_env_path"
 }
 
 # Function to process runtime images
@@ -166,7 +163,7 @@ if [[ "$REPO_OWNER" == "opendatahub-io" ]]; then
         sed -i "s|${image}=.*|${image}=${output}|" "${PARAMS_ENV_PATH}"
     done
 
-    update_commits "$REPO_ROOT" "$HASH"
+    update_image_commit "$image" "$HASH"
     update_runtime_images
 
 # In case the digest updater function is triggered downstream.
