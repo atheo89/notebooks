@@ -1,8 +1,8 @@
 #!/bin/bash
 
 USER_HASH=$1
-REPO_OWNER=$2
-BRANCH=$3
+REPO_OWNER=opendatahub-io
+BRANCH=main
 REPO_NAME=$4
 REPO_ROOT=$(git rev-parse --show-toplevel)
 
