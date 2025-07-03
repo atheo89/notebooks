@@ -741,3 +741,16 @@ replacements:
           kind: ImageStream
           name: runtime-rocm-tensorflow
           version: v1
+  - source:
+      fieldPath: data.odh-workbench-jupyter-minimal-cpu-py312-ubi9-n_PLACEHOLDER
+      kind: ConfigMap
+      name: notebook-image-params
+      version: v1
+    targets:
+      - fieldPaths:
+          - spec.tags.0.from.name
+        select:
+          group: image.openshift.io
+          kind: ImageStream
+          name: jupyter-minimal-notebook
+          version: v1

@@ -5,6 +5,9 @@ kind: Kustomization
 resources:
   - ../../base
 
+patches:
+  - path: jupyter-minimal-notebook-imagestream_tentative.yaml
+
 labels:
   - includeSelectors: true
     pairs:
