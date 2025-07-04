@@ -22,10 +22,10 @@ spec:
           [
             {"name": "JupyterLab","version": "4.2"}
           ]
-        opendatahub.io/notebook-build-commit: odh-workbench-jupyter-minimal-cpu-py312-ubi9-commit-n_PLACEHOLDER
+        opendatahub.io/notebook-build-commit: whatever
       from:
         kind: DockerImage
-        name: odh-workbench-jupyter-minimal-cpu-py312-ubi9-n_PLACEHOLDER
+        name: quay.io/opendatahub/workbench-images@sha256:da9928bcf009a4d704210182873704c472cdbb752788d841707dd3670edb9a0b
       name: "2025.2-beta"
       referencePolicy:
         type: Source
