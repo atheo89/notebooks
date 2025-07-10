@@ -455,7 +455,7 @@ refresh-pipfilelock-files:
 			echo "Updating $(PYTHON_VERSION) Pipfile.lock in $$dir"
 			cd $$dir
 			if [ -f "Pipfile" ]; then
-				pipenv lock --verbose
+				pipenv lock
 			else
 				echo "No Pipfile found in $$dir, skipping."
 			fi
