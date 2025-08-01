@@ -18,7 +18,7 @@ $(error This Make does not support .RECIPEPREFIX. Please use GNU Make 4.0 or lat
 endif
 .RECIPEPREFIX =
 
-IMAGE_REGISTRY   ?= quay.io/opendatahub/workbench-images
+IMAGE_REGISTRY   ?= quay.io/rh_ee_atheodor/workbench-images
 RELEASE	 		 ?= 2025a
 RELEASE_PYTHON_VERSION	 ?= 3.11
 # additional user-specified caching parameters for $(CONTAINER_ENGINE) build
