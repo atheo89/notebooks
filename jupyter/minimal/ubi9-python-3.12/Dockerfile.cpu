@@ -1,7 +1,7 @@
 ####################
 # base             #
 ####################
-FROM quay.io/aipcc/base-images/cuda:3.0 AS base
+FROM quay.io/aipcc/base-images/cpu:3.0 AS base
 
 WORKDIR /opt/app-root/bin
 
@@ -9,7 +9,7 @@ WORKDIR /opt/app-root/bin
 USER 0
 
 # Install useful OS packages
-RUN dnf install -y mesa-libGL skopeo && dnf clean all && rm -rf /var/cache/yum
+RUN dnf install -y perl mesa-libGL skopeo && dnf clean all && rm -rf /var/cache/yum
 
 # Other apps and tools installed as default user
 USER 1001
