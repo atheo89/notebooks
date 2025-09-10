@@ -1,0 +1,1261 @@
+apiVersion: v1
+data:
+  odh-pipeline-runtime-datascience-cpu-py311-ubi9-commit-n-1: 1247a41
+  odh-pipeline-runtime-datascience-cpu-py312-ubi9-commit-n: 620d885
+  odh-pipeline-runtime-minimal-cpu-py311-ubi9-commit-n-1: 1247a41
+  odh-pipeline-runtime-minimal-cpu-py312-ubi9-commit-n: ed2d978
+  odh-pipeline-runtime-pytorch-cuda-py311-ubi9-commit-n-1: 1247a41
+  odh-pipeline-runtime-pytorch-cuda-py312-ubi9-commit-n: 250bac8
+  odh-pipeline-runtime-pytorch-llmcompressor-cuda-py312-ubi9-commit-n: 646aeb5
+  odh-pipeline-runtime-pytorch-rocm-py311-ubi9-commit-n-1: 1247a41
+  odh-pipeline-runtime-pytorch-rocm-py312-ubi9-commit-n: 99698b7
+  odh-pipeline-runtime-tensorflow-cuda-py311-ubi9-commit-n-1: 1247a41
+  odh-pipeline-runtime-tensorflow-cuda-py312-ubi9-commit-n: 250bac8
+  odh-pipeline-runtime-tensorflow-rocm-py311-ubi9-commit-n-1: 80cffeb
+  odh-pipeline-runtime-tensorflow-rocm-py312-ubi9-commit-n: 93c0810
+  odh-workbench-codeserver-datascience-cpu-py311-ubi9-commit-n-1: 1247a41
+  odh-workbench-codeserver-datascience-cpu-py312-ubi9-commit-n: 0a74279
+  odh-workbench-jupyter-datascience-cpu-py311-ubi9-commit-n-1: 1247a41
+  odh-workbench-jupyter-datascience-cpu-py312-ubi9-commit-n: 144d079
+  odh-workbench-jupyter-minimal-cpu-py311-ubi9-commit-n-1: 1247a41
+  odh-workbench-jupyter-minimal-cpu-py312-ubi9-commit-n: 250bac8
+  odh-workbench-jupyter-minimal-cuda-py311-ubi9-commit-n-1: 1247a41
+  odh-workbench-jupyter-minimal-cuda-py312-ubi9-commit-n: 250bac8
+  odh-workbench-jupyter-minimal-rocm-py311-ubi9-commit-n-1: 1247a41
+  odh-workbench-jupyter-minimal-rocm-py312-ubi9-commit-n: 250bac8
+  odh-workbench-jupyter-pytorch-cuda-py311-ubi9-commit-n-1: 1247a41
+  odh-workbench-jupyter-pytorch-cuda-py312-ubi9-commit-n: 250bac8
+  odh-workbench-jupyter-pytorch-llmcompressor-cuda-py312-ubi9-commit-n: 250bac8
+  odh-workbench-jupyter-pytorch-rocm-py311-ubi9-commit-n-1: 80cffeb
+  odh-workbench-jupyter-pytorch-rocm-py312-ubi9-commit-n: 864260c
+  odh-workbench-jupyter-tensorflow-cuda-py311-ubi9-commit-n-1: 1247a41
+  odh-workbench-jupyter-tensorflow-cuda-py312-ubi9-commit-n: 250bac8
+  odh-workbench-jupyter-tensorflow-rocm-py311-ubi9-commit-n-1: 1247a41
+  odh-workbench-jupyter-tensorflow-rocm-py312-ubi9-commit-n: 144d079
+  odh-workbench-jupyter-trustyai-cpu-py311-ubi9-commit-n-1: 1247a41
+  odh-workbench-jupyter-trustyai-cpu-py312-ubi9-commit-n: 144d079
+  odh-workbench-rstudio-minimal-cpu-py311-c9s-commit-n: 0d8752d
+  odh-workbench-rstudio-minimal-cpu-py311-c9s-commit-n-1: 60b6ecc
+  odh-workbench-rstudio-minimal-cuda-py311-c9s-commit-n: 0d8752d
+  odh-workbench-rstudio-minimal-cuda-py311-c9s-commit-n-1: 60b6ecc
+kind: ConfigMap
+metadata:
+  labels:
+    component.opendatahub.io/name: notebooks
+    opendatahub.io/component: "true"
+  name: notebook-image-commithash
+---
+apiVersion: v1
+data:
+  odh-pipeline-runtime-datascience-cpu-py311-ubi9-n-1: quay.io/opendatahub/odh-pipeline-runtime-datascience-cpu-py311-ubi9@sha256:62ceae2f54e06b7231027d1fed7392cfb7cbf5952929fc85b4342e3cb75fab75
+  odh-pipeline-runtime-datascience-cpu-py312-ubi9-n: quay.io/opendatahub/odh-pipeline-runtime-datascience-cpu-py312-ubi9@sha256:a656996b0c9b8c82f4fad6f40de96d1d5b6414c301f06a6fe88b46716f1c3d18
+  odh-pipeline-runtime-minimal-cpu-py311-ubi9-n-1: quay.io/opendatahub/odh-pipeline-runtime-minimal-cpu-py311-ubi9@sha256:4461dd9388cbb9354dd716c6f7680d58c1051eb59ef16e4486bbc4d5ec7fc5ee
+  odh-pipeline-runtime-minimal-cpu-py312-ubi9-n: quay.io/opendatahub/odh-pipeline-runtime-minimal-cpu-py312-ubi9@sha256:e3ca1fe6d0ff82d7050c6c8fec81b13b114b34573711750ae0d4f667eacd6965
+  odh-pipeline-runtime-pytorch-cuda-py311-ubi9-n-1: quay.io/opendatahub/odh-pipeline-runtime-pytorch-cuda-py311-ubi9@sha256:56dc5275d80a7445ab05a53a4dbf347754bf08fbf892b58d2c10e41b0336ddcc
+  odh-pipeline-runtime-pytorch-cuda-py312-ubi9-n: quay.io/opendatahub/odh-pipeline-runtime-pytorch-cuda-py312-ubi9@sha256:dd8ae03979652178cf1910c6173b1d210e1cb1fd846c83f61f7e2d6a488138ea
+  odh-pipeline-runtime-pytorch-llmcompressor-cuda-py312-ubi9-n: quay.io/opendatahub/odh-pipeline-runtime-pytorch-llmcompressor-cuda-py312-ubi9@sha256:ad2a67549b36485862378c392f1fb76e8c5457065d60478d977a8141393f9752
+  odh-pipeline-runtime-pytorch-rocm-py311-ubi9-n-1: quay.io/opendatahub/odh-pipeline-runtime-pytorch-rocm-py311-ubi9@sha256:b55bd2abd3a153ccd78069139a6b60a1fb0917d597f5b5a23b96044ed9eed134
+  odh-pipeline-runtime-pytorch-rocm-py312-ubi9-n: quay.io/opendatahub/odh-pipeline-runtime-pytorch-rocm-py312-ubi9@sha256:81467ad93788cf1a5420b6cb76993b518e7a80b6102a8d3acc734ed97a2103fe
+  odh-pipeline-runtime-tensorflow-cuda-py311-ubi9-n-1: quay.io/opendatahub/odh-pipeline-runtime-tensorflow-cuda-py311-ubi9@sha256:1582cb6d7dd2f949fa73e323b19b5ec0e10bc3e01fe0e752ceed275fe9613bc4
+  odh-pipeline-runtime-tensorflow-cuda-py312-ubi9-n: quay.io/opendatahub/odh-pipeline-runtime-tensorflow-cuda-py312-ubi9@sha256:745110e903623b8fde906b6a2c2f4014037db48f3673302d133a7d73202f5077
+  odh-pipeline-runtime-tensorflow-rocm-py311-ubi9-n-1: quay.io/opendatahub/odh-pipeline-runtime-tensorflow-rocm-py311-ubi9@sha256:71cbe8249b57af33e92216c11979e669882871cac4743a1cf5bd3230e671390a
+  odh-pipeline-runtime-tensorflow-rocm-py312-ubi9-n: quay.io/opendatahub/odh-pipeline-runtime-tensorflow-rocm-py312-ubi9@sha256:1134265c135ba05cfdad9bd2e63b1ee9a5f9989f9f716d4b5146d4df51d4e2bb
+  odh-workbench-codeserver-datascience-cpu-py311-ubi9-n-1: quay.io/opendatahub/odh-workbench-codeserver-datascience-cpu-py311-ubi9@sha256:633bbba923717b75656a56752ed1fc325a6ab255589fbb63ce8a3ffc0ee0d730
+  odh-workbench-codeserver-datascience-cpu-py312-ubi9-n: quay.io/opendatahub/odh-workbench-codeserver-datascience-cpu-py312-ubi9@sha256:41176c843f830cd64751db8b69575ff0ef7c4d0800414542d7687101c95c8a20
+  odh-workbench-jupyter-datascience-cpu-py311-ubi9-n-1: quay.io/opendatahub/odh-workbench-jupyter-datascience-cpu-py311-ubi9@sha256:97ac518d5982f0ad438b6c33f36162715be651fb4dbe1a80f972712997c0de22
+  odh-workbench-jupyter-datascience-cpu-py312-ubi9-n: quay.io/opendatahub/odh-workbench-jupyter-datascience-cpu-py312-ubi9@sha256:5fcac9ff8c6f05626eb5bcbf92b21bda964eaab1041f8267e76d862a08a3af87
+  odh-workbench-jupyter-minimal-cpu-py311-ubi9-n-1: quay.io/opendatahub/odh-workbench-jupyter-minimal-cpu-py311-ubi9@sha256:45ec6fc94d5f0eb1efff548687f4beacb2f5c4a1bef78a38b9475e1583536d7d
+  odh-workbench-jupyter-minimal-cpu-py312-ubi9-n: quay.io/opendatahub/odh-workbench-jupyter-minimal-cpu-py312-ubi9@sha256:b1ee53109d87040c4e7fc4b380bd77ad0ae9bc80ca30fd96ed72cc7db4ff6608
+  odh-workbench-jupyter-minimal-cuda-py311-ubi9-n-1: quay.io/opendatahub/odh-workbench-jupyter-minimal-cuda-py311-ubi9@sha256:b23028134c94c2392a74b89e62dc7f2b5223b15e1c1fb691c6c39a36a4149ee5
+  odh-workbench-jupyter-minimal-cuda-py312-ubi9-n: quay.io/opendatahub/odh-workbench-jupyter-minimal-cuda-py312-ubi9@sha256:c5ccb9fbda4ff6fbcfca211004ef51c4e3fb407c570510288ca97b7a42d67aad
+  odh-workbench-jupyter-minimal-rocm-py311-ubi9-n-1: quay.io/opendatahub/odh-workbench-jupyter-minimal-rocm-py311-ubi9@sha256:0b1f4efb8008ac53c9becdef770f498a263424c3ccea31f4fb377fc9a48b2178
+  odh-workbench-jupyter-minimal-rocm-py312-ubi9-n: quay.io/opendatahub/odh-workbench-jupyter-minimal-rocm-py312-ubi9@sha256:d7e3779bbccb61280dc97445d28bdb5bc0a68914e4916494a50abc9be5a9e3e3
+  odh-workbench-jupyter-pytorch-cuda-py311-ubi9-n-1: quay.io/opendatahub/odh-workbench-jupyter-pytorch-cuda-py311-ubi9@sha256:b9245c43060321b3cb8261fee538765e1debe43e5546103fa30a7c61fdaec032
+  odh-workbench-jupyter-pytorch-cuda-py312-ubi9-n: quay.io/opendatahub/odh-workbench-jupyter-pytorch-cuda-py312-ubi9@sha256:a3ae6981b02d80970f1fae31b1db31bb30ce5fe2de51fa87f747dfe8b684deda
+  odh-workbench-jupyter-pytorch-llmcompressor-cuda-py312-ubi9-n: quay.io/opendatahub/odh-workbench-jupyter-pytorch-llmcompressor-cuda-py312-ubi9@sha256:f5f29519cbeedf52a6315d8193c20bbc26743b6c1e51982fcfa8e15f39d70c02
+  odh-workbench-jupyter-pytorch-rocm-py311-ubi9-n-1: quay.io/opendatahub/odh-workbench-jupyter-pytorch-rocm-py311-ubi9@sha256:09ead5584a314601190b2aa72ccf31063036c66f113c0a217feeac848020efe6
+  odh-workbench-jupyter-pytorch-rocm-py312-ubi9-n: quay.io/opendatahub/odh-workbench-jupyter-pytorch-rocm-py312-ubi9@sha256:692897eef6f521ecd786a620ad8b434c7d10aac0c5dc4eae26c2f14a54a6fb19
+  odh-workbench-jupyter-tensorflow-cuda-py311-ubi9-n-1: quay.io/opendatahub/odh-workbench-jupyter-tensorflow-cuda-py311-ubi9@sha256:9e40b024480c35d5c67114528ff28a87ff96add636bfdf9801099f581f53157e
+  odh-workbench-jupyter-tensorflow-cuda-py312-ubi9-n: quay.io/opendatahub/odh-workbench-jupyter-tensorflow-cuda-py312-ubi9@sha256:61fe1831991ac7cb51ca4ffc49c0e98509515c026d3ae07e0ccd6f9893377eb3
+  odh-workbench-jupyter-tensorflow-rocm-py311-ubi9-n-1: quay.io/opendatahub/odh-workbench-jupyter-tensorflow-rocm-py311-ubi9@sha256:c104ee21be07288428e13fc9a76cb8c6f8cd5eb0a846a9b7cf52a574d4280b8d
+  odh-workbench-jupyter-tensorflow-rocm-py312-ubi9-n: quay.io/opendatahub/odh-workbench-jupyter-tensorflow-rocm-py312-ubi9@sha256:bb6ef33adcbfb01258ebe64794914732be8207dcce65e49116c2f0e7a31b6536
+  odh-workbench-jupyter-trustyai-cpu-py311-ubi9-n-1: quay.io/opendatahub/odh-workbench-jupyter-trustyai-cpu-py311-ubi9@sha256:ba950f4071d79a131e48eb6c892501cbc137f86ebe58de81a3ce44aaebe74301
+  odh-workbench-jupyter-trustyai-cpu-py312-ubi9-n: quay.io/opendatahub/odh-workbench-jupyter-trustyai-cpu-py312-ubi9@sha256:83b163f398175e68b4463fa9cdab60495ef42e2489b852024b9f1e5d3c6b9fd9
+  odh-workbench-rstudio-minimal-cpu-py311-c9s-n: quay.io/opendatahub/odh-workbench-rstudio-minimal-cpu-py311-c9s@sha256:214e8b1912ce97b7d03718fa64ae105d3d2f461815409b9cfd2c1e2c9893fef8
+  odh-workbench-rstudio-minimal-cpu-py311-c9s-n-1: quay.io/opendatahub/odh-workbench-rstudio-minimal-cpu-py311-c9s@sha256:214e8b1912ce97b7d03718fa64ae105d3d2f461815409b9cfd2c1e2c9893fef8
+  odh-workbench-rstudio-minimal-cuda-py311-c9s-n: quay.io/opendatahub/odh-workbench-rstudio-minimal-cuda-py311-c9s@sha256:dceec4b894325444f49ac691f1e9b82da7e8643f8fb1a562293b389fda7d9751
+  odh-workbench-rstudio-minimal-cuda-py311-c9s-n-1: quay.io/opendatahub/odh-workbench-rstudio-minimal-cuda-py311-c9s@sha256:dceec4b894325444f49ac691f1e9b82da7e8643f8fb1a562293b389fda7d9751
+kind: ConfigMap
+metadata:
+  labels:
+    component.opendatahub.io/name: notebooks
+    opendatahub.io/component: "true"
+  name: notebook-image-params
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  annotations:
+    opendatahub.io/notebook-image-desc: code-server workbench allows users to code,
+      build, and collaborate on projects directly from web.
+    opendatahub.io/notebook-image-name: Code Server | Data Science | CPU | Python
+      3.12
+    opendatahub.io/notebook-image-order: "18"
+    opendatahub.io/notebook-image-url: https://github.com/opendatahub-io/notebooks/tree/main/codeserver
+  labels:
+    component.opendatahub.io/name: notebooks
+    opendatahub.io/component: "true"
+    opendatahub.io/notebook-image: "true"
+  name: code-server-notebook
+spec:
+  lookupPolicy:
+    local: true
+  tags:
+  - annotations:
+      opendatahub.io/notebook-build-commit: 0a74279
+      opendatahub.io/notebook-python-dependencies: |
+        [
+          {"name": "Boto3", "version": "1.37"},
+          {"name": "Kafka-Python-ng", "version": "2.2"},
+          {"name": "Matplotlib", "version": "3.10"},
+          {"name": "Numpy", "version": "2.2"},
+          {"name": "Pandas", "version": "2.2"},
+          {"name": "Scikit-learn", "version": "1.6"},
+          {"name": "Scipy", "version": "1.15"},
+          {"name": "Sklearn-onnx", "version": "1.18"},
+          {"name": "ipykernel", "version": "6.29"},
+          {"name": "Kubeflow-Training", "version": "1.9"}
+        ]
+      opendatahub.io/notebook-software: |
+        [
+          {"name": "code-server", "version": "4.98"},
+          {"name": "Python", "version": "v3.12"}
+        ]
+      opendatahub.io/workbench-image-recommended: "true"
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-workbench-codeserver-datascience-cpu-py312-ubi9@sha256:41176c843f830cd64751db8b69575ff0ef7c4d0800414542d7687101c95c8a20
+    name: "2025.2"
+    referencePolicy:
+      type: Source
+  - annotations:
+      opendatahub.io/notebook-build-commit: 1247a41
+      opendatahub.io/notebook-python-dependencies: |
+        [
+          {"name": "Boto3", "version": "1.37"},
+          {"name": "Kafka-Python-ng", "version": "2.2"},
+          {"name": "Matplotlib", "version": "3.10"},
+          {"name": "Numpy", "version": "2.2"},
+          {"name": "Pandas", "version": "2.2"},
+          {"name": "Scikit-learn", "version": "1.6"},
+          {"name": "Scipy", "version": "1.15"},
+          {"name": "Sklearn-onnx", "version": "1.18"},
+          {"name": "ipykernel", "version": "6.29"},
+          {"name": "Kubeflow-Training", "version": "1.9"}
+        ]
+      opendatahub.io/notebook-software: |
+        [
+          {"name": "code-server", "version": "4.98"},
+          {"name": "Python", "version": "v3.11"}
+        ]
+      opendatahub.io/workbench-image-recommended: "false"
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-workbench-codeserver-datascience-cpu-py311-ubi9@sha256:633bbba923717b75656a56752ed1fc325a6ab255589fbb63ce8a3ffc0ee0d730
+    name: "2025.1"
+    referencePolicy:
+      type: Source
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  annotations:
+    opendatahub.io/notebook-image-desc: Jupyter notebook image with a set of data
+      science libraries that advanced AI/ML notebooks will use as a base image to
+      provide a standard for libraries avialable in all notebooks
+    opendatahub.io/notebook-image-name: Jupyter | Data Science | CPU | Python 3.12
+    opendatahub.io/notebook-image-order: "7"
+    opendatahub.io/notebook-image-url: https://github.com/opendatahub-io/notebooks/tree/main/jupyter/datascience
+  labels:
+    component.opendatahub.io/name: notebooks
+    opendatahub.io/component: "true"
+    opendatahub.io/notebook-image: "true"
+  name: jupyter-datascience-notebook
+spec:
+  lookupPolicy:
+    local: true
+  tags:
+  - annotations:
+      opendatahub.io/notebook-build-commit: 144d079
+      opendatahub.io/notebook-python-dependencies: |
+        [
+          {"name": "JupyterLab","version": "4.4"},
+          {"name": "Boto3", "version": "1.37"},
+          {"name": "Kafka-Python-ng", "version": "2.2"},
+          {"name": "Kfp", "version": "2.12"},
+          {"name": "Matplotlib", "version": "3.10"},
+          {"name": "Numpy", "version": "2.2"},
+          {"name": "Pandas", "version": "2.2"},
+          {"name": "Scikit-learn", "version": "1.6"},
+          {"name": "Scipy", "version": "1.15"},
+          {"name": "Odh-Elyra", "version": "4.2"},
+          {"name": "PyMongo", "version": "4.11"},
+          {"name": "Pyodbc", "version": "5.2"},
+          {"name": "Codeflare-SDK", "version": "0.30"},
+          {"name": "Sklearn-onnx", "version": "1.18"},
+          {"name": "Psycopg", "version": "3.2"},
+          {"name": "MySQL Connector/Python", "version": "9.3"},
+          {"name": "Kubeflow-Training", "version": "1.9"}
+        ]
+      opendatahub.io/notebook-software: |
+        [
+          {"name": "Python", "version": "v3.12"}
+        ]
+      opendatahub.io/workbench-image-recommended: "true"
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-workbench-jupyter-datascience-cpu-py312-ubi9@sha256:5fcac9ff8c6f05626eb5bcbf92b21bda964eaab1041f8267e76d862a08a3af87
+    name: "2025.2"
+    referencePolicy:
+      type: Source
+  - annotations:
+      opendatahub.io/notebook-build-commit: 1247a41
+      opendatahub.io/notebook-python-dependencies: |
+        [
+          {"name": "JupyterLab","version": "4.4"},
+          {"name": "Boto3", "version": "1.37"},
+          {"name": "Kafka-Python-ng", "version": "2.2"},
+          {"name": "Kfp", "version": "2.12"},
+          {"name": "Matplotlib", "version": "3.10"},
+          {"name": "Numpy", "version": "2.2"},
+          {"name": "Pandas", "version": "2.2"},
+          {"name": "Scikit-learn", "version": "1.6"},
+          {"name": "Scipy", "version": "1.15"},
+          {"name": "Odh-Elyra", "version": "4.2"},
+          {"name": "PyMongo", "version": "4.11"},
+          {"name": "Pyodbc", "version": "5.2"},
+          {"name": "Codeflare-SDK", "version": "0.30"},
+          {"name": "Sklearn-onnx", "version": "1.18"},
+          {"name": "Psycopg", "version": "3.2"},
+          {"name": "MySQL Connector/Python", "version": "9.3"},
+          {"name": "Kubeflow-Training", "version": "1.9"}
+        ]
+      opendatahub.io/notebook-software: |
+        [
+          {"name": "Python", "version": "v3.11"}
+        ]
+      opendatahub.io/workbench-image-recommended: "false"
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-workbench-jupyter-datascience-cpu-py311-ubi9@sha256:97ac518d5982f0ad438b6c33f36162715be651fb4dbe1a80f972712997c0de22
+    name: "2025.1"
+    referencePolicy:
+      type: Source
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  annotations:
+    opendatahub.io/notebook-image-desc: Jupyter notebook image with GPU support and
+      minimal dependency set to start experimenting with Jupyter environment.
+    opendatahub.io/notebook-image-name: Jupyter | Minimal | CUDA | Python 3.12
+    opendatahub.io/notebook-image-order: "3"
+    opendatahub.io/notebook-image-url: https://github.com/opendatahub-io/notebooks/tree/main/jupyter/minimal
+    opendatahub.io/recommended-accelerators: '["nvidia.com/gpu"]'
+  labels:
+    component.opendatahub.io/name: notebooks
+    opendatahub.io/component: "true"
+    opendatahub.io/notebook-image: "true"
+  name: jupyter-minimal-gpu-notebook
+spec:
+  lookupPolicy:
+    local: true
+  tags:
+  - annotations:
+      opendatahub.io/notebook-build-commit: 250bac8
+      opendatahub.io/notebook-python-dependencies: |
+        [
+          {"name": "JupyterLab", "version": "4.4"}
+        ]
+      opendatahub.io/notebook-software: |
+        [
+          {"name": "CUDA", "version": "12.6"},
+          {"name": "Python", "version": "v3.12"}
+        ]
+      opendatahub.io/workbench-image-recommended: "true"
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-workbench-jupyter-minimal-cuda-py312-ubi9@sha256:c5ccb9fbda4ff6fbcfca211004ef51c4e3fb407c570510288ca97b7a42d67aad
+    name: "2025.2"
+    referencePolicy:
+      type: Source
+  - annotations:
+      opendatahub.io/notebook-build-commit: 1247a41
+      opendatahub.io/notebook-python-dependencies: |
+        [
+          {"name": "JupyterLab", "version": "4.4"}
+        ]
+      opendatahub.io/notebook-software: |
+        [
+          {"name": "CUDA", "version": "12.6"},
+          {"name": "Python", "version": "v3.11"}
+        ]
+      opendatahub.io/workbench-image-recommended: "false"
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-workbench-jupyter-minimal-cuda-py311-ubi9@sha256:b23028134c94c2392a74b89e62dc7f2b5223b15e1c1fb691c6c39a36a4149ee5
+    name: "2025.1"
+    referencePolicy:
+      type: Source
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  annotations:
+    opendatahub.io/notebook-image-desc: Jupyter notebook image with minimal dependency
+      set to start experimenting with Jupyter environment.
+    opendatahub.io/notebook-image-name: Jupyter | Minimal | CPU | Python 3.12
+    opendatahub.io/notebook-image-order: "1"
+    opendatahub.io/notebook-image-url: https://github.com/opendatahub-io/notebooks/tree/main/jupyter/minimal
+  labels:
+    component.opendatahub.io/name: notebooks
+    opendatahub.io/component: "true"
+    opendatahub.io/notebook-image: "true"
+  name: jupyter-minimal-notebook
+spec:
+  lookupPolicy:
+    local: true
+  tags:
+  - annotations:
+      opendatahub.io/default-image: "true"
+      opendatahub.io/notebook-build-commit: 250bac8
+      opendatahub.io/notebook-python-dependencies: |
+        [
+          {"name": "JupyterLab","version": "4.4"}
+        ]
+      opendatahub.io/notebook-software: |
+        [
+          {"name": "Python", "version": "v3.12"}
+        ]
+      opendatahub.io/workbench-image-recommended: "true"
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-workbench-jupyter-minimal-cpu-py312-ubi9@sha256:b1ee53109d87040c4e7fc4b380bd77ad0ae9bc80ca30fd96ed72cc7db4ff6608
+    name: "2025.2"
+    referencePolicy:
+      type: Source
+  - annotations:
+      opendatahub.io/default-image: "false"
+      opendatahub.io/notebook-build-commit: 1247a41
+      opendatahub.io/notebook-python-dependencies: |
+        [
+          {"name": "JupyterLab","version": "4.4"}
+        ]
+      opendatahub.io/notebook-software: |
+        [
+          {"name": "Python", "version": "v3.11"}
+        ]
+      opendatahub.io/workbench-image-recommended: "false"
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-workbench-jupyter-minimal-cpu-py311-ubi9@sha256:45ec6fc94d5f0eb1efff548687f4beacb2f5c4a1bef78a38b9475e1583536d7d
+    name: "2025.1"
+    referencePolicy:
+      type: Source
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  annotations:
+    opendatahub.io/notebook-image-desc: Jupyter notebook image with PyTorch libraries
+      and dependencies to start experimenting with advanced AI/ML notebooks.
+    opendatahub.io/notebook-image-name: Jupyter | PyTorch | CUDA | Python 3.12
+    opendatahub.io/notebook-image-order: "9"
+    opendatahub.io/notebook-image-url: https://github.com/opendatahub-io/notebooks/blob/main/jupyter/pytorch
+    opendatahub.io/recommended-accelerators: '["nvidia.com/gpu"]'
+  labels:
+    component.opendatahub.io/name: notebooks
+    opendatahub.io/component: "true"
+    opendatahub.io/notebook-image: "true"
+  name: jupyter-pytorch-notebook
+spec:
+  lookupPolicy:
+    local: true
+  tags:
+  - annotations:
+      opendatahub.io/notebook-build-commit: 250bac8
+      opendatahub.io/notebook-python-dependencies: |
+        [
+          {"name": "JupyterLab","version": "4.4"},
+          {"name": "PyTorch", "version": "2.6"},
+          {"name": "Tensorboard", "version": "2.19"},
+          {"name": "Boto3", "version": "1.37"},
+          {"name": "Kafka-Python-ng", "version": "2.2"},
+          {"name": "Kfp", "version": "2.12"},
+          {"name": "Matplotlib", "version": "3.10"},
+          {"name": "Numpy", "version": "2.2"},
+          {"name": "Pandas", "version": "2.2"},
+          {"name": "Scikit-learn", "version": "1.6"},
+          {"name": "Scipy", "version": "1.15"},
+          {"name": "Odh-Elyra", "version": "4.2"},
+          {"name": "PyMongo", "version": "4.11"},
+          {"name": "Pyodbc", "version": "5.2"},
+          {"name": "Codeflare-SDK", "version": "0.30"},
+          {"name": "Sklearn-onnx", "version": "1.18"},
+          {"name": "Psycopg", "version": "3.2"},
+          {"name": "MySQL Connector/Python", "version": "9.3"},
+          {"name": "Kubeflow-Training", "version": "1.9"}
+        ]
+      opendatahub.io/notebook-software: |
+        [
+          {"name": "CUDA", "version": "12.6"},
+          {"name": "Python", "version": "v3.12"},
+          {"name": "PyTorch", "version": "2.6"}
+        ]
+      opendatahub.io/workbench-image-recommended: "true"
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-workbench-jupyter-pytorch-cuda-py312-ubi9@sha256:a3ae6981b02d80970f1fae31b1db31bb30ce5fe2de51fa87f747dfe8b684deda
+    name: "2025.2"
+    referencePolicy:
+      type: Source
+  - annotations:
+      opendatahub.io/notebook-build-commit: 1247a41
+      opendatahub.io/notebook-python-dependencies: |
+        [
+          {"name": "JupyterLab","version": "4.4"},
+          {"name": "PyTorch", "version": "2.6"},
+          {"name": "Tensorboard", "version": "2.19"},
+          {"name": "Boto3", "version": "1.37"},
+          {"name": "Kafka-Python-ng", "version": "2.2"},
+          {"name": "Kfp", "version": "2.12"},
+          {"name": "Matplotlib", "version": "3.10"},
+          {"name": "Numpy", "version": "2.2"},
+          {"name": "Pandas", "version": "2.2"},
+          {"name": "Scikit-learn", "version": "1.6"},
+          {"name": "Scipy", "version": "1.15"},
+          {"name": "Odh-Elyra", "version": "4.2"},
+          {"name": "PyMongo", "version": "4.11"},
+          {"name": "Pyodbc", "version": "5.2"},
+          {"name": "Codeflare-SDK", "version": "0.30"},
+          {"name": "Sklearn-onnx", "version": "1.18"},
+          {"name": "Psycopg", "version": "3.2"},
+          {"name": "MySQL Connector/Python", "version": "9.3"},
+          {"name": "Kubeflow-Training", "version": "1.9"}
+        ]
+      opendatahub.io/notebook-software: |
+        [
+          {"name": "CUDA", "version": "12.6"},
+          {"name": "Python", "version": "v3.11"},
+          {"name": "PyTorch", "version": "2.6"}
+        ]
+      opendatahub.io/workbench-image-recommended: "false"
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-workbench-jupyter-pytorch-cuda-py311-ubi9@sha256:b9245c43060321b3cb8261fee538765e1debe43e5546103fa30a7c61fdaec032
+    name: "2025.1"
+    referencePolicy:
+      type: Source
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  annotations:
+    opendatahub.io/notebook-image-desc: Jupyter ROCm notebook image for ODH notebooks.
+    opendatahub.io/notebook-image-name: Jupyter | Minimal | ROCm | Python 3.12
+    opendatahub.io/notebook-image-order: "5"
+    opendatahub.io/notebook-image-url: https://github.com/opendatahub-io/notebooks/blob/main/jupyter/rocm
+    opendatahub.io/recommended-accelerators: '["amd.com/gpu"]'
+  labels:
+    component.opendatahub.io/name: notebooks
+    opendatahub.io/component: "true"
+    opendatahub.io/notebook-image: "true"
+  name: jupyter-rocm-minimal
+spec:
+  lookupPolicy:
+    local: true
+  tags:
+  - annotations:
+      opendatahub.io/notebook-build-commit: 250bac8
+      opendatahub.io/notebook-python-dependencies: |
+        [
+          {"name": "JupyterLab", "version": "4.4"}
+        ]
+      opendatahub.io/notebook-software: |
+        [
+          {"name": "ROCm", "version": "6.2"},
+          {"name": "Python", "version": "v3.12"}
+        ]
+      opendatahub.io/workbench-image-recommended: "true"
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-workbench-jupyter-minimal-rocm-py312-ubi9@sha256:d7e3779bbccb61280dc97445d28bdb5bc0a68914e4916494a50abc9be5a9e3e3
+    name: "2025.2"
+    referencePolicy:
+      type: Source
+  - annotations:
+      opendatahub.io/notebook-build-commit: 1247a41
+      opendatahub.io/notebook-python-dependencies: |
+        [
+          {"name": "JupyterLab", "version": "4.4"}
+        ]
+      opendatahub.io/notebook-software: |
+        [
+          {"name": "ROCm", "version": "6.2"},
+          {"name": "Python", "version": "v3.11"}
+        ]
+      opendatahub.io/workbench-image-recommended: "false"
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-workbench-jupyter-minimal-rocm-py311-ubi9@sha256:0b1f4efb8008ac53c9becdef770f498a263424c3ccea31f4fb377fc9a48b2178
+    name: "2025.1"
+    referencePolicy:
+      type: Source
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  annotations:
+    opendatahub.io/notebook-image-desc: Jupyter ROCm optimized PyTorch notebook image
+      for ODH notebooks.
+    opendatahub.io/notebook-image-name: Jupyter | PyTorch | ROCm | Python 3.12
+    opendatahub.io/notebook-image-order: "11"
+    opendatahub.io/notebook-image-url: https://github.com/opendatahub-io/notebooks/blob/main/jupyter/rocm/pytorch
+    opendatahub.io/recommended-accelerators: '["amd.com/gpu"]'
+  labels:
+    component.opendatahub.io/name: notebooks
+    opendatahub.io/component: "true"
+    opendatahub.io/notebook-image: "true"
+  name: jupyter-rocm-pytorch
+spec:
+  lookupPolicy:
+    local: true
+  tags:
+  - annotations:
+      opendatahub.io/notebook-build-commit: 864260c
+      opendatahub.io/notebook-python-dependencies: |
+        [
+          {"name": "JupyterLab","version": "4.4"},
+          {"name": "ROCm-PyTorch", "version": "2.6"},
+          {"name": "Tensorboard", "version": "2.18"},
+          {"name": "Kafka-Python-ng", "version": "2.2"},
+          {"name": "Matplotlib", "version": "3.10"},
+          {"name": "Numpy", "version": "2.2"},
+          {"name": "Pandas", "version": "2.2"},
+          {"name": "Scikit-learn", "version": "1.6"},
+          {"name": "Scipy", "version": "1.15"},
+          {"name": "Odh-Elyra", "version": "4.2"},
+          {"name": "PyMongo", "version": "4.11"},
+          {"name": "Pyodbc", "version": "5.2"},
+          {"name": "Codeflare-SDK", "version": "0.30"},
+          {"name": "Sklearn-onnx", "version": "1.18"},
+          {"name": "Psycopg", "version": "3.2"},
+          {"name": "MySQL Connector/Python", "version": "9.3"},
+          {"name": "Kubeflow-Training", "version": "1.9"}
+        ]
+      opendatahub.io/notebook-software: |
+        [
+          {"name": "Python", "version": "v3.12"},
+          {"name": "ROCm-PyTorch", "version": "2.6"}
+        ]
+      opendatahub.io/workbench-image-recommended: "true"
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-workbench-jupyter-pytorch-rocm-py312-ubi9@sha256:692897eef6f521ecd786a620ad8b434c7d10aac0c5dc4eae26c2f14a54a6fb19
+    name: "2025.2"
+    referencePolicy:
+      type: Source
+  - annotations:
+      opendatahub.io/notebook-build-commit: 80cffeb
+      opendatahub.io/notebook-python-dependencies: |
+        [
+          {"name": "JupyterLab","version": "4.4"},
+          {"name": "ROCm-PyTorch", "version": "2.6"},
+          {"name": "Tensorboard", "version": "2.18"},
+          {"name": "Kafka-Python-ng", "version": "2.2"},
+          {"name": "Matplotlib", "version": "3.10"},
+          {"name": "Numpy", "version": "2.2"},
+          {"name": "Pandas", "version": "2.2"},
+          {"name": "Scikit-learn", "version": "1.6"},
+          {"name": "Scipy", "version": "1.15"},
+          {"name": "Odh-Elyra", "version": "4.2"},
+          {"name": "PyMongo", "version": "4.11"},
+          {"name": "Pyodbc", "version": "5.2"},
+          {"name": "Codeflare-SDK", "version": "0.30"},
+          {"name": "Sklearn-onnx", "version": "1.18"},
+          {"name": "Psycopg", "version": "3.2"},
+          {"name": "MySQL Connector/Python", "version": "9.3"},
+          {"name": "Kubeflow-Training", "version": "1.9"}
+        ]
+      opendatahub.io/notebook-software: |
+        [
+          {"name": "Python", "version": "v3.11"},
+          {"name": "ROCm-PyTorch", "version": "2.6"}
+        ]
+      opendatahub.io/workbench-image-recommended: "false"
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-workbench-jupyter-pytorch-rocm-py311-ubi9@sha256:09ead5584a314601190b2aa72ccf31063036c66f113c0a217feeac848020efe6
+    name: "2025.1"
+    referencePolicy:
+      type: Source
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  annotations:
+    opendatahub.io/notebook-image-desc: Jupyter ROCm optimized TensorFlow notebook
+      image for ODH notebooks.
+    opendatahub.io/notebook-image-name: Jupyter | TensorFlow | ROCm | Python 3.12
+    opendatahub.io/notebook-image-order: "15"
+    opendatahub.io/notebook-image-url: https://github.com/opendatahub-io/notebooks/blob/main/jupyter/rocm/tensorflow
+    opendatahub.io/recommended-accelerators: '["amd.com/gpu"]'
+  labels:
+    component.opendatahub.io/name: notebooks
+    opendatahub.io/component: "true"
+    opendatahub.io/notebook-image: "true"
+  name: jupyter-rocm-tensorflow
+spec:
+  lookupPolicy:
+    local: true
+  tags:
+  - annotations:
+      opendatahub.io/notebook-build-commit: 144d079
+      opendatahub.io/notebook-python-dependencies: |
+        [
+          {"name": "JupyterLab","version": "4.4"},
+          {"name": "ROCm-TensorFlow", "version": "2.18"},
+          {"name": "Tensorboard", "version": "2.14"},
+          {"name": "Kafka-Python-ng", "version": "2.2"},
+          {"name": "Matplotlib", "version": "3.10"},
+          {"name": "Numpy", "version": "1.26"},
+          {"name": "Pandas", "version": "2.2"},
+          {"name": "Scikit-learn", "version": "1.6"},
+          {"name": "Scipy", "version": "1.15"},
+          {"name": "Odh-Elyra", "version": "4.2"},
+          {"name": "PyMongo", "version": "4.11"},
+          {"name": "Pyodbc", "version": "5.2"},
+          {"name": "Codeflare-SDK", "version": "0.30"},
+          {"name": "Sklearn-onnx", "version": "1.17"},
+          {"name": "Psycopg", "version": "3.2"},
+          {"name": "MySQL Connector/Python", "version": "9.3"}
+        ]
+      opendatahub.io/notebook-software: |
+        [
+          {"name": "Python", "version": "v3.12"},
+          {"name": "ROCm-TensorFlow", "version": "2.18"}
+        ]
+      opendatahub.io/workbench-image-recommended: "true"
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-workbench-jupyter-tensorflow-rocm-py312-ubi9@sha256:bb6ef33adcbfb01258ebe64794914732be8207dcce65e49116c2f0e7a31b6536
+    name: "2025.2"
+    referencePolicy:
+      type: Source
+  - annotations:
+      opendatahub.io/notebook-build-commit: 1247a41
+      opendatahub.io/notebook-python-dependencies: |
+        [
+          {"name": "JupyterLab","version": "4.4"},
+          {"name": "ROCm-TensorFlow", "version": "2.14"},
+          {"name": "Tensorboard", "version": "2.14"},
+          {"name": "Kafka-Python-ng", "version": "2.2"},
+          {"name": "Matplotlib", "version": "3.10"},
+          {"name": "Numpy", "version": "1.26"},
+          {"name": "Pandas", "version": "2.2"},
+          {"name": "Scikit-learn", "version": "1.6"},
+          {"name": "Scipy", "version": "1.15"},
+          {"name": "Odh-Elyra", "version": "4.2"},
+          {"name": "PyMongo", "version": "4.11"},
+          {"name": "Pyodbc", "version": "5.2"},
+          {"name": "Codeflare-SDK", "version": "0.30"},
+          {"name": "Sklearn-onnx", "version": "1.17"},
+          {"name": "Psycopg", "version": "3.2"},
+          {"name": "MySQL Connector/Python", "version": "9.3"}
+        ]
+      opendatahub.io/notebook-software: |
+        [
+          {"name": "Python", "version": "v3.11"},
+          {"name": "ROCm-TensorFlow", "version": "2.14"}
+        ]
+      opendatahub.io/workbench-image-recommended: "false"
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-workbench-jupyter-tensorflow-rocm-py311-ubi9@sha256:c104ee21be07288428e13fc9a76cb8c6f8cd5eb0a846a9b7cf52a574d4280b8d
+    name: "2025.1"
+    referencePolicy:
+      type: Source
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  annotations:
+    opendatahub.io/notebook-image-desc: Jupyter notebook image with TensorFlow libraries
+      and dependencies to start experimenting with advanced AI/ML notebooks.
+    opendatahub.io/notebook-image-name: Jupyter | TensorFlow | CUDA | Python 3.12
+    opendatahub.io/notebook-image-order: "13"
+    opendatahub.io/notebook-image-url: https://github.com/opendatahub-io/notebooks/blob/main/jupyter/tensorflow
+    opendatahub.io/recommended-accelerators: '["nvidia.com/gpu"]'
+  labels:
+    component.opendatahub.io/name: notebooks
+    opendatahub.io/component: "true"
+    opendatahub.io/notebook-image: "true"
+  name: jupyter-tensorflow-notebook
+spec:
+  lookupPolicy:
+    local: true
+  tags:
+  - annotations:
+      opendatahub.io/notebook-build-commit: 250bac8
+      opendatahub.io/notebook-python-dependencies: |
+        [
+          {"name": "JupyterLab","version": "4.4"},
+          {"name": "TensorFlow", "version": "2.19"},
+          {"name": "Tensorboard", "version": "2.19"},
+          {"name": "Nvidia-CUDA-CU12-Bundle", "version": "12.5"},
+          {"name": "Boto3", "version": "1.37"},
+          {"name": "Kafka-Python-ng", "version": "2.2"},
+          {"name": "Kfp", "version": "2.12"},
+          {"name": "Matplotlib", "version": "3.10"},
+          {"name": "Numpy", "version": "1.26"},
+          {"name": "Pandas", "version": "2.2"},
+          {"name": "Scikit-learn", "version": "1.6"},
+          {"name": "Scipy", "version": "1.15"},
+          {"name": "Odh-Elyra", "version": "4.2"},
+          {"name": "PyMongo", "version": "4.11"},
+          {"name": "Pyodbc", "version": "5.2"},
+          {"name": "Codeflare-SDK", "version": "0.30"},
+          {"name": "Sklearn-onnx", "version": "1.18"},
+          {"name": "Psycopg", "version": "3.2"},
+          {"name": "MySQL Connector/Python", "version": "9.3"}
+        ]
+      opendatahub.io/notebook-software: |
+        [
+          {"name": "CUDA", "version": "12.6"},
+          {"name": "Python", "version": "v3.12"},
+          {"name": "TensorFlow", "version": "2.19"}
+        ]
+      opendatahub.io/workbench-image-recommended: "true"
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-workbench-jupyter-tensorflow-cuda-py312-ubi9@sha256:61fe1831991ac7cb51ca4ffc49c0e98509515c026d3ae07e0ccd6f9893377eb3
+    name: "2025.2"
+    referencePolicy:
+      type: Source
+  - annotations:
+      opendatahub.io/notebook-build-commit: 1247a41
+      opendatahub.io/notebook-python-dependencies: |
+        [
+          {"name": "JupyterLab","version": "4.4"},
+          {"name": "TensorFlow", "version": "2.18"},
+          {"name": "Tensorboard", "version": "2.18"},
+          {"name": "Nvidia-CUDA-CU12-Bundle", "version": "12.5"},
+          {"name": "Boto3", "version": "1.37"},
+          {"name": "Kafka-Python-ng", "version": "2.2"},
+          {"name": "Kfp", "version": "2.12"},
+          {"name": "Matplotlib", "version": "3.10"},
+          {"name": "Numpy", "version": "1.26"},
+          {"name": "Pandas", "version": "2.2"},
+          {"name": "Scikit-learn", "version": "1.6"},
+          {"name": "Scipy", "version": "1.15"},
+          {"name": "Odh-Elyra", "version": "4.2"},
+          {"name": "PyMongo", "version": "4.11"},
+          {"name": "Pyodbc", "version": "5.2"},
+          {"name": "Codeflare-SDK", "version": "0.30"},
+          {"name": "Sklearn-onnx", "version": "1.18"},
+          {"name": "Psycopg", "version": "3.2"},
+          {"name": "MySQL Connector/Python", "version": "9.3"}
+        ]
+      opendatahub.io/notebook-software: |
+        [
+          {"name": "CUDA", "version": "12.6"},
+          {"name": "Python", "version": "v3.11"},
+          {"name": "TensorFlow", "version": "2.18"}
+        ]
+      opendatahub.io/workbench-image-recommended: "false"
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-workbench-jupyter-tensorflow-cuda-py311-ubi9@sha256:9e40b024480c35d5c67114528ff28a87ff96add636bfdf9801099f581f53157e
+    name: "2025.1"
+    referencePolicy:
+      type: Source
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  annotations:
+    opendatahub.io/notebook-image-desc: Jupyter TrustyAI notebook integrates the TrustyAI
+      Explainability Toolkit on Jupyter environment.
+    opendatahub.io/notebook-image-name: Jupyter | TrustyAI | CPU | Python 3.12
+    opendatahub.io/notebook-image-order: "16"
+    opendatahub.io/notebook-image-url: https://github.com/opendatahub-io/notebooks/tree/main/jupyter/trustyai
+  labels:
+    component.opendatahub.io/name: notebooks
+    opendatahub.io/component: "true"
+    opendatahub.io/notebook-image: "true"
+  name: jupyter-trustyai-notebook
+spec:
+  lookupPolicy:
+    local: true
+  tags:
+  - annotations:
+      opendatahub.io/notebook-build-commit: 144d079
+      opendatahub.io/notebook-python-dependencies: |
+        [
+          {"name": "JupyterLab","version": "4.4"},
+          {"name": "TrustyAI", "version": "0.6"},
+          {"name": "Transformers", "version": "4.53"},
+          {"name": "Datasets", "version": "3.4"},
+          {"name": "Accelerate", "version": "1.5"},
+          {"name": "Torch", "version": "2.6"},
+          {"name": "Boto3", "version": "1.37"},
+          {"name": "Kafka-Python-ng", "version": "2.2"},
+          {"name": "Kfp", "version": "2.12"},
+          {"name": "Matplotlib", "version": "3.6"},
+          {"name": "Numpy", "version": "1.24"},
+          {"name": "Pandas", "version": "1.5"},
+          {"name": "Scikit-learn", "version": "1.5"},
+          {"name": "Scipy", "version": "1.15"},
+          {"name": "Odh-Elyra", "version": "4.2"},
+          {"name": "PyMongo", "version": "4.11"},
+          {"name": "Pyodbc", "version": "5.2"},
+          {"name": "Codeflare-SDK", "version": "0.30"},
+          {"name": "Sklearn-onnx", "version": "1.18"},
+          {"name": "Psycopg", "version": "3.2"},
+          {"name": "MySQL Connector/Python", "version": "9.3"},
+          {"name": "Kubeflow-Training", "version": "1.9"}
+        ]
+      opendatahub.io/notebook-software: |
+        [
+          {"name": "Python", "version": "v3.12"}
+        ]
+      opendatahub.io/workbench-image-recommended: "true"
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-workbench-jupyter-trustyai-cpu-py312-ubi9@sha256:83b163f398175e68b4463fa9cdab60495ef42e2489b852024b9f1e5d3c6b9fd9
+    name: "2025.2"
+    referencePolicy:
+      type: Source
+  - annotations:
+      opendatahub.io/notebook-build-commit: 1247a41
+      opendatahub.io/notebook-python-dependencies: |
+        [
+          {"name": "JupyterLab","version": "4.4"},
+          {"name": "TrustyAI", "version": "0.6"},
+          {"name": "Transformers", "version": "4.53"},
+          {"name": "Datasets", "version": "3.4"},
+          {"name": "Accelerate", "version": "1.5"},
+          {"name": "Torch", "version": "2.6"},
+          {"name": "Boto3", "version": "1.37"},
+          {"name": "Kafka-Python-ng", "version": "2.2"},
+          {"name": "Kfp", "version": "2.12"},
+          {"name": "Matplotlib", "version": "3.6"},
+          {"name": "Numpy", "version": "1.24"},
+          {"name": "Pandas", "version": "1.5"},
+          {"name": "Scikit-learn", "version": "1.5"},
+          {"name": "Scipy", "version": "1.15"},
+          {"name": "Odh-Elyra", "version": "4.2"},
+          {"name": "PyMongo", "version": "4.11"},
+          {"name": "Pyodbc", "version": "5.2"},
+          {"name": "Codeflare-SDK", "version": "0.30"},
+          {"name": "Sklearn-onnx", "version": "1.18"},
+          {"name": "Psycopg", "version": "3.2"},
+          {"name": "MySQL Connector/Python", "version": "9.3"},
+          {"name": "Kubeflow-Training", "version": "1.9"}
+        ]
+      opendatahub.io/notebook-software: |
+        [
+          {"name": "Python", "version": "v3.11"}
+        ]
+      opendatahub.io/workbench-image-recommended: "false"
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-workbench-jupyter-trustyai-cpu-py311-ubi9@sha256:ba950f4071d79a131e48eb6c892501cbc137f86ebe58de81a3ce44aaebe74301
+    name: "2025.1"
+    referencePolicy:
+      type: Source
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  annotations:
+    opendatahub.io/notebook-image-desc: RStudio Server Workbench image with an integrated
+      development environment for R, a programming language designed for statistical
+      computing and graphics.
+    opendatahub.io/notebook-image-name: RStudio | Minimal | CUDA | R 4.4
+    opendatahub.io/notebook-image-order: "21"
+    opendatahub.io/notebook-image-url: https://github.com/opendatahub-io/notebooks/tree/main/rstudio
+    opendatahub.io/recommended-accelerators: '["nvidia.com/gpu"]'
+  labels:
+    component.opendatahub.io/name: notebooks
+    opendatahub.io/component: "true"
+    opendatahub.io/notebook-image: "true"
+  name: rstudio-gpu-notebook
+spec:
+  lookupPolicy:
+    local: true
+  tags:
+  - annotations:
+      opendatahub.io/notebook-build-commit: 0d8752d
+      opendatahub.io/notebook-python-dependencies: |
+        [
+          {"name": "rstudio-server", "version": "2024.12"}
+        ]
+      opendatahub.io/notebook-software: |
+        [
+          {"name": "CUDA", "version": "12.6"},
+          {"name": "R", "version": "v4.4"},
+          {"name": "Python", "version": "v3.11"}
+        ]
+      opendatahub.io/workbench-image-recommended: "true"
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-workbench-rstudio-minimal-cuda-py311-c9s@sha256:dceec4b894325444f49ac691f1e9b82da7e8643f8fb1a562293b389fda7d9751
+    name: "2025.1"
+    referencePolicy:
+      type: Source
+  - annotations:
+      opendatahub.io/notebook-build-commit: 60b6ecc
+      opendatahub.io/notebook-python-dependencies: |
+        [
+          {"name": "rstudio-server", "version": "2024.04"}
+        ]
+      opendatahub.io/notebook-software: |
+        [
+          {"name": "CUDA", "version": "12.1"},
+          {"name": "R", "version": "v4.4"},
+          {"name": "Python", "version": "v3.11"}
+        ]
+      opendatahub.io/workbench-image-recommended: "false"
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-workbench-rstudio-minimal-cuda-py311-c9s@sha256:dceec4b894325444f49ac691f1e9b82da7e8643f8fb1a562293b389fda7d9751
+    name: "2024.2"
+    referencePolicy:
+      type: Source
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  annotations:
+    opendatahub.io/notebook-image-desc: RStudio Server Workbench image with an integrated
+      development environment for R, a programming language designed for statistical
+      computing and graphics.
+    opendatahub.io/notebook-image-name: RStudio | Minimal | CPU | R 4.4
+    opendatahub.io/notebook-image-order: "20"
+    opendatahub.io/notebook-image-url: https://github.com/opendatahub-io/notebooks/tree/main/rstudio
+  labels:
+    component.opendatahub.io/name: notebooks
+    opendatahub.io/component: "true"
+    opendatahub.io/notebook-image: "true"
+  name: rstudio-notebook
+spec:
+  lookupPolicy:
+    local: true
+  tags:
+  - annotations:
+      opendatahub.io/notebook-build-commit: 0d8752d
+      opendatahub.io/notebook-python-dependencies: |
+        [
+          {"name": "rstudio-server", "version": "2024.12"}
+        ]
+      opendatahub.io/notebook-software: |
+        [
+          {"name": "R", "version": "v4.4"},
+          {"name": "Python", "version": "v3.11"}
+        ]
+      opendatahub.io/workbench-image-recommended: "true"
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-workbench-rstudio-minimal-cpu-py311-c9s@sha256:214e8b1912ce97b7d03718fa64ae105d3d2f461815409b9cfd2c1e2c9893fef8
+    name: "2025.1"
+    referencePolicy:
+      type: Source
+  - annotations:
+      opendatahub.io/notebook-build-commit: 60b6ecc
+      opendatahub.io/notebook-python-dependencies: |
+        [
+          {"name": "rstudio-server", "version": "2024.04"}
+        ]
+      opendatahub.io/notebook-software: |
+        [
+          {"name": "R", "version": "v4.4"},
+          {"name": "Python", "version": "v3.11"}
+        ]
+      opendatahub.io/workbench-image-recommended: "false"
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-workbench-rstudio-minimal-cpu-py311-c9s@sha256:214e8b1912ce97b7d03718fa64ae105d3d2f461815409b9cfd2c1e2c9893fef8
+    name: "2024.1"
+    referencePolicy:
+      type: Source
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  annotations:
+    opendatahub.io/runtime-image-desc: Datascience runtime image for Elyra, enabling
+      pipeline execution from Workbenches with a set of advanced AI/ML data science
+      libraries, supporting different runtimes for various pipeline nodes.
+    opendatahub.io/runtime-image-name: Datascience with Python 3.12 (UBI9)
+    opendatahub.io/runtime-image-url: https://github.com/opendatahub-io/notebooks/tree/main/runtimes
+  labels:
+    component.opendatahub.io/name: notebooks
+    opendatahub.io/component: "true"
+    opendatahub.io/runtime-image: "true"
+  name: runtime-datascience
+spec:
+  lookupPolicy:
+    local: true
+  tags:
+  - annotations:
+      opendatahub.io/runtime-image-metadata: |
+        [
+          {
+            "display_name": "Datascience with Python 3.12 (UBI9)",
+            "metadata": {
+              "tags": [
+                "datascience"
+              ],
+              "display_name": "Datascience with Python 3.12 (UBI9)",
+              "pull_policy": "IfNotPresent"
+            },
+            "schema_name": "runtime-image"
+          }
+        ]
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-pipeline-runtime-datascience-cpu-py312-ubi9@sha256:a656996b0c9b8c82f4fad6f40de96d1d5b6414c301f06a6fe88b46716f1c3d18
+    name: datascience
+    referencePolicy:
+      type: Source
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  annotations:
+    opendatahub.io/runtime-image-desc: Minimal runtime image for Elyra, enabling pipeline
+      execution from Workbenches with minimal dependency set to start experimenting
+      with, for various pipeline nodes.
+    opendatahub.io/runtime-image-name: Python 3.12 (UBI9)
+    opendatahub.io/runtime-image-url: https://github.com//opendatahub-io/notebooks/tree/main/runtimes
+  labels:
+    component.opendatahub.io/name: notebooks
+    opendatahub.io/component: "true"
+    opendatahub.io/runtime-image: "true"
+  name: runtime-minimal
+spec:
+  lookupPolicy:
+    local: true
+  tags:
+  - annotations:
+      opendatahub.io/runtime-image-metadata: |
+        [
+          {
+            "display_name": "Python 3.12 (UBI9)",
+            "metadata": {
+              "tags": [
+                "minimal"
+              ],
+              "display_name": "Python 3.12 (UBI9)",
+              "pull_policy": "IfNotPresent"
+            },
+            "schema_name": "runtime-image"
+          }
+        ]
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-pipeline-runtime-minimal-cpu-py312-ubi9@sha256:e3ca1fe6d0ff82d7050c6c8fec81b13b114b34573711750ae0d4f667eacd6965
+    name: minimal
+    referencePolicy:
+      type: Source
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  annotations:
+    opendatahub.io/runtime-image-desc: PyTorch runtime image for Elyra, enabling pipeline
+      execution from Workbenches with PyTorch libraries and dependencies, supporting
+      different runtimes for various pipeline nodes.
+    opendatahub.io/runtime-image-name: PyTorch with CUDA and Python 3.12 (UBI9)
+    opendatahub.io/runtime-image-url: https://github.com/opendatahub-io/notebooks/tree/main/runtimes
+  labels:
+    component.opendatahub.io/name: notebooks
+    opendatahub.io/component: "true"
+    opendatahub.io/runtime-image: "true"
+  name: runtime-pytorch
+spec:
+  lookupPolicy:
+    local: true
+  tags:
+  - annotations:
+      opendatahub.io/runtime-image-metadata: |
+        [
+          {
+            "display_name": "PyTorch with CUDA and Python 3.12 (UBI9)",
+            "metadata": {
+              "tags": [
+                "pytorch"
+              ],
+              "display_name": "PyTorch with CUDA and Python 3.12 (UBI9)",
+              "pull_policy": "IfNotPresent"
+            },
+            "schema_name": "runtime-image"
+          }
+        ]
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-pipeline-runtime-pytorch-cuda-py312-ubi9@sha256:dd8ae03979652178cf1910c6173b1d210e1cb1fd846c83f61f7e2d6a488138ea
+    name: pytorch
+    referencePolicy:
+      type: Source
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  annotations:
+    opendatahub.io/runtime-image-desc: ROCm optimized PyTorch runtime image for Elyra,
+      enabling pipeline execution from Workbenches with PyTorch libraries and dependencies,
+      supporting different runtimes for various pipeline nodes.
+    opendatahub.io/runtime-image-name: PyTorch with ROCm and Python 3.12 (UBI9)
+    opendatahub.io/runtime-image-url: https://github.com/opendatahub-io/notebooks/tree/main/runtimes
+  labels:
+    component.opendatahub.io/name: notebooks
+    opendatahub.io/component: "true"
+    opendatahub.io/runtime-image: "true"
+  name: runtime-rocm-pytorch
+spec:
+  lookupPolicy:
+    local: true
+  tags:
+  - annotations:
+      opendatahub.io/runtime-image-metadata: |
+        [
+          {
+            "display_name": "PyTorch with ROCm and Python 3.12 (UBI9)",
+            "metadata": {
+              "tags": [
+                "rocm-pytorch"
+              ],
+              "display_name": "PyTorch with ROCm and Python 3.12 (UBI9)",
+              "pull_policy": "IfNotPresent"
+            },
+            "schema_name": "runtime-image"
+          }
+        ]
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-pipeline-runtime-pytorch-rocm-py312-ubi9@sha256:81467ad93788cf1a5420b6cb76993b518e7a80b6102a8d3acc734ed97a2103fe
+    name: rocm-pytorch
+    referencePolicy:
+      type: Source
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  annotations:
+    opendatahub.io/runtime-image-desc: ROCm optimized TensorFlow runtime image for
+      Elyra, enabling pipeline execution from Workbenches with TensorFlow libraries
+      and dependencies, supporting different runtimes for various pipeline nodes.
+    opendatahub.io/runtime-image-name: TensorFlow with ROCm and Python 3.12 (UBI9)
+    opendatahub.io/runtime-image-url: https://github.com/opendatahub-io/notebooks/tree/main/runtimes
+  labels:
+    component.opendatahub.io/name: notebooks
+    opendatahub.io/component: "true"
+    opendatahub.io/runtime-image: "true"
+  name: runtime-rocm-tensorflow
+spec:
+  lookupPolicy:
+    local: true
+  tags:
+  - annotations:
+      opendatahub.io/runtime-image-metadata: |
+        [
+          {
+            "display_name": "TensorFlow with ROCm and Python 3.12 (UBI9)",
+            "metadata": {
+              "tags": [
+                "rocm-tensorflow"
+              ],
+              "display_name": "TensorFlow with ROCm and Python 3.12 (UBI9)",
+              "pull_policy": "IfNotPresent"
+            },
+            "schema_name": "runtime-image"
+          }
+        ]
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-pipeline-runtime-tensorflow-rocm-py312-ubi9@sha256:1134265c135ba05cfdad9bd2e63b1ee9a5f9989f9f716d4b5146d4df51d4e2bb
+    name: rocm-tensorflow
+    referencePolicy:
+      type: Source
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  annotations:
+    opendatahub.io/runtime-image-desc: TensorFlow runtime image for Elyra, enabling
+      pipeline execution from Workbenches with TensorFlow libraries and dependencies,
+      supporting different runtimes for various pipeline nodes.
+    opendatahub.io/runtime-image-name: TensorFlow with CUDA and Python 3.12 (UBI9)
+    opendatahub.io/runtime-image-url: https://github.com/opendatahub-io/notebooks/tree/main/runtimes
+  labels:
+    component.opendatahub.io/name: notebooks
+    opendatahub.io/component: "true"
+    opendatahub.io/runtime-image: "true"
+  name: runtime-tensorflow
+spec:
+  lookupPolicy:
+    local: true
+  tags:
+  - annotations:
+      opendatahub.io/runtime-image-metadata: |
+        [
+          {
+            "display_name": "TensorFlow with CUDA and Python 3.12 (UBI9)",
+            "metadata": {
+              "tags": [
+                "tensorflow"
+              ],
+              "display_name": "TensorFlow with CUDA and Python 3.12 (UBI9)",
+              "pull_policy": "IfNotPresent"
+            },
+            "schema_name": "runtime-image"
+          }
+        ]
+      openshift.io/imported-from: quay.io/opendatahub/workbench-images
+    from:
+      kind: DockerImage
+      name: quay.io/opendatahub/odh-pipeline-runtime-tensorflow-cuda-py312-ubi9@sha256:745110e903623b8fde906b6a2c2f4014037db48f3673302d133a7d73202f5077
+    name: tensorflow
+    referencePolicy:
+      type: Source
