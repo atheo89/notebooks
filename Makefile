@@ -22,7 +22,7 @@ IMAGE_REGISTRY   ?= quay.io/rh_ee_atheodor/workbench-images
 RELEASE	 		 ?= 2025a
 RELEASE_PYTHON_VERSION	 ?= 3.12
 # additional user-specified caching parameters for $(CONTAINER_ENGINE) build
-CONTAINER_BUILD_CACHE_ARGS ?= --no-cache
+CONTAINER_BUILD_CACHE_ARGS ?= 
 # whether to push the images to a registry as they are built
 PUSH_IMAGES ?= yes
 
