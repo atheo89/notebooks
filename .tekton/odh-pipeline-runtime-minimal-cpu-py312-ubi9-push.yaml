@@ -23,11 +23,11 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/opendatahub/odh-pipeline-runtime-minimal-cpu-py312-ubi9:'{{revision}}'
+    value: quay.io/opendatahub/odh-pipeline-runtime-minimal-cpu-py312-ubi9:{{revision}}
   - name: dockerfile
     value: runtimes/minimal/ubi9-python-3.12/Dockerfile.cpu
   - name: build-args-file
-    value: runtimes/minimal/build-args/cpu.conf
+    value: runtimes/minimal/ubi9-python-3.12/build-args/cpu.conf
   - name: path-context
     value: .
   - name: additional-tags
