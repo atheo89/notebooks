@@ -15,6 +15,11 @@ WORKDIR /opt/app-root/bin
 # OS Packages needs to be installed as root
 USER root
 
+# Inject the official UBI 9 repository configuration into the AIPCC base image.
+# The Quay-based AIPCC image is "repo-less" by default (https://gitlab.com/redhat/rhel-ai/core/base-images/app#repositories), so dnf cannot upgrade or install packages.
+# By copying ubi.repo from the public UBI 9 image, we enable package management for upgrades and installations.
+COPY --from=registry.access.redhat.com/ubi9/ubi /etc/yum.repos.d/ubi.repo /etc/yum.repos.d/ubi.repo
+
 # upgrade first to avoid fixable vulnerabilities begin
 # Problem: The operation would result in removing the following protected packages: systemd
 #  (try to add '--allowerasing' to command line to replace conflicting packages or '--skip-broken' to skip uninstallable packages)
@@ -25,7 +30,7 @@ RUN dnf -y upgrade --refresh --nobest --skip-broken --nodocs --noplugins --setop
 
 # Install useful OS packages
 # remove skopeo, CVE-2025-4674
-RUN dnf install -y mesa-libGL && dnf clean all && rm -rf /var/cache/yum
+RUN dnf install -y perl mesa-libGL && dnf clean all && rm -rf /var/cache/yum
 
 # Other apps and tools installed as default user
 USER 1001
@@ -41,28 +46,66 @@ WORKDIR /opt/app-root/src
 ################
 FROM cuda-base AS cuda-rstudio
 
-ARG RSTUDIO_SOURCE_CODE=rstudio/c9s-python-3.12
+ARG RSTUDIO_SOURCE_CODE=rstudio/rhel9-python-3.12
 
 WORKDIR /opt/app-root/bin
 
-LABEL name="odh-notebook-rstudio-server-cuda-c9s-python-3.12" \
-      summary="RStudio Server CUDA image with python 3.12 based on CentOS Stream 9" \
-      description="RStudio server CUDA image with python 3.12 based on CentOS Stream 9" \
-      io.k8s.display-name="RStudio server CUDA image with python 3.12 based on CentOS Stream 9" \
-      io.k8s.description="RStudio server CUDA image with python 3.12 based on CentOS Stream 9" \
+# TODO THIS SHOULD BE REMOVED
+# Access the client's secret for the subscription manager from the environment variable
+ARG SECRET_DIR=/opt/app-root/src/.sec
+ARG SERVERURL_DEFAULT=""
+ARG BASEURL_DEFAULT=""
+# TILL HERE
+
+LABEL name="odh-notebook-rstudio-server-rhel9-python-3.12" \
+      summary="RStudio Server image with python 3.12 based on Red Hat Enterprise Linux 9" \
+      description="RStudio Server image with python 3.12 based on Red Hat Enterprise Linux 9" \
+      io.k9s.display-name="RStudio Server image with python 3.12 based on Red Hat Enterprise Linux 9" \
+      io.k9s.description="RStudio Server image with python 3.12 based on Red Hat Enterprise Linux 9" \
       authoritative-source-url="https://github.com/opendatahub-io/notebooks" \
       io.openshift.build.commit.ref="main" \
-      io.openshift.build.source-location="https://github.com/opendatahub-io/notebooks/tree/main/rstudio/c9s-python-3.12" \
-      io.openshift.build.image="quay.io/opendatahub/workbench-images:cuda-rstudio-c9s-python-3.12"
+      io.openshift.build.source-location="https://github.com/opendatahub-io/notebooks/tree/main/rstudio/rhel9-python-3.12" \
+      io.openshift.build.image="quay.io/opendatahub/workbench-images:rstudio-rhel9-python-3.12"
 
 USER 0
+
+# TEST THIS PART OF CODE IF INSTALED WELL
+# Set this flag so that libraries can find the location of CUDA
+ENV XLA_FLAGS=--xla_gpu_cuda_data_dir=/usr/local/cuda
+
+# Install CUDA toolkit 12.8
+RUN dnf -y install cuda-toolkit-12-8 && \
+    dnf -y clean all --enablerepo="*"
+
+WORKDIR /opt/app-root/src
+# TILL HERE
+
+# TODO THIS SHOULD BE REMOVED in favor of: https://issues.redhat.com/browse/RHOAIENG-32541
+# uncomment the below line if you fall on this error: subscription-manager is disabled when running inside a container. Please refer to your host system for subscription management.
+#RUN sed -i 's/\(def in_container():\)/\1\n    return False/g' /usr/lib64/python*/*-packages/rhsm/config.py
+
+# If necessary, run the subscription manager command using the provided credentials. Only include --serverurl and --baseurl if they are provided
+RUN if [ -d "${SECRET_DIR}" ]; then \
+    SERVERURL=$(cat ${SECRET_DIR}/SERVERURL 2>/dev/null || echo ${SERVERURL_DEFAULT}) && \
+    BASEURL=$(cat ${SECRET_DIR}/BASEURL 2>/dev/null || echo ${BASEURL_DEFAULT}) && \
+    USERNAME=$(cat ${SECRET_DIR}/USERNAME) && \
+    PASSWORD=$(cat ${SECRET_DIR}/PASSWORD) && \
+    subscription-manager register \
+    ${SERVERURL:+--serverurl=$SERVERURL} \
+    ${BASEURL:+--baseurl=$BASEURL} \
+    --username=$USERNAME \
+    --password=$PASSWORD \
+    --force \
+    --auto-attach; \
+  fi
+# TILL HERE
 
 ENV R_VERSION=4.5.1
 
 # Install R
-RUN dnf install -y 'dnf-command(config-manager)' && \
-    dnf config-manager --set-enabled crb && \
-    dnf install -y https://download.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
+RUN dnf install -y dnf-plugins-core && \
+    subscription-manager repos --enable codeready-builder-for-rhel-9-x86_64-rpms && \
+    dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
     INSTALL_PKGS="R-core R-core-devel R-java R-Rcpp R-highlight \
     R-littler R-littler-examples openssl-libs compat-openssl11" && \
     dnf install -y --setopt=tsflags=nodocs $INSTALL_PKGS && \
@@ -179,6 +222,13 @@ WORKDIR /opt/app-root/bin
 
 COPY ${RSTUDIO_SOURCE_CODE}/utils utils/
 COPY ${RSTUDIO_SOURCE_CODE}/run-rstudio.sh ${RSTUDIO_SOURCE_CODE}/setup_rstudio.py ${RSTUDIO_SOURCE_CODE}/rsession.sh ${RSTUDIO_SOURCE_CODE}/run-nginx.sh ./
+
+# TODO THIS SHOULD BE REMOVED in favor of: https://issues.redhat.com/browse/RHOAIENG-32541
+# Unregister the system
+RUN if [ -d "${SECRET_DIR}" ]; then \
+    subscription-manager remove --all && subscription-manager unregister && subscription-manager clean; \
+  fi
+# TILL HERE
 
 USER 1001
 

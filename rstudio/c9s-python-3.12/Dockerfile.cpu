@@ -1,3 +1,5 @@
+ARG TARGETARCH
+
 #########################
 # configuration args    #
 #########################
@@ -35,9 +37,9 @@ USER 1001
 WORKDIR /opt/app-root/src
 
 #####################
-# rstudio           #
+# cpu-rstudio       #
 #####################
-FROM cpu-base AS rstudio
+FROM cpu-base AS cpu-rstudio
 
 ARG RSTUDIO_SOURCE_CODE=rstudio/c9s-python-3.12
 
@@ -55,8 +57,7 @@ LABEL name="odh-notebook-rstudio-server-c9s-python-3.12" \
 
 USER 0
 
-### After the build need to check what r version installed
-ENV R_VERSION=4.4.3
+ENV R_VERSION=4.5.1
 
 # Install R
 RUN dnf install -y 'dnf-command(config-manager)' && \
@@ -71,7 +72,7 @@ RUN dnf install -y 'dnf-command(config-manager)' && \
 
 # set R library to default (used in install.r from littler)
 ENV LIBLOC=/usr/lib64/R/library
-ENV R_LIBS_USER=/opt/app-root/bin/Rpackages/4.4
+ENV R_LIBS_USER=/opt/app-root/bin/Rpackages/4.5
 
 RUN chmod -R a+w ${LIBLOC} && \
     # create User R Library path

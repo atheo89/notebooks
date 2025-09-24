@@ -18,11 +18,11 @@ $(error This Make does not support .RECIPEPREFIX. Please use GNU Make 4.0 or lat
 endif
 .RECIPEPREFIX =
 
-IMAGE_REGISTRY   ?= quay.io/opendatahub/workbench-images
+IMAGE_REGISTRY   ?= quay.io/rh_ee_atheodor/workbench-images
 RELEASE	 		 ?= 2025b
 RELEASE_PYTHON_VERSION	 ?= 3.12
 # additional user-specified caching parameters for $(CONTAINER_ENGINE) build
-CONTAINER_BUILD_CACHE_ARGS ?= --no-cache
+CONTAINER_BUILD_CACHE_ARGS ?=
 # whether to push the images to a registry as they are built
 PUSH_IMAGES ?= yes
 
@@ -41,7 +41,7 @@ WHERE_WHICH ?= which
 OS_ARCH=$(shell go env GOOS)/$(shell go env GOARCH)
 BUILD_ARCH ?= linux/amd64
 
-IMAGE_TAG		 ?= $(RELEASE)_$(DATE)
+IMAGE_TAG		 ?= cpu-cuda
 KUBECTL_BIN      ?= bin/kubectl
 KUBECTL_VERSION  ?= v1.23.11
 YQ_BIN      ?= bin/yq
