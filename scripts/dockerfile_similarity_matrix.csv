@@ -1,0 +1,11 @@
+,Dockerfile.datascience.cpu,Dockerfile.minimal.cpu,Dockerfile.minimal.cuda,Dockerfile.minimal.rocm,Dockerfile.pytorch.cuda,Dockerfile.pytorch.rocm,Dockerfile.pytorchllmcompressor.cuda,Dockerfile.tensorflow.cuda,Dockerfile.tensorflow.rocm,Dockerfile.trustyai.cpu
+Dockerfile.datascience.cpu,100.0%,22.0%,21.8%,21.8%,38.5%,38.1%,38.0%,36.7%,30.3%,32.0%
+Dockerfile.minimal.cpu,22.0%,100.0%,98.9% ✅,99.1% ✅,48.2%,47.6%,47.5%,45.7%,50.1%,35.3%
+Dockerfile.minimal.cuda,21.8%,98.9% ✅,100.0%,98.5% ✅,48.6%,47.3%,47.9%,46.1%,49.8%,35.0%
+Dockerfile.minimal.rocm,21.8%,99.1% ✅,98.5% ✅,100.0%,47.9%,47.7%,47.3%,45.5%,50.2%,35.1%
+Dockerfile.pytorch.cuda,38.5%,48.2%,48.6%,47.9%,100.0%,97.2% ✅,98.4% ✅,93.7% ✅,90.8% ✅,77.4%
+Dockerfile.pytorch.rocm,38.1%,47.6%,47.3%,47.7%,97.2% ✅,100.0%,94.3% ✅,90.2% ✅,89.6% ✅,75.4%
+Dockerfile.pytorchllmcompressor.cuda,38.0%,47.5%,47.9%,47.3%,98.4% ✅,94.3% ✅,100.0%,92.3% ✅,89.8% ✅,76.3%
+Dockerfile.tensorflow.cuda,36.7%,45.7%,46.1%,45.5%,93.7% ✅,90.2% ✅,92.3% ✅,100.0%,94.0% ✅,74.8%
+Dockerfile.tensorflow.rocm,30.3%,50.1%,49.8%,50.2%,90.8% ✅,89.6% ✅,89.8% ✅,94.0% ✅,100.0%,73.2%
+Dockerfile.trustyai.cpu,32.0%,35.3%,35.0%,35.1%,77.4%,75.4%,76.3%,74.8%,73.2%,100.0%
