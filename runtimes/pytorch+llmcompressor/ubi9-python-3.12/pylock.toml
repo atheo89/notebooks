@@ -156,9 +156,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/fb/76/641ae3715086764
 
 [[packages]]
 name = "annotated-doc"
-version = "0.0.3"
-sdist = { url = "https://files.pythonhosted.org/packages/d7/a6/dc46877b911e40c00d395771ea710d5e77b6de7bacd5fdcd78d70cc5a48f/annotated_doc-0.0.3.tar.gz", upload-time = 2025-10-24T14:57:10Z, size = 5535, hashes = { sha256 = "e18370014c70187422c33e945053ff4c286f453a984eba84d0dbfa0c935adeda" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/02/b7/cf592cb5de5cb3bade3357f8d2cf42bf103bbe39f459824b4939fd212911/annotated_doc-0.0.3-py3-none-any.whl", upload-time = 2025-10-24T14:57:09Z, size = 5488, hashes = { sha256 = "348ec6664a76f1fd3be81f43dffbee4c7e8ce931ba71ec67cc7f4ade7fbbb580" } }]
+version = "0.0.4"
+sdist = { url = "https://files.pythonhosted.org/packages/57/ba/046ceea27344560984e26a590f90bc7f4a75b06701f653222458922b558c/annotated_doc-0.0.4.tar.gz", upload-time = 2025-11-10T22:07:42Z, size = 7288, hashes = { sha256 = "fbcda96e87e9c92ad167c2e53839e57503ecfda18804ea28102353485033faa4" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/1e/d3/26bf1008eb3d2daa8ef4cacc7f3bfdc11818d111f7e2d0201bc6e3b49d45/annotated_doc-0.0.4-py3-none-any.whl", upload-time = 2025-11-10T22:07:40Z, size = 5303, hashes = { sha256 = "571ac1dc6991c450b25a9c2d84a3705e2ae7a53467b5d111c24fa8baabbed320" } }]
 
 [[packages]]
 name = "annotated-types"
@@ -248,15 +248,15 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/cd/3a/577b549de0cc09d
 
 [[packages]]
 name = "boto3"
-version = "1.40.66"
-sdist = { url = "https://files.pythonhosted.org/packages/9a/95/db1f23bbc5cf1a9b66cb1828a0940305ea300162ae12c55522c738ab6f0e/boto3-1.40.66.tar.gz", upload-time = 2025-11-04T20:28:59Z, size = 111564, hashes = { sha256 = "f2038d9bac5154da7390c29bfd013546ac96609e7ce5a7f3cb6f99412be3f4c0" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/bd/c2/3097e2492931b8fdcab47217b917c7964dbc8bfce31f89ace49568ed47f8/boto3-1.40.66-py3-none-any.whl", upload-time = 2025-11-04T20:28:57Z, size = 139361, hashes = { sha256 = "ee4fe21c5301cc0e11cc11a53e71e5ddd82d5fae42b10fa8e5403f3aa06434e3" } }]
+version = "1.40.71"
+sdist = { url = "https://files.pythonhosted.org/packages/2e/d8/c316637525560e01cbf048fd88f29be73214411ad26e743f3b1950df76f0/boto3-1.40.71.tar.gz", upload-time = 2025-11-11T20:25:02Z, size = 111638, hashes = { sha256 = "6d38e0250154552658be92a62cd48adf8ca8fd4abc181fb52d13371b53179503" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/3e/5c/e1ef895ceaf42826b21c2a85b281cb31d3fc7056fb03d5d2d4beeb0ee574/boto3-1.40.71-py3-none-any.whl", upload-time = 2025-11-11T20:24:59Z, size = 139357, hashes = { sha256 = "4ac9ee8d1629e45d6b6adc727795d1fc9852e998cd1a73e4eda50f6120677bab" } }]
 
 [[packages]]
 name = "botocore"
-version = "1.40.66"
-sdist = { url = "https://files.pythonhosted.org/packages/c3/f3/5dae6e3b06493f2ac769c6764543b84fa50a8de3fec1e33252271166b394/botocore-1.40.66.tar.gz", upload-time = 2025-11-04T20:28:48Z, size = 14411853, hashes = { sha256 = "e49a55ad54426c4ea853a59ff9d8243023a90c935782d4c287e9b3424883c3fa" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/9a/48/43f9335e28351f35a939dce366a3943296f381ecd4660bd1c8d2bb8f3006/botocore-1.40.66-py3-none-any.whl", upload-time = 2025-11-04T20:28:44Z, size = 14076509, hashes = { sha256 = "98d5766e17e72110b1d08ab510a8475a6597c59d9560235e2d28ae1a4b043b92" } }]
+version = "1.40.71"
+sdist = { url = "https://files.pythonhosted.org/packages/5f/2f/7e5b9a0f9f9c958e1b70734be9b5cbcef64a1bfa9a570bcaafea0c997840/botocore-1.40.71.tar.gz", upload-time = 2025-11-11T20:24:50Z, size = 14445036, hashes = { sha256 = "7ed28c2e092fc0d67fbfba818fbdccc92426b452cc936bf034db6de717e0d068" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/cf/a3/b44efd9db38d4426740f42c550c0c23502a91328e2cdcbe6f0795191002a/botocore-1.40.71-py3-none-any.whl", upload-time = 2025-11-11T20:24:48Z, size = 14107773, hashes = { sha256 = "4c05907b2a56b1f6fd70403fbae0f09a4758b95758192db5ff93c0e9940a11bb" } }]
 
 [[packages]]
 name = "certifi"
@@ -596,9 +596,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/e7/05/c19819d5e3d9529
 
 [[packages]]
 name = "dask"
-version = "2025.10.0"
-sdist = { url = "https://files.pythonhosted.org/packages/49/f0/d747f9517f2a50b835513da36a6da0cffa7d1f0a8b33f60e642ff78879a8/dask-2025.10.0.tar.gz", upload-time = 2025-10-14T19:50:36Z, size = 10974677, hashes = { sha256 = "fd3159c319c27cea39b891c0f22d60056a33575fb4906618eab0aeeb5dcd0cbc" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/a4/2b/36b8753d881ff8fcf9c57eadd2b9379815cbe08fde7ded4e52c4cbb4b227/dask-2025.10.0-py3-none-any.whl", upload-time = 2025-10-14T19:50:21Z, size = 1481586, hashes = { sha256 = "86c0a4aecbed3eae938f13a52bcc3fdc35852cce34d7d701590c15850b92506e" } }]
+version = "2025.11.0"
+sdist = { url = "https://files.pythonhosted.org/packages/db/33/eacaa72731f7fc64868caaf2d35060d50049eff889bd217263e68f76472f/dask-2025.11.0.tar.gz", upload-time = 2025-11-06T16:56:51Z, size = 10984781, hashes = { sha256 = "23d59e624b80ee05b7cc8df858682cca58262c4c3b197ccf61da0f6543c8f7c3" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/1d/54/a46920229d12c3a6e9f0081d1bdaeffad23c1826353ace95714faee926e5/dask-2025.11.0-py3-none-any.whl", upload-time = 2025-11-06T16:56:44Z, size = 1477108, hashes = { sha256 = "08c35a8146c05c93b34f83cf651009129c42ee71762da7ca452fb7308641c2b8" } }]
 
 [[packages]]
 name = "dataproperty"
@@ -692,9 +692,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/c1/ea/53f2148663b321f
 
 [[packages]]
 name = "fastapi"
-version = "0.121.0"
-sdist = { url = "https://files.pythonhosted.org/packages/8c/e3/77a2df0946703973b9905fd0cde6172c15e0781984320123b4f5079e7113/fastapi-0.121.0.tar.gz", upload-time = 2025-11-03T10:25:54Z, size = 342412, hashes = { sha256 = "06663356a0b1ee93e875bbf05a31fb22314f5bed455afaaad2b2dad7f26e98fa" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/dd/2c/42277afc1ba1a18f8358561eee40785d27becab8f80a1f945c0a3051c6eb/fastapi-0.121.0-py3-none-any.whl", upload-time = 2025-11-03T10:25:53Z, size = 109183, hashes = { sha256 = "8bdf1b15a55f4e4b0d6201033da9109ea15632cb76cf156e7b8b4019f2172106" } }]
+version = "0.121.1"
+sdist = { url = "https://files.pythonhosted.org/packages/6b/a4/29e1b861fc9017488ed02ff1052feffa40940cb355ed632a8845df84ce84/fastapi-0.121.1.tar.gz", upload-time = 2025-11-08T21:48:14Z, size = 342523, hashes = { sha256 = "b6dba0538fd15dab6fe4d3e5493c3957d8a9e1e9257f56446b5859af66f32441" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/94/fd/2e6f7d706899cc08690c5f6641e2ffbfffe019e8f16ce77104caa5730910/fastapi-0.121.1-py3-none-any.whl", upload-time = 2025-11-08T21:48:12Z, size = 109192, hashes = { sha256 = "2c5c7028bc3a58d8f5f09aecd3fd88a000ccc0c5ad627693264181a3c33aa1fc" } }]
 
 [[packages]]
 name = "fastjsonschema"
@@ -2150,9 +2150,9 @@ wheels = [
 
 [[packages]]
 name = "narwhals"
-version = "2.10.2"
-sdist = { url = "https://files.pythonhosted.org/packages/c5/dc/8db74daf8c2690ec696c1d772a33cc01511559ee8a9e92d7ed85a18e3c22/narwhals-2.10.2.tar.gz", upload-time = 2025-11-04T16:36:42Z, size = 584954, hashes = { sha256 = "ff738a08bc993cbb792266bec15346c1d85cc68fdfe82a23283c3713f78bd354" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/47/a9/9e02fa97e421a355fc5e818e9c488080fce04a8e0eebb3ed75a84f041c4a/narwhals-2.10.2-py3-none-any.whl", upload-time = 2025-11-04T16:36:40Z, size = 419573, hashes = { sha256 = "059cd5c6751161b97baedcaf17a514c972af6a70f36a89af17de1a0caf519c43" } }]
+version = "2.11.0"
+sdist = { url = "https://files.pythonhosted.org/packages/7d/a2/25208347aa4c2d82a265cf4bc0873aaf5069f525c0438146821e7fc19ef5/narwhals-2.11.0.tar.gz", upload-time = 2025-11-10T16:28:35Z, size = 589233, hashes = { sha256 = "d23f3ea7efc6b4d0355444a72de6b8fa3011175585246c3400c894a7583964af" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/c0/a1/4d21933898e23b011ae0528151b57a9230a62960d0919bf2ee48c7f5c20a/narwhals-2.11.0-py3-none-any.whl", upload-time = 2025-11-10T16:28:33Z, size = 423069, hashes = { sha256 = "a9795e1e44aa94e5ba6406ef1c5ee4c172414ced4f1aea4a79e5894f0c7378d4" } }]
 
 [[packages]]
 name = "nbclient"
