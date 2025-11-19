@@ -18,13 +18,13 @@ $(error This Make does not support .RECIPEPREFIX. Please use GNU Make 4.0 or lat
 endif
 .RECIPEPREFIX =
 
-IMAGE_REGISTRY   ?= quay.io/opendatahub/workbench-images
+IMAGE_REGISTRY   ?= quay.io/rh_ee_atheodor/workbench-images
 RELEASE	 		 ?= 2025b
 RELEASE_PYTHON_VERSION	 ?= 3.12
 # additional user-specified caching parameters for $(CONTAINER_ENGINE) build
 CONTAINER_BUILD_CACHE_ARGS ?= --no-cache
 # whether to push the images to a registry as they are built
-PUSH_IMAGES ?= yes
+PUSH_IMAGES ?= no
 # INDEX_MODES=public-index(default) or aipcc-index this used for the lock
 INDEX_MODE ?= public-index
 
