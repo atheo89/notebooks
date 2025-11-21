@@ -70,10 +70,10 @@ endif
 define build_image
 	$(eval IMAGE_NAME := $(IMAGE_REGISTRY):$(1)-$(IMAGE_TAG))
 
-	# Checks if there’s a build-args/*.conf matching the Dockerfile
+	# Checks if there's a build-args/*.conf matching the Dockerfile
 	$(eval BUILD_DIR := $(dir $(2)))
 	$(eval DOCKERFILE_NAME := $(notdir $(2)))
-	$(eval CONF_FILE := $(BUILD_DIR)build-args/$(shell echo $(DOCKERFILE_NAME) | cut -d. -f2).conf)
+	$(eval CONF_FILE := $(BUILD_DIR)build-args/$(shell echo $(DOCKERFILE_NAME) | sed 's/^Dockerfile\.//').conf)
 
 	# if the conf file exists, transform it into --build-arg KEY=VALUE flags
 	$(eval BUILD_ARGS := $(shell \

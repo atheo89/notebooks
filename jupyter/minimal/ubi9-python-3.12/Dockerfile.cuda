@@ -4,6 +4,8 @@ ARG TARGETARCH
 # configuration args    #
 #########################
 ARG BASE_IMAGE
+ARG PYLOCK_PATH
+ARG PYLOCK_NAME
 
 ####################
 # cuda-base        #
@@ -90,7 +92,7 @@ ENV PATH="/usr/local/texlive/bin/linux:/usr/local/pandoc/bin:$PATH"
 
 USER 1001
 
-COPY ${MINIMAL_SOURCE_CODE}/uv.lock/pylock.cuda.toml ${MINIMAL_SOURCE_CODE}/start-notebook.sh ./
+COPY ${MINIMAL_SOURCE_CODE}${PYLOCK_PATH} ${MINIMAL_SOURCE_CODE}/start-notebook.sh ./${PYLOCK_NAME}
 
 # Install Python dependencies from requirements.txt file
 RUN /bin/bash <<'EOF'
@@ -98,7 +100,7 @@ set -Eeuxo pipefail
 echo "Installing softwares and packages"
 # This may have to download and compile some dependencies, and as we don't lock requirements from `build-system.requires`,
 #  we often don't know the correct hashes and `--require-hashes` would therefore fail on non amd64, where building is common.
-uv pip install --strict --no-deps --no-cache --no-config --no-progress --verify-hashes --compile-bytecode --index-strategy=unsafe-best-match --requirements=./pylock.cuda.toml
+uv pip install --strict --no-deps --no-cache --no-config --no-progress --verify-hashes --compile-bytecode --index-strategy=unsafe-best-match --requirements=./${PYLOCK_NAME}
 # Disable announcement plugin of jupyterlab
 jupyter labextension disable "@jupyterlab/apputils-extension:announcements"
 # Replace Notebook's launcher, "(ipykernel)" with Python's version 3.x.y
