@@ -21,7 +21,7 @@ if [[ "$ARCH" == "amd64" || "$ARCH" == "arm64" || "$ARCH" == "ppc64le" || "$ARCH
 
 	export MAX_JOBS=${MAX_JOBS:-$(nproc)}
 	export NODE_VERSION=${NODE_VERSION:-22.18.0}
-	export CODESERVER_VERSION=${CODESERVER_VERSION:-v4.104.0}
+	export CODESERVER_VERSION=${CODESERVER_VERSION:-v4.108.2}
 
 	export NVM_DIR=/root/.nvm VENV=/opt/.venv
 	export PATH=${VENV}/bin:$PATH
@@ -59,7 +59,8 @@ if [[ "$ARCH" == "amd64" || "$ARCH" == "arm64" || "$ARCH" == "ppc64le" || "$ARCH
 	    && curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh | bash \
 	    && source ${NVM_DIR}/nvm.sh && nvm install ${NODE_VERSION}
 
-	# build codeserver
+	# Build code-server from source (same sequence as upstream ci/build/ and package.json scripts)
+	# Node 22 required per https://github.com/coder/code-server package.json "engines": {"node": "22"}
 	git clone --depth 1 --branch "${CODESERVER_VERSION}" --recurse-submodules --shallow-submodules https://github.com/coder/code-server.git
 	cd code-server
         
@@ -106,17 +107,19 @@ EOL
 fi	
         	
 	source ${NVM_DIR}/nvm.sh
+	# Apply upstream patches from the cloned tag (patches/series)
 	while IFS= read -r src_patch; do echo "patches/$src_patch"; patch -p1 < "patches/$src_patch"; done < patches/series
 	nvm use ${NODE_VERSION}
 	npm cache clean --force
 	npm install
+	# Official build order: build → build:vscode (VERSION) → release (KEEP_MODULES) → release:standalone → package
 	npm run build
 	VERSION=${CODESERVER_VERSION/v/} npm run build:vscode
 	export KEEP_MODULES=1
 	npm run release
 	npm run release:standalone
 
-	# build codeserver rpm
+	# Build rpm via upstream ci/build/build-packages.sh (nfpm)
 	VERSION=${CODESERVER_VERSION/v/} npm run package
 	mv release-packages/code-server-${CODESERVER_VERSION/v/}-${ARCH}.rpm /tmp/
 
