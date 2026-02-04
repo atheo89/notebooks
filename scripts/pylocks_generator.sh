@@ -41,24 +41,13 @@ set -euo pipefail
 # ----------------------------
 # CONFIGURATION
 # ----------------------------
-# https://redhat-internal.slack.com/archives/C079FE5H94J/p1768855783394919?thread_ts=1767789190.424899&cid=C079FE5H94J
-CPU_INDEX_URL="https://console.redhat.com/api/pypi/public-rhai/rhoai/3.3/cpu-ubi9/simple/"
-CUDA_INDEX_URL="https://console.redhat.com/api/pypi/public-rhai/rhoai/3.3/cuda12.9-ubi9/simple/"
-ROCM_INDEX_URL="https://console.redhat.com/api/pypi/public-rhai/rhoai/3.3/rocm6.4-ubi9/simple/"
-
-CPU_INDEX="--default-index=${CPU_INDEX_URL}"
-# TODO(RHAIENG-3071): Add CPU index as fallback for packages not available in CUDA/ROCm indexes
-# (e.g., kfp-pipeline-spec, kfp-server-api, google-cloud-storage, requests-toolbelt)
-CUDA_INDEX="--default-index=${CUDA_INDEX_URL} --index=${CUDA_INDEX_URL} --index=${CPU_INDEX_URL}"
-ROCM_INDEX="--default-index=${ROCM_INDEX_URL} --index=${ROCM_INDEX_URL} --index=${CPU_INDEX_URL}"
-PUBLIC_INDEX="--default-index=https://pypi.org/simple"
-
-MAIN_DIRS=("jupyter" "runtimes" "rstudio" "codeserver")
-
+PUBLIC_INDEX_URL="https://pypi.org/simple"
 # CVE constraints file - applied to all lock file generations
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 CVE_CONSTRAINTS_FILE="$ROOT_DIR/dependencies/cve-constraints.txt"
+
+MAIN_DIRS=("jupyter" "runtimes" "rstudio" "codeserver")
 
 # ----------------------------
 # HELPER FUNCTIONS
@@ -70,6 +59,36 @@ ok()    { echo -e "✅ \033[1;32m$1\033[0m"; }
 
 uppercase() {
   echo "$1" | tr '[:lower:]' '[:upper:]'
+}
+
+get_index_arg() {
+  local flavor="$1"
+  local mode="$2"
+  local config_path="build-args/${flavor}.conf"
+  local index_url
+
+  if [[ ! -f "$config_path" ]]; then
+    error "Index config not found for flavor '$flavor' in $PWD/build-args"
+    return 1
+  fi
+
+  INDEX_URL=""
+
+  # shellcheck disable=SC1090
+  source "$config_path"
+
+  index_url="${INDEX_URL}"
+
+  if [[ -z "$index_url" ]]; then
+    error "Build-args config '$config_path' must define INDEX_URL"
+    return 1
+  fi
+
+  if [[ "$mode" == "public-index" ]]; then
+    echo "--index-url=${PUBLIC_INDEX_URL}"
+  else
+    echo "--index-url=${index_url}"
+  fi
 }
 
 # ----------------------------
@@ -197,10 +216,21 @@ for TARGET_DIR in "${TARGET_DIRS[@]}"; do
 
   run_lock() {
     local flavor="$1"
-    local index="$2"
-    local mode="$3"
+    local mode="$2"
+    local index
     local output
     local desc
+    local constraints_flag=""
+
+    if [[ "$mode" == "public-index" ]]; then
+      index="--index-url=${PUBLIC_INDEX_URL}"
+    else
+      if ! index="$(get_index_arg "$flavor" "$mode")"; then
+        warn "Missing index configuration for flavor '$flavor' in $TARGET_DIR"
+        DIR_SUCCESS=false
+        return
+      fi
+    fi
 
     if [[ "$mode" == "public-index" ]]; then
       output="pylock.toml"
@@ -213,6 +243,16 @@ for TARGET_DIR in "${TARGET_DIRS[@]}"; do
       echo "➡️ Generating $(uppercase "$flavor") lock file..."
     fi
 
+    # Build constraints flag if CVE constraints file exists
+    # Use relative path to avoid absolute paths in pylock.toml headers
+    # (which would differ between CI and local environments)
+    if [[ -f "$CVE_CONSTRAINTS_FILE" ]]; then
+      local relative_constraints
+      # Use Python for cross-platform relative path computation (realpath --relative-to is GNU-only)
+      relative_constraints=$(python3 -c "import os; print(os.path.relpath('$CVE_CONSTRAINTS_FILE', '$PWD'))")
+      constraints_flag="--constraints=$relative_constraints"
+    fi
+
     # The behavior has changed in uv 0.9.17 (https://github.com/astral-sh/uv/pull/16956)
     # Documentation at https://docs.astral.sh/uv/reference/cli/#uv-pip-compile--python-platform says that
     #  `--python-platform linux` is alias for `x86_64-unknown-linux-gnu`; we cannot use this to get a multiarch pylock
@@ -221,18 +261,6 @@ for TARGET_DIR in "${TARGET_DIRS[@]}"; do
     # Note: currently generating uv.lock.d/pylock.${flavor}.toml; future rename to uv.${flavor}.lock is planned
     # See also --universal discussion with Gerard
     #  https://redhat-internal.slack.com/archives/C0961HQ858Q/p1757935641975969?thread_ts=1757542802.032519&cid=C0961HQ858Q
-
-    # Build constraints flag if CVE constraints file exists
-    # Use relative path to avoid absolute paths in pylock.toml headers
-    # (which would differ between CI and local environments)
-    local constraints_flag=""
-    if [[ -f "$CVE_CONSTRAINTS_FILE" ]]; then
-      local relative_constraints
-      # Use Python for cross-platform relative path computation (realpath --relative-to is GNU-only)
-      relative_constraints=$(python3 -c "import os; print(os.path.relpath('$CVE_CONSTRAINTS_FILE', '$PWD'))")
-      constraints_flag="--constraints=$relative_constraints"
-    fi
-
     set +e
     # shellcheck disable=SC2086
     uv pip compile pyproject.toml \
@@ -240,6 +268,7 @@ for TARGET_DIR in "${TARGET_DIRS[@]}"; do
       --format pylock.toml \
       --generate-hashes \
       --emit-index-url \
+      $constraints_flag \
       --python-version="$PYTHON_VERSION" \
       --universal \
       --no-annotate \
@@ -249,7 +278,6 @@ for TARGET_DIR in "${TARGET_DIRS[@]}"; do
       --no-emit-package odh-notebooks-meta-runtime-datascience-deps \
       --no-emit-package odh-notebooks-meta-workbench-datascience-deps \
       $UPGRADE_FLAG \
-      $constraints_flag \
       $index
     local status=$?
     set -e
@@ -265,11 +293,17 @@ for TARGET_DIR in "${TARGET_DIRS[@]}"; do
 
   # Run lock generation based on effective mode
   if [[ "$EFFECTIVE_MODE" == "public-index" ]]; then
-    run_lock "cpu" "$PUBLIC_INDEX" "$EFFECTIVE_MODE"
+    if $HAS_CPU; then
+      run_lock "cpu" "$EFFECTIVE_MODE"
+    elif $HAS_CUDA; then
+      run_lock "cuda" "$EFFECTIVE_MODE"
+    else
+      run_lock "rocm" "$EFFECTIVE_MODE"
+    fi
   else
-    $HAS_CPU && run_lock "cpu" "$CPU_INDEX" "$EFFECTIVE_MODE"
-    $HAS_CUDA && run_lock "cuda" "$CUDA_INDEX" "$EFFECTIVE_MODE"
-    $HAS_ROCM && run_lock "rocm" "$ROCM_INDEX" "$EFFECTIVE_MODE"
+    $HAS_CPU && run_lock "cpu" "$EFFECTIVE_MODE"
+    $HAS_CUDA && run_lock "cuda" "$EFFECTIVE_MODE"
+    $HAS_ROCM && run_lock "rocm" "$EFFECTIVE_MODE"
   fi
 
   if $DIR_SUCCESS; then
