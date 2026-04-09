@@ -1,0 +1,159 @@
+---
+name: "Embedding Tuning for RAG"
+version: "1.0.0"
+description: >
+  Fine-tune embedding models to improve retrieval quality in RAG (Retrieval-Augmented Generation)
+  pipelines. Adapt embeddings for your domain-specific terminology and document types.
+
+category: "embedding-tuning"
+difficulty: "beginner"
+
+requirements:
+  gpu: true
+  gpu_memory_gb_minimum: 4
+  gpu_memory_gb_recommended: 8
+  gpu_types:
+    - cuda
+    - rocm
+    - cpu  # Can work on CPU, slower
+
+  cpu_memory_gb: 4
+
+  frameworks:
+    - name: "sentence-transformers"
+      version: ">=2.2.0"
+    - name: "pytorch"
+      version: ">=2.0"
+    - name: "transformers"
+      version: ">=4.30"
+
+compatible_models:
+  - type: "embedding"
+    description: "Sentence/text embedding models"
+    examples: ["sentence-transformers/all-MiniLM-L6-v2", "sentence-transformers/all-mpnet-base-v2"]
+    min_parameters: "22M"
+    architectures: ["transformer-based", "siamese-networks"]
+
+workbench_image:
+  name: "datascience-cpu"  # CPU is fine for embeddings
+  description: "Jupyter workbench with PyTorch"
+  alternatives:
+    - "pytorch-cuda"    # If you want GPU
+  python_version: ">=3.10"
+
+io_specification:
+  inputs:
+    base_model:
+      description: "Sentence-Transformers model name"
+      format: "string (HuggingFace model ID)"
+      example: "sentence-transformers/all-MiniLM-L6-v2"
+
+    training_data:
+      description: "Training pairs with relevance labels"
+      format: "CSV or JSON with: query, positive_doc, negative_doc (optional)"
+      location: "/mnt/datasets/"
+      required: true
+
+  outputs:
+    fine_tuned_model:
+      description: "Fine-tuned embedding model"
+      format: "Sentence-Transformers format"
+      location: "/mnt/outputs/embedding-model"
+
+    metrics:
+      description: "Evaluation metrics"
+      format: "JSON"
+      location: "/mnt/outputs/metrics.json"
+
+techniques:
+  - name: "Triplet Loss Fine-tuning"
+    description: "Trains on query-positive-negative triplets"
+
+  - name: "Siamese Loss (SentenceTransformer)"
+    description: "Trains on pairs with similarity scores"
+
+  - name: "Multi-task Learning"
+    description: "Combines multiple loss functions"
+
+complexity:
+  difficulty_level: "beginner"
+  estimated_training_time_minutes: 30
+  gpu_hours_needed: 0.5
+  cost_estimate: "Very cheap (can even train on CPU)"
+
+workflow_steps:
+  - step: 1
+    name: "Load Base Embedding Model"
+    description: "Load a pre-trained sentence transformer"
+
+  - step: 2
+    name: "Prepare Training Data"
+    description: "Load and format query-document pairs"
+
+  - step: 3
+    name: "Configure Training"
+    description: "Set loss function and hyperparameters"
+
+  - step: 4
+    name: "Fine-tune on Domain Data"
+    description: "Train the embedding model"
+
+  - step: 5
+    name: "Evaluate Retrieval Quality"
+    description: "Test on validation set"
+
+  - step: 6
+    name: "Save and Export"
+    description: "Export fine-tuned embeddings"
+
+hyperparameters:
+  learning_rate:
+    description: "Training learning rate"
+    default: 2e-5
+    range: [1e-6, 1e-4]
+
+  batch_size:
+    description: "Training batch size"
+    default: 16
+    range: [4, 128]
+
+  num_epochs:
+    description: "Number of training epochs"
+    default: 2
+    range: [1, 10]
+
+  warmup_steps:
+    description: "Number of warmup steps"
+    default: 500
+    range: [0, 5000]
+
+data_requirements:
+  minimum_examples: 10
+  recommended_examples: 100
+  maximum_examples: 100000
+  format: "CSV or JSON"
+  structure: >
+    For triplet loss: query, positive_doc, negative_doc
+    For Siamese: query, doc, similarity_score (0-1)
+
+tags:
+  - "embedding"
+  - "rag"
+  - "retrieval"
+  - "similarity"
+  - "sentence-transformers"
+  - "domain-adaptation"
+  - "quick-training"
+
+resources:
+  - title: "Sentence-Transformers Documentation"
+    url: "https://www.sbert.net/"
+  - title: "Fine-tuning Guide"
+    url: "https://www.sbert.net/docs/training/overview.html"
+  - title: "RAG Best Practices"
+    url: "https://python.langchain.com/docs/modules/data_connection/"
+
+metadata_version: "1.0"
+last_updated: "2024-04-09"
+author: "OpenDataHub"
+status: "stable"

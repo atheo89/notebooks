@@ -1,0 +1,215 @@
+---
+# Bundle Metadata: Fine-Tuning with PEFT (LoRA)
+name: "Fine-Tuning with PEFT (LoRA)"
+version: "1.0.0"
+description: >
+  Parameter-Efficient Fine-Tuning using Low-Rank Adaptation (LoRA).
+  Train only 1-10% of model parameters while maintaining performance.
+  Ideal for quick adaptation on consumer-grade GPUs.
+
+category: "fine-tuning"
+difficulty: "intermediate"
+
+# What hardware/software is needed
+requirements:
+  gpu: true
+  gpu_memory_gb_minimum: 8
+  gpu_memory_gb_recommended: 16
+  gpu_types:
+    - cuda      # NVIDIA GPUs
+    - rocm      # AMD GPUs
+
+  cpu_memory_gb: 8
+
+  frameworks:
+    - name: "pytorch"
+      version: ">=2.0"
+    - name: "peft"
+      version: ">=0.4.0"
+    - name: "transformers"
+      version: ">=4.30"
+    - name: "torch-distributed"
+      description: "For multi-GPU training"
+      optional: true
+
+# What model types this works for
+compatible_models:
+  - type: "llm"
+    description: "Large Language Models"
+    examples: ["Llama-2", "Mistral", "Phi", "Qwen"]
+    min_parameters: "1B"
+    architectures: ["transformer-based"]
+
+  - type: "seq2seq"
+    description: "Sequence-to-sequence models"
+    examples: ["FLAN-T5", "mT5", "BART"]
+    min_parameters: "250M"
+    architectures: ["transformer-based"]
+
+# Recommended workbench image
+workbench_image:
+  name: "pytorch-cuda"
+  description: "Jupyter workbench with PyTorch and CUDA"
+  alternatives:
+    - "pytorch-rocm"    # For AMD GPUs
+    - "datascience-cpu" # CPU training (very slow)
+  python_version: ">=3.10"
+
+# What this bundle produces/consumes
+io_specification:
+  inputs:
+    model_path:
+      description: "Path to base model (Hugging Face model ID or local path)"
+      format: "string"
+      location: "/mnt/models/"
+      example: "/mnt/models/meta-llama/Llama-2-7b-hf"
+
+    training_data:
+      description: "Training dataset (CSV or JSON)"
+      format: "CSV with 'text' and 'label' columns, or JSON with 'instruction', 'input', 'output'"
+      location: "/mnt/datasets/"
+      required: true
+
+    validation_data:
+      description: "Validation dataset (optional, for evaluation)"
+      format: "Same as training_data"
+      location: "/mnt/datasets/"
+      required: false
+
+  outputs:
+    adapter_weights:
+      description: "Trained LoRA adapter weights"
+      format: "Hugging Face adapter format (.safetensors)"
+      location: "/mnt/outputs/adapter"
+
+    metrics:
+      description: "Training metrics (loss, accuracy, etc.)"
+      format: "JSON"
+      location: "/mnt/outputs/metrics.json"
+
+    training_logs:
+      description: "Detailed training logs"
+      format: "text"
+      location: "/mnt/outputs/training.log"
+
+# Techniques and approaches
+techniques:
+  - name: "Low-Rank Adaptation (LoRA)"
+    description: "Adds trainable low-rank matrices to attention layers"
+    parameters:
+      - name: "r"
+        description: "Rank of adaptation matrices"
+        default: 8
+        range: [4, 64]
+      - name: "lora_alpha"
+        description: "LoRA scaling parameter"
+        default: 16
+        range: [8, 32]
+      - name: "target_modules"
+        description: "Which model layers to adapt"
+        examples: ["q_proj", "v_proj", "linear"]
+
+  - name: "QLoRA (Optional)"
+    description: "Combines LoRA with 4-bit quantization (even cheaper)"
+    when_to_use: "When GPU memory is very limited"
+
+# Complexity and resource estimates
+complexity:
+  difficulty_level: "intermediate"  # beginner, intermediate, advanced
+  estimated_training_time_minutes: 120
+  gpu_hours_needed: 4
+  cost_estimate: "Roughly 1/10th of full fine-tuning cost"
+
+# Step-by-step workflow description
+workflow_steps:
+  - step: 1
+    name: "Load Base Model and Data"
+    description: "Load pre-trained model and training dataset"
+
+  - step: 2
+    name: "Configure LoRA Parameters"
+    description: "Set r, alpha, target_modules, etc."
+
+  - step: 3
+    name: "Initialize LoRA Adapter"
+    description: "Prepare model with LoRA layers"
+
+  - step: 4
+    name: "Training"
+    description: "Fine-tune only the LoRA adapter weights"
+
+  - step: 5
+    name: "Evaluation"
+    description: "Test on validation set, compute metrics"
+
+  - step: 6
+    name: "Save and Export"
+    description: "Save adapter weights for deployment"
+
+# Key hyperparameters that can be tuned
+hyperparameters:
+  learning_rate:
+    description: "Training learning rate"
+    default: 3e-4
+    range: [1e-5, 1e-2]
+
+  batch_size:
+    description: "Training batch size per GPU"
+    default: 8
+    range: [1, 64]
+
+  num_epochs:
+    description: "Number of training epochs"
+    default: 3
+    range: [1, 10]
+
+  warmup_steps:
+    description: "Number of warmup steps for learning rate"
+    default: 100
+    range: [0, 1000]
+
+  weight_decay:
+    description: "L2 regularization strength"
+    default: 0.01
+    range: [0.0, 0.1]
+
+# Data requirements
+data_requirements:
+  minimum_examples: 50
+  recommended_examples: 500
+  maximum_examples: 100000
+  format: "CSV or JSON"
+  column_requirements:
+    - name: "text"
+      description: "Main input text"
+      required: true
+    - name: "label"
+      description: "Target output or label"
+      required: true
+
+# Tags for discoverability
+tags:
+  - "fine-tuning"
+  - "peft"
+  - "lora"
+  - "parameter-efficient"
+  - "gpu"
+  - "quick-training"
+  - "adapter"
+
+# Links to related resources
+resources:
+  - title: "PEFT Documentation"
+    url: "https://huggingface.co/docs/peft/"
+
+  - title: "LoRA Paper"
+    url: "https://arxiv.org/abs/2106.09685"
+
+  - title: "Hugging Face Fine-tuning Guide"
+    url: "https://huggingface.co/docs/transformers/training"
+
+# Versioning and updates
+metadata_version: "1.0"
+last_updated: "2024-04-09"
+author: "OpenDataHub"
+status: "stable"

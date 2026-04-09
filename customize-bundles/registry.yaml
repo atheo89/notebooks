@@ -1,0 +1,411 @@
+---
+# Customize Bundles Registry
+# This file is the source of truth for all available customization bundles.
+# Used by: Jupyter extension, Model Catalog, documentation generators
+
+version: "1.0"
+last_updated: "2024-04-09"
+description: "Registry of curated customization bundles for model adaptation"
+
+bundles:
+  # ============================================
+  # FINE-TUNING BUNDLES
+  # ============================================
+
+  - id: "fine-tuning-peft"
+    name: "Fine-Tuning with PEFT (LoRA)"
+    category: "fine-tuning"
+    path: "fine-tuning-peft"
+    description: >
+      Parameter-Efficient Fine-Tuning using LoRA.
+      Train only 1-10% of model parameters.
+      Ideal for quick adaptation on consumer GPUs.
+
+    short_description: "Adapt models using LoRA (10x faster than full fine-tuning)"
+    difficulty: "intermediate"
+    estimated_time_minutes: 120
+
+    use_cases:
+      - "Domain-specific LLM adaptation"
+      - "Task-specific fine-tuning"
+      - "Quick model customization with limited compute"
+
+    compatible_model_types:
+      - "llm"
+      - "seq2seq"
+
+    compatible_frameworks:
+      - "transformers"
+      - "pytorch"
+
+    workbench_images:
+      preferred: "pytorch-cuda"
+      alternatives:
+        - "pytorch-rocm"
+        - "datascience-cpu"
+
+    hardware_requirements:
+      gpu: true
+      min_memory_gb: 8
+      preferred_memory_gb: 16
+
+    key_features:
+      - "Parameter-efficient training"
+      - "Works with consumer GPUs"
+      - "Saves small adapter files"
+      - "Supports multi-GPU training"
+
+    output_artifacts:
+      - name: "adapter"
+        type: "huggingface-adapter"
+        description: "Trained LoRA adapter weights"
+
+      - name: "metrics.json"
+        type: "metrics"
+        description: "Training and evaluation metrics"
+
+  - id: "fine-tuning-osft"
+    name: "Open Source Fine-Tuning (OSFT)"
+    category: "fine-tuning"
+    path: "fine-tuning-osft"
+    description: >
+      Full model fine-tuning for complete customization.
+      Train the entire model on your data.
+      Best for significant behavioral changes.
+
+    short_description: "Full fine-tuning for maximum model customization"
+    difficulty: "advanced"
+    estimated_time_minutes: 480
+
+    use_cases:
+      - "Complete domain specialization"
+      - "Major task adaptation"
+      - "Learning entirely new knowledge"
+
+    compatible_model_types:
+      - "llm"
+      - "seq2seq"
+      - "encoder-only"
+
+    workbench_images:
+      preferred: "pytorch-cuda"
+      alternatives:
+        - "pytorch-rocm"
+
+    hardware_requirements:
+      gpu: true
+      min_memory_gb: 24
+      preferred_memory_gb: 40
+
+    key_features:
+      - "Full model training"
+      - "Maximum flexibility"
+      - "Supports distributed training"
+      - "Produces complete model"
+
+    output_artifacts:
+      - name: "model"
+        type: "huggingface-model"
+        description: "Complete fine-tuned model"
+
+      - name: "metrics.json"
+        type: "metrics"
+        description: "Training metrics"
+
+  # ============================================
+  # EMBEDDING BUNDLES
+  # ============================================
+
+  - id: "embedding-tuning-rag"
+    name: "Embedding Tuning for RAG"
+    category: "embedding-tuning"
+    path: "embedding-tuning-rag"
+    description: >
+      Fine-tune embedding models for RAG systems.
+      Improve document retrieval with domain-specific embeddings.
+      Quick to train, huge impact on RAG quality.
+
+    short_description: "Customize embeddings for better RAG retrieval"
+    difficulty: "beginner"
+    estimated_time_minutes: 30
+
+    use_cases:
+      - "RAG system optimization"
+      - "Document retrieval improvement"
+      - "Domain-specific similarity search"
+      - "E-commerce product matching"
+
+    compatible_model_types:
+      - "embedding"
+
+    compatible_frameworks:
+      - "sentence-transformers"
+      - "pytorch"
+
+    workbench_images:
+      preferred: "datascience-cpu"
+      alternatives:
+        - "pytorch-cuda"
+
+    hardware_requirements:
+      gpu: false  # CPU works fine
+      min_memory_gb: 4
+      preferred_memory_gb: 8
+
+    key_features:
+      - "Minimal data requirements"
+      - "Trains on CPU"
+      - "Fast training (30 min)"
+      - "Huge impact on retrieval"
+
+    output_artifacts:
+      - name: "embedding-model"
+        type: "sentence-transformers"
+        description: "Fine-tuned embedding model"
+
+      - name: "metrics.json"
+        type: "metrics"
+        description: "Retrieval evaluation metrics"
+
+  # ============================================
+  # PROMPT ENGINEERING BUNDLES
+  # ============================================
+
+  - id: "prompt-tuning"
+    name: "Prompt Tuning and Experimentation"
+    category: "prompt-engineering"
+    path: "prompt-tuning"
+    description: >
+      Optimize prompts without fine-tuning.
+      Test different prompt formats and strategies.
+      Works with any LLM via API.
+
+    short_description: "Get better results through prompt engineering (no training)"
+    difficulty: "beginner"
+    estimated_time_minutes: 60
+
+    use_cases:
+      - "Prompt optimization"
+      - "Few-shot learning"
+      - "Chain-of-thought reasoning"
+      - "Output formatting"
+
+    compatible_model_types:
+      - "llm"
+      - "any-api-model"
+
+    workbench_images:
+      preferred: "minimal"
+      alternatives:
+        - "datascience-cpu"
+
+    hardware_requirements:
+      gpu: false
+      min_memory_gb: 1
+      preferred_memory_gb: 2
+
+    key_features:
+      - "No fine-tuning needed"
+      - "Works with any model"
+      - "Fast experimentation"
+      - "Cost-effective"
+
+    output_artifacts:
+      - name: "best_prompts.json"
+        type: "prompts"
+        description: "Best performing prompts"
+
+      - name: "evaluation_results.json"
+        type: "metrics"
+        description: "Prompt performance metrics"
+
+  # ============================================
+  # EVALUATION BUNDLES
+  # ============================================
+
+  - id: "evaluation-llm-as-judge"
+    name: "Evaluation with LLM-as-Judge"
+    category: "evaluation"
+    path: "evaluation"
+    description: >
+      Automate quality evaluation using an LLM.
+      Score model outputs without manual labeling.
+      Create evaluation rubrics for any task.
+
+    short_description: "Automatic model evaluation using another LLM"
+    difficulty: "intermediate"
+    estimated_time_minutes: 45
+
+    use_cases:
+      - "Model evaluation"
+      - "Quality assurance"
+      - "Continuous monitoring"
+      - "A/B testing"
+
+    compatible_model_types:
+      - "llm"
+      - "any-generative-model"
+
+    workbench_images:
+      preferred: "minimal"
+      alternatives:
+        - "datascience-cpu"
+
+    hardware_requirements:
+      gpu: false
+      min_memory_gb: 2
+      preferred_memory_gb: 4
+
+    key_features:
+      - "Automatic grading"
+      - "Scalable to thousands"
+      - "Customizable rubrics"
+      - "Detailed feedback"
+
+    output_artifacts:
+      - name: "evaluation_scores.json"
+        type: "metrics"
+        description: "Scores for all evaluated outputs"
+
+      - name: "analysis_report.md"
+        type: "report"
+        description: "Detailed evaluation analysis"
+
+  # ============================================
+  # DATA PREPARATION BUNDLES
+  # ============================================
+
+  - id: "data-processing-sdg"
+    name: "Data Processing and Synthetic Data Generation"
+    category: "data-preparation"
+    path: "data-processing-sdg"
+    description: >
+      Prepare and generate training data.
+      Clean real data, create synthetic examples.
+      Essential for all customization workflows.
+
+    short_description: "Prepare and generate training data for model customization"
+    difficulty: "beginner"
+    estimated_time_minutes: 30
+
+    use_cases:
+      - "Training data preparation"
+      - "Synthetic data generation"
+      - "Data augmentation"
+      - "Data quality improvement"
+
+    compatible_model_types:
+      - "any"  # Works for any model type
+
+    workbench_images:
+      preferred: "datascience-cpu"
+      alternatives:
+        - "minimal"
+
+    hardware_requirements:
+      gpu: false
+      min_memory_gb: 2
+      preferred_memory_gb: 4
+
+    key_features:
+      - "Data cleaning and validation"
+      - "Synthetic data generation"
+      - "Data augmentation"
+      - "Format conversion"
+
+    output_artifacts:
+      - name: "cleaned_data.csv"
+        type: "dataset"
+        description: "Cleaned training data"
+
+      - name: "synthetic_data.csv"
+        type: "dataset"
+        description: "Generated synthetic examples"
+
+# ============================================
+# BUNDLE DISCOVERY METADATA
+# ============================================
+
+discovery:
+  by_use_case:
+    "domain-specialization": ["fine-tuning-peft", "fine-tuning-osft"]
+    "rag": ["embedding-tuning-rag", "data-processing-sdg"]
+    "quick-improvement": ["prompt-tuning"]
+    "quality-assurance": ["evaluation-llm-as-judge"]
+    "data-preparation": ["data-processing-sdg"]
+
+  by_difficulty:
+    "beginner": ["embedding-tuning-rag", "prompt-tuning", "data-processing-sdg"]
+    "intermediate": ["fine-tuning-peft", "evaluation-llm-as-judge"]
+    "advanced": ["fine-tuning-osft"]
+
+  by_training_time:
+    "quick": ["prompt-tuning", "embedding-tuning-rag"]  # <1 hour
+    "medium": ["fine-tuning-peft", "evaluation-llm-as-judge"]  # 1-4 hours
+    "long": ["fine-tuning-osft"]  # 4+ hours
+
+  by_compute_requirement:
+    "cpu": ["prompt-tuning", "evaluation-llm-as-judge", "data-processing-sdg", "embedding-tuning-rag"]
+    "gpu_required": ["fine-tuning-peft", "fine-tuning-osft"]
+
+  by_model_type:
+    "llm": ["fine-tuning-peft", "fine-tuning-osft", "prompt-tuning", "evaluation-llm-as-judge"]
+    "embedding": ["embedding-tuning-rag"]
+    "seq2seq": ["fine-tuning-peft", "fine-tuning-osft"]
+    "any": ["evaluation-llm-as-judge", "data-processing-sdg"]
+
+# ============================================
+# RECOMMENDED WORKFLOW CHAINS
+# ============================================
+
+workflows:
+  - name: "Complete Fine-Tuning Pipeline"
+    description: "Prepare data, fine-tune with LoRA, evaluate results"
+    steps:
+      - "data-processing-sdg"
+      - "fine-tuning-peft"
+      - "evaluation-llm-as-judge"
+
+  - name: "RAG Optimization"
+    description: "Prepare documents, tune embeddings, test retrieval"
+    steps:
+      - "data-processing-sdg"
+      - "embedding-tuning-rag"
+      - "evaluation-llm-as-judge"
+
+  - name: "Quick Prompt Optimization"
+    description: "Test and optimize prompts without training"
+    steps:
+      - "prompt-tuning"
+      - "evaluation-llm-as-judge"
+
+  - name: "Full Model Customization"
+    description: "Complete fine-tuning for maximum customization"
+    steps:
+      - "data-processing-sdg"
+      - "fine-tuning-osft"
+      - "evaluation-llm-as-judge"
+
+# ============================================
+# METADATA
+# ============================================
+
+metadata:
+  total_bundles: 6
+  categories:
+    - "fine-tuning"
+    - "embedding-tuning"
+    - "prompt-engineering"
+    - "evaluation"
+    - "data-preparation"
+
+  supported_frameworks:
+    - "transformers"
+    - "pytorch"
+    - "sentence-transformers"
+
+  workbench_images_required:
+    - "minimal"
+    - "datascience-cpu"
+    - "pytorch-cuda"
+    - "pytorch-rocm"
