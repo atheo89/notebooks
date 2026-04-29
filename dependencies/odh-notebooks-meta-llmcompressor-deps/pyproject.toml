@@ -29,6 +29,8 @@ dependencies = [
     #"torch==2.9.1",
 
     "llmcompressor",
+    "speculators",
+    "lm-eval",
 ]
 
 [tool.uv]

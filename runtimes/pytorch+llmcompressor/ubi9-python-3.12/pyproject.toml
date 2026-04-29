@@ -11,11 +11,8 @@ dependencies = [
 
     # llmcompressor packages
     "odh-notebooks-meta-llmcompressor-deps",
-    "speculators",
-    "lm-eval",
 
     # Datascience and useful extensions
-    "feast",
     "odh-notebooks-meta-runtime-datascience-deps",
 
     "odh-notebooks-meta-db-connectors-deps",
@@ -31,8 +28,6 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-# speculators: resolve from default RH cuda index (same as cachi2 --index-url), not PyPI — RH wheels
-# differ from PyPI (e.g. …-8-… suffix) and mismatched hashes break Konflux prefetch.
 odh-notebooks-meta-llmcompressor-deps = { path = "../../../dependencies/odh-notebooks-meta-llmcompressor-deps" }
 odh-notebooks-meta-runtime-elyra-deps = { path = "../../../dependencies/odh-notebooks-meta-runtime-elyra-deps" }
 odh-notebooks-meta-runtime-datascience-deps = { path = "../../../dependencies/odh-notebooks-meta-runtime-datascience-deps" }

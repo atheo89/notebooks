@@ -5,13 +5,11 @@ requires-python = "==3.12.*"
 
 dependencies = [
     # Hermetic cpu-base: prefetched with the rest of the stack (see repo-root prefetch-input/ and jupyter/minimal pyproject)
-    "uv==0.11.0",
-    "micropipenv[toml]==1.10.0",
+    "uv",
+    "micropipenv[toml]",
 
     # Datascience and useful extensions
     "codeflare-sdk; platform_machine != 'ppc64le' and platform_machine != 's390x'",
-    "feast",
-    "skl2onnx",
     "odh-notebooks-meta-workbench-datascience-deps",
     "odh-notebooks-meta-db-connectors-deps",
     "odh-notebooks-meta-jupyterlab-deps",

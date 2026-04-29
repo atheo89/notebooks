@@ -29,8 +29,11 @@ spec:
           [
             {"name": "JupyterLab", "version": "4.5"},
             {"name": "ROCm-PyTorch", "version": "2.10"},
+            {"name": "torchvision", "version": "0.25"},
             {"name": "Tensorboard", "version": "2.20"},
+            {"name": "Boto3", "version": "1.42"},
             {"name": "Kafka-Python-ng", "version": "2.2"},
+            {"name": "Kfp", "version": "2.16"},
             {"name": "Matplotlib", "version": "3.10"},
             {"name": "Numpy", "version": "2.4"},
             {"name": "Pandas", "version": "2.3"},

@@ -17,12 +17,9 @@ dependencies = [
     # llmcompressor packages
     # see https://redhat-internal.slack.com/archives/C0961HQ858Q/p1757007056725559?thread_ts=1756924127.136609&cid=C0961HQ858Q
     "odh-notebooks-meta-llmcompressor-deps",
-    "speculators",
-    "lm-eval",
 
     # Datascience and useful extensions
     "codeflare-sdk",
-    "feast",
     "skl2onnx",
     "onnxscript",
     "odh-notebooks-meta-workbench-datascience-deps",

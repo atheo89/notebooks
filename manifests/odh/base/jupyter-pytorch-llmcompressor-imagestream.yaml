@@ -29,7 +29,11 @@ spec:
           [
             {"name": "JupyterLab", "version": "4.5"},
             {"name": "PyTorch", "version": "2.10"},
+            {"name": "torchvision", "version": "0.25"},
             {"name": "LLM-Compressor", "version": "0.10"},
+            {"name": "Transformers", "version": "4.57"},
+            {"name": "Datasets", "version": "4.4"},
+            {"name": "Accelerate", "version": "1.12"},
             {"name": "Tensorboard", "version": "2.20"},
             {"name": "Boto3", "version": "1.42"},
             {"name": "Kafka-Python-ng", "version": "2.2"},

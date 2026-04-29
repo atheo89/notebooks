@@ -18,7 +18,6 @@ dependencies = [
     
     # Datascience and useful extensions
     "codeflare-sdk",
-    "feast",
     "skl2onnx",
     "odh-notebooks-meta-workbench-datascience-deps",
 

@@ -29,6 +29,7 @@ spec:
           [
             {"name": "JupyterLab", "version": "4.5"},
             {"name": "PyTorch", "version": "2.10"},
+            {"name": "torchvision", "version": "0.25"},
             {"name": "Tensorboard", "version": "2.20"},
             {"name": "Boto3", "version": "1.42"},
             {"name": "Kafka-Python-ng", "version": "2.2"},

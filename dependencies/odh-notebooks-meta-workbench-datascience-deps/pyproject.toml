@@ -16,10 +16,13 @@ dependencies = [
     "kfp",
     "kubeflow-training",
     "mlflow",
-
-    # NOTE: skl2onnx is added directly in consuming pyproject.toml files
-    # because codeserver needs s390x exclusion marker while jupyter notebooks don't
+    "feast",
     "onnxconverter-common",
+
+    # NOTE1: skl2onnx is added directly in consuming pyproject.toml files
+    # because codeserver needs s390x exclusion marker while jupyter notebooks don't
+    # NOTE2: codeflare-sdk is added directly in consuming pyproject.toml files
+    # because cpu flavored notebooks needs s390x and ppc exclusion marker
 
     # Cloud/Infrastructure
     "boto3",
