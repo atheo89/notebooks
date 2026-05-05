@@ -9,7 +9,8 @@ Features:
   - Supports multiple Python project directories, detected by pyproject.toml.
   - Detects available Dockerfile flavors separately for Konflux and non-Konflux images.
   - Validates Python version extracted from directory name (expects format .../ubi9-python-X.Y).
-  - Generates RHDS locks as ``uv.lock.d/pylock.<flavor>.toml`` and ``requirements.<flavor>.txt``.
+  - Generates RHDS locks as ``uv.lock.d/pylock.rhds.<flavor>.toml`` and
+    ``requirements.rhds.<flavor>.txt``.
   - Generates ODH/public locks as ``uv.lock.d/pylock.odh.<flavor>.toml`` and
     ``requirements.odh.<flavor>.txt``.
 
@@ -17,7 +18,8 @@ Index Modes:
   auto (default) -- Generates public-index outputs for non-Konflux Dockerfiles and
                     rh-index outputs for Konflux Dockerfiles.
   rh-index       -- Uses internal Red Hat wheel indexes. Generates
-                    ``uv.lock.d/pylock.<flavor>.toml`` and ``requirements.<flavor>.txt``.
+                    ``uv.lock.d/pylock.rhds.<flavor>.toml`` and
+                    ``requirements.rhds.<flavor>.txt``.
   public-index   -- Uses the non-Konflux ``*.conf`` files. Generates
                     ``uv.lock.d/pylock.odh.<flavor>.toml`` and ``requirements.odh.<flavor>.txt``.
 
@@ -65,7 +67,6 @@ from __future__ import annotations
 
 import os
 import re
-import shutil
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -334,19 +335,6 @@ def requirements_path(project_dir: Path, flavor: str, mode: IndexMode) -> Path:
     return project_dir / filename
 
 
-def legacy_rhds_lockfile_path(project_dir: Path, flavor: str) -> Path:
-    return project_dir / "uv.lock.d" / f"pylock.{flavor}.toml"
-
-
-def legacy_rhds_requirements_path(project_dir: Path, flavor: str) -> Path:
-    return project_dir / f"requirements.{flavor}.txt"
-
-
-def write_compatibility_alias(source: Path, destination: Path) -> None:
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(source, destination)
-
-
 def get_index_flags(
     project_dir: Path,
     flavor: str,
@@ -425,7 +413,8 @@ def run_lock(
     #  `--python-platform linux` is alias for `x86_64-unknown-linux-gnu`; we cannot use this to get a multiarch pylock
     # Let's use --universal temporarily, and in the future we can switch to using uv.lock
     #  when https://github.com/astral-sh/uv/issues/6830 is resolved, or symlink `ln -s uv.lock.d/uv.${flavor}.lock uv.lock`
-    # Note: currently generating uv.lock.d/pylock.${flavor}.toml; future rename to uv.${flavor}.lock is planned
+    # Note: currently generating uv.lock.d/pylock.${profile}.${flavor}.toml;
+    # future rename to uv.${flavor}.lock is planned
     # See also --universal discussion with Gerard
     #  https://redhat-internal.slack.com/archives/C0961HQ858Q/p1757935641975969?thread_ts=1757542802.032519&cid=C0961HQ858Q
     cmd: list[str] = [
@@ -501,9 +490,6 @@ def run_lock(
         (project_dir / output).unlink(missing_ok=True)
         return False
 
-    if mode == IndexMode.rh_index:
-        write_compatibility_alias(output_path, legacy_rhds_lockfile_path(project_dir, flavor))
-
     log.ok(f"{desc} generated successfully.")
     return True
 
@@ -532,8 +518,6 @@ def generate_requirements_txt(
     if result.returncode != 0:
         log.warning(f"Failed to generate {output_path}")
         return False
-    if mode == IndexMode.rh_index:
-        write_compatibility_alias(output_path, legacy_rhds_requirements_path(project_dir, flavor))
     log.ok(f"{output_path.name} generated.")
     return True
 

@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# create-requirements-lockfile.sh — Generate requirements.<flavor>.txt for hermetic builds.
+# create-requirements-lockfile.sh — Generate profile-specific requirements files for hermetic builds.
 #
 # Why this script exists
 # ----------------------
 # Hermetic builds need every Python wheel prefetched.  This script:
 #   1. Delegates to pylocks_generator.py to generate a lockfile
-#      (PUBLIC_INDEX_PROJECTS → public-index → root pylock.toml; else rh-index → uv.lock.d/pylock.<flavor>.toml).
+#      (PUBLIC_INDEX_PROJECTS → public-index → uv.lock.d/pylock.odh.<flavor>.toml;
+#       else rh-index → uv.lock.d/pylock.rhds.<flavor>.toml).
 #      (ensures consistency with CI's check-generated-code).
 #   2. Converts the pylock to a pip-compatible requirements.<flavor>.txt.
 #   3. (--download) Downloads every wheel into cachi2/output/deps/pip/.
@@ -41,8 +42,8 @@ show_help() {
   cat << 'EOF'
 Usage: ./scripts/lockfile-generators/create-requirements-lockfile.sh [OPTIONS]
 
-Generate pylock.<flavor>.toml (via pylocks_generator.py) and convert it to
-a pip-compatible requirements.<flavor>.txt with sha256 hashes.
+Generate pylock.<profile>.<flavor>.toml (via pylocks_generator.py) and convert it to
+a pip-compatible requirements.<profile>.<flavor>.txt with sha256 hashes.
 
 Options:
   --pyproject-toml FILE  Path to pyproject.toml (required)
@@ -56,7 +57,7 @@ Options:
 
 Steps performed:
   1. pylocks_generator.py rh-index or public-index (see PUBLIC_INDEX_PROJECTS in script)
-  2. Convert pylock → <project>/requirements.<flavor>.txt
+  2. Convert pylock → <project>/requirements.<profile>.<flavor>.txt
   3. (--download) Download all wheels from the lockfile URLs
 EOF
 }
@@ -91,10 +92,9 @@ done
 
 # Derive paths
 PROJECT_DIR="$(dirname "$PYPROJECT")"
-REQUIREMENTS_FILE="${PROJECT_DIR}/requirements.${FLAVOR}.txt"
 
 # Use public-index when PROJECT_DIR equals a listed path or is a subdirectory (e.g. .../ubi9-python-3.12).
-# Produces root pylock.toml (not uv.lock.d/pylock.<flavor>.toml) — same layout as jupyter/rocm/tensorflow.
+# The profile-specific filenames are derived from the selected mode.
 PUBLIC_INDEX_PROJECTS=(
   jupyter/rocm/tensorflow
   runtimes/rocm-tensorflow
@@ -108,13 +108,15 @@ for _d in "${PUBLIC_INDEX_PROJECTS[@]}"; do
   fi
 done
 
-PYLOCK_FILE="${PROJECT_DIR}/uv.lock.d/pylock.${FLAVOR}.toml"
+PROFILE="rhds"
 CONF_FILE="${PROJECT_DIR}/build-args/konflux.${FLAVOR}.conf"
 REQUIREMENTS_INDEX_URL=""
 if [[ "$PYLOCKS_MODE" == "public-index" ]]; then
-  PYLOCK_FILE="${PROJECT_DIR}/pylock.toml"
+  PROFILE="odh"
   CONF_FILE="${PROJECT_DIR}/build-args/${FLAVOR}.conf"
 fi
+PYLOCK_FILE="${PROJECT_DIR}/uv.lock.d/pylock.${PROFILE}.${FLAVOR}.toml"
+REQUIREMENTS_FILE="${PROJECT_DIR}/requirements.${PROFILE}.${FLAVOR}.txt"
 
 INDEX_URL=""
 if [[ "$PYLOCKS_MODE" == "rh-index" && -f "$CONF_FILE" ]]; then
@@ -146,14 +148,14 @@ echo "--- Done: ${PYLOCK_FILE} ---"
 wc -l "$PYLOCK_FILE"
 
 # =========================================================================
-# Step 2: Convert pylock.<flavor>.toml → requirements.<flavor>.txt
+# Step 2: Convert pylock.<profile>.<flavor>.toml → requirements.<profile>.<flavor>.txt
 #
 # The pylock.toml (PEP 751) format is not yet supported by pip or cachi2.
 # This step converts it to a pip-compatible requirements.txt with
 # --hash=sha256:… lines for integrity verification.
 # =========================================================================
 echo ""
-echo "=== Step 2: Converting $(basename "$PYLOCK_FILE") → requirements.${FLAVOR}.txt ==="
+echo "=== Step 2: Converting $(basename "$PYLOCK_FILE") → $(basename "$REQUIREMENTS_FILE") ==="
 
 if [[ -n "$REQUIREMENTS_INDEX_URL" ]]; then
   python3 "${SCRIPTS_PATH}/helpers/pylock-to-requirements.py" \

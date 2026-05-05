@@ -185,12 +185,10 @@ def test_generate_requirements_txt_uses_konflux_index_for_rh_locks(
     assert captured["cmd"][2].endswith("uv.lock.d/pylock.rhds.cpu.toml")
     assert captured["cmd"][3].endswith("requirements.rhds.cpu.txt")
     assert captured["cmd"][-1] == "https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cpu-ubi9/simple/"
-    assert (tmp_path / "requirements.cpu.txt").read_text(encoding="utf-8") == (
-        tmp_path / "requirements.rhds.cpu.txt"
-    ).read_text(encoding="utf-8")
+    assert not (tmp_path / "requirements.cpu.txt").exists()
 
 
-def test_run_lock_writes_legacy_rhds_lock_alias(
+def test_run_lock_does_not_write_legacy_rhds_lock_alias(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
@@ -217,9 +215,7 @@ def test_run_lock_writes_legacy_rhds_lock_alias(
         log=pg.LogBuffer(),
     )
     assert (tmp_path / "uv.lock.d" / "pylock.rhds.cpu.toml").is_file()
-    assert (tmp_path / "uv.lock.d" / "pylock.cpu.toml").read_text(encoding="utf-8") == (
-        tmp_path / "uv.lock.d" / "pylock.rhds.cpu.toml"
-    ).read_text(encoding="utf-8")
+    assert not (tmp_path / "uv.lock.d" / "pylock.cpu.toml").exists()
 
 
 def test_generate_requirements_txt_uses_odh_paths_for_public_locks(
