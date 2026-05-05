@@ -206,5 +206,6 @@ override-dependencies = [
 ## See Also
 
 - [Developer Guide](developer-guide.md) - General development information
+- [Build-Args and Lockfile Automation](build-args-and-lockfile-automation.md) - `versions_config.yml`-driven build-args sync and split lockfile flow
 - [AGENTS.md](../AGENTS.md) - Instructions for AI agents
 - [CONTRIBUTING.md](../CONTRIBUTING.md) - Contribution guidelines
