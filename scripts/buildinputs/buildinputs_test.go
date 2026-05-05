@@ -51,7 +51,7 @@ func TestParseAllDockerfiles(t *testing.T) {
 			if strings.Contains(filepath.Base(dockerfile), ".konflux.") {
 				buildArgs["PROFILE"] = "rhds"
 			} else {
-				buildArgs["PROFILE"] = "pypi"
+				buildArgs["PROFILE"] = "odh"
 			}
 
 			result := getDockerfileDeps(dockerfile, "amd64", buildArgs)

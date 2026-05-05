@@ -69,7 +69,7 @@ def get_dockerfile_flavor(dockerfile: pathlib.Path) -> str | None:
 
 
 def get_dockerfile_profile(dockerfile: pathlib.Path) -> str:
-    return "rhds" if ".konflux." in dockerfile.name else "pypi"
+    return "rhds" if ".konflux." in dockerfile.name else "odh"
 
 
 def get_lockfile_for_dockerfile(dockerfile: pathlib.Path) -> pathlib.Path | None:

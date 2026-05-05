@@ -222,7 +222,7 @@ def test_run_lock_writes_legacy_rhds_lock_alias(
     ).read_text(encoding="utf-8")
 
 
-def test_generate_requirements_txt_uses_pypi_paths_for_public_locks(
+def test_generate_requirements_txt_uses_odh_paths_for_public_locks(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
@@ -231,7 +231,7 @@ def test_generate_requirements_txt_uses_pypi_paths_for_public_locks(
     (build_args / "cpu.conf").write_text("INDEX_URL=https://pypi.org/simple/\n", encoding="utf-8")
     pylock_dir = tmp_path / "uv.lock.d"
     pylock_dir.mkdir()
-    (pylock_dir / "pylock.pypi.cpu.toml").write_text('lock-version = "1.0"\n', encoding="utf-8")
+    (pylock_dir / "pylock.odh.cpu.toml").write_text('lock-version = "1.0"\n', encoding="utf-8")
 
     captured: dict[str, list[str]] = {}
 
@@ -242,8 +242,8 @@ def test_generate_requirements_txt_uses_pypi_paths_for_public_locks(
     monkeypatch.setattr(pg.subprocess, "run", fake_run)
 
     assert pg.generate_requirements_txt(tmp_path, "cpu", pg.IndexMode.public_index, pg.LogBuffer()) is True
-    assert captured["cmd"][2].endswith("uv.lock.d/pylock.pypi.cpu.toml")
-    assert captured["cmd"][3].endswith("requirements.pypi.cpu.txt")
+    assert captured["cmd"][2].endswith("uv.lock.d/pylock.odh.cpu.toml")
+    assert captured["cmd"][3].endswith("requirements.odh.cpu.txt")
     assert captured["cmd"][-1] == "https://pypi.org/simple/"
 
 

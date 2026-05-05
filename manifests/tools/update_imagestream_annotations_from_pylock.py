@@ -275,7 +275,7 @@ def _pylock_kind_from_tag(wb_resource_file: str, base_key: str) -> str:
 
 def _profile_for_variant(variant: str) -> str:
     if variant == "odh":
-        return "pypi"
+        return "odh"
     if variant == "rhoai":
         return "rhds"
     raise ValueError(f"Unsupported variant: {variant}")

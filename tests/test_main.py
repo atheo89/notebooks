@@ -92,7 +92,7 @@ def _iter_image_pyproject_pylock_files() -> Iterator[pathlib.Path]:
 
 def _pylock_profile_for_manifests_dir(manifests_directory: pathlib.Path) -> str:
     if manifests_directory == manifests.MANIFESTS_ODH_DIR:
-        return "pypi"
+        return "odh"
     if manifests_directory == manifests.MANIFESTS_RHOAI_DIR:
         return "rhds"
     raise ValueError(f"Unsupported manifests directory: {manifests_directory}")

@@ -10,8 +10,8 @@ Features:
   - Detects available Dockerfile flavors separately for Konflux and non-Konflux images.
   - Validates Python version extracted from directory name (expects format .../ubi9-python-X.Y).
   - Generates RHDS locks as ``uv.lock.d/pylock.<flavor>.toml`` and ``requirements.<flavor>.txt``.
-  - Generates public PyPI locks as ``uv.lock.d/pylock.pypi.<flavor>.toml`` and
-    ``requirements.pypi.<flavor>.txt``.
+  - Generates ODH/public locks as ``uv.lock.d/pylock.odh.<flavor>.toml`` and
+    ``requirements.odh.<flavor>.txt``.
 
 Index Modes:
   auto (default) -- Generates public-index outputs for non-Konflux Dockerfiles and
@@ -19,7 +19,7 @@ Index Modes:
   rh-index       -- Uses internal Red Hat wheel indexes. Generates
                     ``uv.lock.d/pylock.<flavor>.toml`` and ``requirements.<flavor>.txt``.
   public-index   -- Uses the non-Konflux ``*.conf`` files. Generates
-                    ``uv.lock.d/pylock.pypi.<flavor>.toml`` and ``requirements.pypi.<flavor>.txt``.
+                    ``uv.lock.d/pylock.odh.<flavor>.toml`` and ``requirements.odh.<flavor>.txt``.
 
 Usage:
   1. Lock using auto mode (default) for all projects in MAIN_DIRS::
@@ -320,7 +320,7 @@ def profile_name(mode: IndexMode) -> str:
     if mode == IndexMode.rh_index:
         return "rhds"
     if mode == IndexMode.public_index:
-        return "pypi"
+        return "odh"
     raise ValueError(f"Unsupported index mode for profile naming: {mode}")
 
 
@@ -572,7 +572,7 @@ def process_directory(
     for flavor in sorted(all_flavors):
         families: list[str] = []
         if flavor in public_flavors:
-            families.append("pypi")
+            families.append("odh")
         if flavor in rh_flavors:
             families.append("konflux")
         log.print(f"  • {flavor.upper()} ({', '.join(families)})")

@@ -513,7 +513,7 @@ def profile_for_distribution(distribution: str) -> str:
     if distribution == "rhds":
         return "rhds"
     if distribution == "odh":
-        return "pypi"
+        return "odh"
     raise ValueError(f"Unsupported profile distribution: {distribution}")
 
 

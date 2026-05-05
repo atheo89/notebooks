@@ -456,4 +456,4 @@ def test_main_updates_odh_conf_to_public_index(tmp_path: Path, capsys: pytest.Ca
     assert "Updated jupyter/minimal/ubi9-python-3.12/build-args/cpu.conf" in output
     text = conf_file.read_text(encoding="utf-8")
     assert "INDEX_URL=https://pypi.org/simple/" in text
-    assert "PROFILE=pypi" in text
+    assert "PROFILE=odh" in text
