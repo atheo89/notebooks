@@ -273,10 +273,21 @@ def _pylock_kind_from_tag(wb_resource_file: str, base_key: str) -> str:
     return "cpu"
 
 
-def pylock_candidate_rel_paths(notebook_dir: Path, kind: str) -> list[str]:
+def _profile_for_variant(variant: str) -> str:
+    if variant == "odh":
+        return "pypi"
+    if variant == "rhoai":
+        return "rhds"
+    raise ValueError(f"Unsupported variant: {variant}")
+
+
+def pylock_candidate_rel_paths(notebook_dir: Path, kind: str, variant: str) -> list[str]:
     """Paths to try: pylock TOMLs, requirements files, then pipenv ``Pipfile.lock*``."""
+    profile = _profile_for_variant(variant)
+    rel_uv_profile = notebook_dir / "uv.lock.d" / f"pylock.{profile}.{kind}.toml"
     rel_uv = notebook_dir / "uv.lock.d" / f"pylock.{kind}.toml"
     rel_legacy = notebook_dir / "pylock.toml"
+    rel_req_profile = notebook_dir / f"requirements.{profile}.{kind}.txt"
     rel_req_kind = notebook_dir / f"requirements.{kind}.txt"
     rel_req = notebook_dir / "requirements.txt"
     pipenv_flavor = notebook_dir / (
@@ -284,8 +295,10 @@ def pylock_candidate_rel_paths(notebook_dir: Path, kind: str) -> list[str]:
     )
     rel_pipenv = notebook_dir / "Pipfile.lock"
     out: list[str] = [
+        str(rel_uv_profile.relative_to(ROOT)),
         str(rel_uv.relative_to(ROOT)),
         str(rel_legacy.relative_to(ROOT)),
+        str(rel_req_profile.relative_to(ROOT)),
         str(rel_req_kind.relative_to(ROOT)),
         str(rel_req.relative_to(ROOT)),
         str(pipenv_flavor.relative_to(ROOT)),
@@ -618,7 +631,7 @@ def run_variant(variant: str, dry_run: bool) -> int:
                 )
                 continue
             kind = _pylock_kind_from_tag(wb.resource_file, base_key)
-            rel_paths = pylock_candidate_rel_paths(nb_dir, kind)
+            rel_paths = pylock_candidate_rel_paths(nb_dir, kind, variant)
 
             shown: tuple[str, str] | None
             if suffix == "-n":

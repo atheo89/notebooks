@@ -213,6 +213,7 @@ def test_rewrite_conf_text_preserves_other_lines() -> None:
         "# comment\n"
         "INDEX_URL=old-index\n"
         "BASE_IMAGE=old-image\n"
+        "PROFILE=old-profile\n"
         "PYLOCK_FLAVOR=cuda\n"
     )
 
@@ -221,6 +222,7 @@ def test_rewrite_conf_text_preserves_other_lines() -> None:
         {
             "INDEX_URL": "new-index",
             "BASE_IMAGE": "new-image",
+            "PROFILE": "rhds",
         },
     )
 
@@ -228,6 +230,24 @@ def test_rewrite_conf_text_preserves_other_lines() -> None:
         "# comment\n"
         "INDEX_URL=new-index\n"
         "BASE_IMAGE=new-image\n"
+        "PROFILE=rhds\n"
+        "PYLOCK_FLAVOR=cuda\n"
+    )
+
+
+def test_ensure_conf_key_inserts_profile_before_pylock_flavor() -> None:
+    original = (
+        "INDEX_URL=old-index\n"
+        "BASE_IMAGE=old-image\n"
+        "PYLOCK_FLAVOR=cuda\n"
+    )
+
+    updated = updater.ensure_conf_key(original, "PROFILE", "rhds", before_key="PYLOCK_FLAVOR")
+
+    assert updated == (
+        "INDEX_URL=old-index\n"
+        "BASE_IMAGE=old-image\n"
+        "PROFILE=rhds\n"
         "PYLOCK_FLAVOR=cuda\n"
     )
 
@@ -338,6 +358,7 @@ def test_main_check_returns_nonzero_when_updates_needed(tmp_path: Path, capsys: 
             """\
             INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cuda13.0-ubi9-test/simple/
             BASE_IMAGE=quay.io/aipcc/base-images/cuda-13.0-el9.6:3.5.0-ea.1-1777919771
+            PROFILE=stale
             PYLOCK_FLAVOR=cuda
             """
         ),
@@ -372,6 +393,7 @@ def test_main_updates_file_in_place(tmp_path: Path, capsys: pytest.CaptureFixtur
             """\
             INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cuda13.0-ubi9-test/simple/
             BASE_IMAGE=quay.io/aipcc/base-images/cuda-13.0-el9.6:3.5.0-ea.1-1777919771
+            PROFILE=stale
             PYLOCK_FLAVOR=cuda
             """
         ),
@@ -394,6 +416,7 @@ def test_main_updates_file_in_place(tmp_path: Path, capsys: pytest.CaptureFixtur
     text = conf_file.read_text(encoding="utf-8")
     assert "INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cuda25.0-ubi9-test/simple/" in text
     assert "BASE_IMAGE=quay.io/aipcc/base-images/cuda-25.0-el9.6:3.5.0-ea.1-1777919771" in text
+    assert "PROFILE=rhds" in text
 
 
 def test_main_updates_odh_conf_to_public_index(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
@@ -411,6 +434,7 @@ def test_main_updates_odh_conf_to_public_index(tmp_path: Path, capsys: pytest.Ca
             """\
             INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cpu-ubi9-test/simple/
             BASE_IMAGE=quay.io/opendatahub/odh-base-image-cpu-py312-c9s:latest
+            PROFILE=stale
             PYLOCK_FLAVOR=cpu
             """
         ),
@@ -430,4 +454,6 @@ def test_main_updates_odh_conf_to_public_index(tmp_path: Path, capsys: pytest.Ca
     )
     output = capsys.readouterr().out
     assert "Updated jupyter/minimal/ubi9-python-3.12/build-args/cpu.conf" in output
-    assert "INDEX_URL=https://pypi.org/simple/" in conf_file.read_text(encoding="utf-8")
+    text = conf_file.read_text(encoding="utf-8")
+    assert "INDEX_URL=https://pypi.org/simple/" in text
+    assert "PROFILE=pypi" in text

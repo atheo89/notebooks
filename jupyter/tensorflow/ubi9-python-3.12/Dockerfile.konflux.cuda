@@ -140,6 +140,7 @@ FROM cuda-jupyter-datascience AS cuda-jupyter-tensorflow
 
 ARG TENSORFLOW_SOURCE_CODE=jupyter/tensorflow/ubi9-python-3.12
 ARG PYLOCK_FLAVOR
+ARG PROFILE
 
 WORKDIR /opt/app-root/bin
 
@@ -156,8 +157,8 @@ LABEL name="rhoai/odh-workbench-jupyter-tensorflow-cuda-py312-rhel9" \
       com.redhat.license_terms="https://www.redhat.com/licenses/Red_Hat_Standard_EULA_20191108.pdf"
 
 # Install Python packages and Jupyterlab extensions from lockfile (requirements.cuda.txt used only for Cachi2 prefetch)
-COPY ${TENSORFLOW_SOURCE_CODE}/uv.lock.d/pylock.${PYLOCK_FLAVOR}.toml ./pylock.toml
-COPY ${TENSORFLOW_SOURCE_CODE}/requirements.${PYLOCK_FLAVOR}.txt ./requirements.txt
+COPY ${TENSORFLOW_SOURCE_CODE}/uv.lock.d/pylock.${PROFILE}.${PYLOCK_FLAVOR}.toml ./pylock.toml
+COPY ${TENSORFLOW_SOURCE_CODE}/requirements.${PROFILE}.${PYLOCK_FLAVOR}.txt ./requirements.txt
 
 RUN /bin/bash <<'EOF'
 set -Eeuxo pipefail

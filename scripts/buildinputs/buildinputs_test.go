@@ -40,14 +40,18 @@ func TestParseAllDockerfiles(t *testing.T) {
 	for _, dockerfile := range dockerfiles {
 		t.Run(dockerfile, func(t *testing.T) {
 			buildArgs := map[string]string{"BASE_IMAGE": "fake-image"}
-
-			// Set PYLOCK_FLAVOR from uv.lock.d/ contents if the directory exists
-			dockerfileDir := filepath.Dir(dockerfile)
-			if entries, err := filepath.Glob(filepath.Join(dockerfileDir, "uv.lock.d", "pylock.*.toml")); err == nil && len(entries) > 0 {
-				// Extract flavor from "pylock.cpu.toml" → "cpu"
-				base := filepath.Base(entries[0])
-				flavor := strings.TrimPrefix(strings.TrimSuffix(base, ".toml"), "pylock.")
-				buildArgs["PYLOCK_FLAVOR"] = flavor
+			switch {
+			case strings.HasSuffix(dockerfile, ".cpu"):
+				buildArgs["PYLOCK_FLAVOR"] = "cpu"
+			case strings.HasSuffix(dockerfile, ".cuda"):
+				buildArgs["PYLOCK_FLAVOR"] = "cuda"
+			case strings.HasSuffix(dockerfile, ".rocm"):
+				buildArgs["PYLOCK_FLAVOR"] = "rocm"
+			}
+			if strings.Contains(filepath.Base(dockerfile), ".konflux.") {
+				buildArgs["PROFILE"] = "rhds"
+			} else {
+				buildArgs["PROFILE"] = "pypi"
 			}
 
 			result := getDockerfileDeps(dockerfile, "amd64", buildArgs)

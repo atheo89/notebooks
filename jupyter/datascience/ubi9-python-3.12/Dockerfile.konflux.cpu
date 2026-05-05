@@ -109,6 +109,7 @@ FROM jupyter-minimal AS jupyter-datascience
 
 ARG DATASCIENCE_SOURCE_CODE=jupyter/datascience/ubi9-python-3.12
 ARG PYLOCK_FLAVOR
+ARG PROFILE
 
 LABEL name="rhoai/odh-workbench-jupyter-datascience-cpu-py312-rhel9" \
       com.redhat.component="odh-workbench-jupyter-datascience-cpu-py312-rhel9" \
@@ -134,7 +135,7 @@ COPY --from=mongocli-builder /tmp/mongocli /opt/app-root/bin/
 
 # hadolint ignore=DL3002
 # Run as root (same as jupyter-minimal): uv/micropipenv from cpu-base are root-owned; chmod g+w must be root.
-COPY ${DATASCIENCE_SOURCE_CODE}/requirements.${PYLOCK_FLAVOR}.txt ./requirements.txt
+COPY ${DATASCIENCE_SOURCE_CODE}/requirements.${PROFILE}.${PYLOCK_FLAVOR}.txt ./requirements.txt
 COPY ${DATASCIENCE_SOURCE_CODE}/setup-elyra.sh ${DATASCIENCE_SOURCE_CODE}/utils ./utils/
 
 RUN /bin/bash <<'EOF'

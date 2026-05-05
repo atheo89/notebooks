@@ -65,6 +65,7 @@ from __future__ import annotations
 
 import os
 import re
+import shutil
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -315,14 +316,35 @@ def build_args_conf_file(project_dir: Path, flavor: str, mode: IndexMode) -> Pat
     return project_dir / "build-args" / conf_name
 
 
+def profile_name(mode: IndexMode) -> str:
+    if mode == IndexMode.rh_index:
+        return "rhds"
+    if mode == IndexMode.public_index:
+        return "pypi"
+    raise ValueError(f"Unsupported index mode for profile naming: {mode}")
+
+
 def lockfile_path(project_dir: Path, flavor: str, mode: IndexMode) -> Path:
-    filename = f"pylock.{flavor}.toml" if mode == IndexMode.rh_index else f"pylock.pypi.{flavor}.toml"
+    filename = f"pylock.{profile_name(mode)}.{flavor}.toml"
     return project_dir / "uv.lock.d" / filename
 
 
 def requirements_path(project_dir: Path, flavor: str, mode: IndexMode) -> Path:
-    filename = f"requirements.{flavor}.txt" if mode == IndexMode.rh_index else f"requirements.pypi.{flavor}.txt"
+    filename = f"requirements.{profile_name(mode)}.{flavor}.txt"
     return project_dir / filename
+
+
+def legacy_rhds_lockfile_path(project_dir: Path, flavor: str) -> Path:
+    return project_dir / "uv.lock.d" / f"pylock.{flavor}.toml"
+
+
+def legacy_rhds_requirements_path(project_dir: Path, flavor: str) -> Path:
+    return project_dir / f"requirements.{flavor}.txt"
+
+
+def write_compatibility_alias(source: Path, destination: Path) -> None:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, destination)
 
 
 def get_index_flags(
@@ -479,6 +501,9 @@ def run_lock(
         (project_dir / output).unlink(missing_ok=True)
         return False
 
+    if mode == IndexMode.rh_index:
+        write_compatibility_alias(output_path, legacy_rhds_lockfile_path(project_dir, flavor))
+
     log.ok(f"{desc} generated successfully.")
     return True
 
@@ -507,6 +532,8 @@ def generate_requirements_txt(
     if result.returncode != 0:
         log.warning(f"Failed to generate {output_path}")
         return False
+    if mode == IndexMode.rh_index:
+        write_compatibility_alias(output_path, legacy_rhds_requirements_path(project_dir, flavor))
     log.ok(f"{output_path.name} generated.")
     return True
 

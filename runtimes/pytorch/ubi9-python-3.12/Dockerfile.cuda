@@ -36,6 +36,7 @@ USER 1001
 FROM cuda-base AS cuda-runtime-pytorch
 
 ARG PYTORCH_SOURCE_CODE=runtimes/pytorch/ubi9-python-3.12
+ARG PROFILE
 ARG PYLOCK_FLAVOR
 
 LABEL name="odh-notebook-runtime-pytorch-ubi9-python-3.12" \
@@ -50,8 +51,8 @@ LABEL name="odh-notebook-runtime-pytorch-ubi9-python-3.12" \
 
 WORKDIR /opt/app-root/bin
 
-COPY --chown=1001:0 ${PYTORCH_SOURCE_CODE}/uv.lock.d/pylock.pypi.${PYLOCK_FLAVOR}.toml ./pylock.toml
-COPY --chown=1001:0 ${PYTORCH_SOURCE_CODE}/requirements.pypi.${PYLOCK_FLAVOR}.txt ./requirements.txt
+COPY --chown=1001:0 ${PYTORCH_SOURCE_CODE}/uv.lock.d/pylock.${PROFILE}.${PYLOCK_FLAVOR}.toml ./pylock.toml
+COPY --chown=1001:0 ${PYTORCH_SOURCE_CODE}/requirements.${PROFILE}.${PYLOCK_FLAVOR}.txt ./requirements.txt
 COPY --chown=1001:0 ${PYTORCH_SOURCE_CODE}/utils ./utils/
 
 USER 0

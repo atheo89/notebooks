@@ -126,6 +126,7 @@ FROM rocm-jupyter-datascience AS rocm-jupyter-pytorch
 
 ARG PYTORCH_SOURCE_CODE=jupyter/rocm/pytorch/ubi9-python-3.12
 ARG PYLOCK_FLAVOR
+ARG PROFILE
 
 WORKDIR /opt/app-root/bin
 
@@ -137,8 +138,8 @@ LABEL name="rhoai/odh-workbench-jupyter-pytorch-rocm-py312-rhel9" \
       io.k8s.description="Jupyter ROCm pytorch notebook image with base Python 3.12 builder image based on UBI9 for ODH notebooks" \
       com.redhat.license_terms="https://www.redhat.com/licenses/Red_Hat_Standard_EULA_20191108.pdf"
 
-COPY ${PYTORCH_SOURCE_CODE}/uv.lock.d/pylock.${PYLOCK_FLAVOR}.toml ./pylock.toml
-COPY ${PYTORCH_SOURCE_CODE}/requirements.${PYLOCK_FLAVOR}.txt ./requirements.txt
+COPY ${PYTORCH_SOURCE_CODE}/uv.lock.d/pylock.${PROFILE}.${PYLOCK_FLAVOR}.toml ./pylock.toml
+COPY ${PYTORCH_SOURCE_CODE}/requirements.${PROFILE}.${PYLOCK_FLAVOR}.txt ./requirements.txt
 COPY ${PYTORCH_SOURCE_CODE}/de-vendor-torch.py ./
 
 USER 0

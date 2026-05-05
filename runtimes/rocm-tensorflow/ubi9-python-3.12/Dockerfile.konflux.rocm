@@ -32,12 +32,13 @@ USER 1001
 FROM rocm-base AS rocm-runtime-tensorflow
 
 ARG TENSORFLOW_SOURCE_CODE=runtimes/rocm-tensorflow/ubi9-python-3.12
+ARG PROFILE
 ARG PYLOCK_FLAVOR
 
 WORKDIR /opt/app-root/bin
 
-COPY --chown=1001:0 ${TENSORFLOW_SOURCE_CODE}/uv.lock.d/pylock.${PYLOCK_FLAVOR}.toml ./pylock.toml
-COPY --chown=1001:0 ${TENSORFLOW_SOURCE_CODE}/requirements.${PYLOCK_FLAVOR}.txt ./requirements.txt
+COPY --chown=1001:0 ${TENSORFLOW_SOURCE_CODE}/uv.lock.d/pylock.${PROFILE}.${PYLOCK_FLAVOR}.toml ./pylock.toml
+COPY --chown=1001:0 ${TENSORFLOW_SOURCE_CODE}/requirements.${PROFILE}.${PYLOCK_FLAVOR}.txt ./requirements.txt
 COPY --chown=1001:0 ${TENSORFLOW_SOURCE_CODE}/utils ./utils/
 
 USER 0

@@ -141,6 +141,7 @@ FROM rocm-jupyter-datascience AS rocm-jupyter-tensorflow
 ARG JUPYTER_REUSABLE_UTILS=jupyter/utils
 ARG TENSORFLOW_SOURCE_CODE=jupyter/rocm/tensorflow/ubi9-python-3.12
 ARG PYLOCK_FLAVOR
+ARG PROFILE
 
 WORKDIR /opt/app-root/bin
 
@@ -157,7 +158,7 @@ LABEL name="rhoai/odh-workbench-jupyter-tensorflow-rocm-py312-rhel9" \
       com.redhat.license_terms="https://www.redhat.com/licenses/Red_Hat_Standard_EULA_20191108.pdf"
 
 # Install Python packages from lockfile (requirements.rocm.txt used only for Cachi2 prefetch)
-COPY ${TENSORFLOW_SOURCE_CODE}/requirements.${PYLOCK_FLAVOR}.txt ./requirements.txt
+COPY ${TENSORFLOW_SOURCE_CODE}/requirements.${PROFILE}.${PYLOCK_FLAVOR}.txt ./requirements.txt
 
 RUN /bin/bash <<'EOF'
 set -Eeuxo pipefail

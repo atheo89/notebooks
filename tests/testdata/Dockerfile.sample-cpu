@@ -1,8 +1,9 @@
 FROM quay.io/opendatahub/workbench-images:base-ubi9-python-3.12 AS base
 
+ARG PROFILE
 ARG PYLOCK_FLAVOR
 COPY pyproject.toml ./
-COPY uv.lock.d/pylock.${PYLOCK_FLAVOR}.toml ./pylock.toml
+COPY uv.lock.d/pylock.${PROFILE}.${PYLOCK_FLAVOR}.toml ./pylock.toml
 
 RUN pip install --no-cache-dir --no-deps --requirement=./pylock.toml
 

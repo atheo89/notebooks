@@ -68,6 +68,10 @@ def get_dockerfile_flavor(dockerfile: pathlib.Path) -> str | None:
     return None
 
 
+def get_dockerfile_profile(dockerfile: pathlib.Path) -> str:
+    return "rhds" if ".konflux." in dockerfile.name else "pypi"
+
+
 def get_lockfile_for_dockerfile(dockerfile: pathlib.Path) -> pathlib.Path | None:
     """Resolve lockfile source according to uv.lock.d/pylock fallback rules."""
     docker_dir = dockerfile.parent
@@ -76,8 +80,11 @@ def get_lockfile_for_dockerfile(dockerfile: pathlib.Path) -> pathlib.Path | None
         flavor = get_dockerfile_flavor(dockerfile)
         if flavor is None:
             return None
-        lockfile = uv_lock_dir / f"pylock.{flavor}.toml"
-        return lockfile if lockfile.is_file() else None
+        profile_lockfile = uv_lock_dir / f"pylock.{get_dockerfile_profile(dockerfile)}.{flavor}.toml"
+        if profile_lockfile.is_file():
+            return profile_lockfile
+        legacy_lockfile = uv_lock_dir / f"pylock.{flavor}.toml"
+        return legacy_lockfile if legacy_lockfile.is_file() else None
 
     lockfile = docker_dir / "pylock.toml"
     return lockfile if lockfile.is_file() else None

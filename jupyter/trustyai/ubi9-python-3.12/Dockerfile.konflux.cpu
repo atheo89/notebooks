@@ -135,6 +135,7 @@ FROM jupyter-datascience AS jupyter-trustyai
 
 ARG TRUSTYAI_SOURCE_CODE=jupyter/trustyai/ubi9-python-3.12
 ARG PYLOCK_FLAVOR
+ARG PROFILE
 
 LABEL name="rhoai/odh-workbench-jupyter-trustyai-cpu-py312-rhel9" \
       com.redhat.component="odh-workbench-jupyter-trustyai-cpu-py312-rhel9" \
@@ -160,7 +161,7 @@ dnf install -y --setopt=tsflags=nodocs "${PACKAGES[@]}"
 dnf -y clean all --enablerepo='*'
 EOF
 
-COPY ${TRUSTYAI_SOURCE_CODE}/requirements.${PYLOCK_FLAVOR}.txt ./requirements-trustyai.txt
+COPY ${TRUSTYAI_SOURCE_CODE}/requirements.${PROFILE}.${PYLOCK_FLAVOR}.txt ./requirements-trustyai.txt
 
 RUN /bin/bash <<'EOF'
 set -Eeuxo pipefail

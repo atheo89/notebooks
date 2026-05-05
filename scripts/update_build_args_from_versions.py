@@ -293,6 +293,25 @@ def rewrite_conf_text(text: str, replacements: dict[str, str]) -> str:
     return "".join(updated_lines)
 
 
+def ensure_conf_key(text: str, key: str, value: str, *, before_key: str | None = None) -> str:
+    assignments = read_conf_assignments(text)
+    if key in assignments:
+        return text
+
+    lines = text.splitlines(keepends=True)
+    insertion = f"{key}={value}\n"
+    if before_key is not None:
+        for idx, line in enumerate(lines):
+            stripped = line.strip()
+            if stripped.startswith("#") or "=" not in stripped:
+                continue
+            existing_key, _, _existing_value = stripped.partition("=")
+            if existing_key.strip() == before_key:
+                return "".join([*lines[:idx], insertion, *lines[idx:]])
+    line_ending = "" if not text or text.endswith("\n") else "\n"
+    return f"{text}{line_ending}{insertion}"
+
+
 def read_conf_assignments(text: str) -> dict[str, str]:
     assignments: dict[str, str] = {}
     for line in text.splitlines():
@@ -490,13 +509,24 @@ def index_distribution_for_target(target: ConfTarget) -> str:
     return "odh"
 
 
+def profile_for_distribution(distribution: str) -> str:
+    if distribution == "rhds":
+        return "rhds"
+    if distribution == "odh":
+        return "pypi"
+    raise ValueError(f"Unsupported profile distribution: {distribution}")
+
+
 def plan_updates(root_dir: Path, config: VersionsConfig) -> list[PlannedUpdate]:
     updates: list[PlannedUpdate] = []
     for target in collect_conf_targets(root_dir):
         original_text = target.path.read_text(encoding="utf-8")
+        profile = profile_for_distribution(index_distribution_for_target(target))
+        original_text = ensure_conf_key(original_text, "PROFILE", profile, before_key="PYLOCK_FLAVOR")
         assignments = read_conf_assignments(original_text)
         current_base_image = assignments.get("BASE_IMAGE")
         replacements: dict[str, str] = {}
+        replacements["PROFILE"] = profile
 
         if target.manage_index_url:
             replacements["INDEX_URL"] = resolve_index_url(

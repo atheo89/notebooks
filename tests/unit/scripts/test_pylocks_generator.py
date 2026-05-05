@@ -170,20 +170,56 @@ def test_generate_requirements_txt_uses_konflux_index_for_rh_locks(
     )
     pylock_dir = tmp_path / "uv.lock.d"
     pylock_dir.mkdir()
-    (pylock_dir / "pylock.cpu.toml").write_text('lock-version = "1.0"\n', encoding="utf-8")
+    (pylock_dir / "pylock.rhds.cpu.toml").write_text('lock-version = "1.0"\n', encoding="utf-8")
 
     captured: dict[str, list[str]] = {}
 
     def fake_run(cmd: list[str], **_: object) -> SimpleNamespace:
         captured["cmd"] = cmd
+        Path(cmd[3]).write_text("--index-url https://example.invalid/\n", encoding="utf-8")
         return SimpleNamespace(returncode=0, stdout="", stderr="")
 
     monkeypatch.setattr(pg.subprocess, "run", fake_run)
 
     assert pg.generate_requirements_txt(tmp_path, "cpu", pg.IndexMode.rh_index, pg.LogBuffer()) is True
-    assert captured["cmd"][2].endswith("uv.lock.d/pylock.cpu.toml")
-    assert captured["cmd"][3].endswith("requirements.cpu.txt")
+    assert captured["cmd"][2].endswith("uv.lock.d/pylock.rhds.cpu.toml")
+    assert captured["cmd"][3].endswith("requirements.rhds.cpu.txt")
     assert captured["cmd"][-1] == "https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cpu-ubi9/simple/"
+    assert (tmp_path / "requirements.cpu.txt").read_text(encoding="utf-8") == (
+        tmp_path / "requirements.rhds.cpu.txt"
+    ).read_text(encoding="utf-8")
+
+
+def test_run_lock_writes_legacy_rhds_lock_alias(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_run(cmd: list[str], **kwargs: object) -> SimpleNamespace:
+        captured["cmd"] = cmd
+        cwd = Path(kwargs["cwd"])
+        output = cmd[cmd.index("--output-file") + 1]
+        (cwd / output).write_text('lock-version = "1.0"\n', encoding="utf-8")
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(pg.subprocess, "run", fake_run)
+
+    assert pg.run_lock(
+        tmp_path,
+        "cpu",
+        ["--default-index=https://example.invalid/simple/?format=json"],
+        pg.IndexMode.rh_index,
+        "3.12",
+        upgrade=False,
+        ci_check=False,
+        live_timestamp="2020-01-01T00:00:00Z",
+        log=pg.LogBuffer(),
+    )
+    assert (tmp_path / "uv.lock.d" / "pylock.rhds.cpu.toml").is_file()
+    assert (tmp_path / "uv.lock.d" / "pylock.cpu.toml").read_text(encoding="utf-8") == (
+        tmp_path / "uv.lock.d" / "pylock.rhds.cpu.toml"
+    ).read_text(encoding="utf-8")
 
 
 def test_generate_requirements_txt_uses_pypi_paths_for_public_locks(

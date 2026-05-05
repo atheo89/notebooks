@@ -80,9 +80,22 @@ def _iter_image_pyproject_pylock_files() -> Iterator[pathlib.Path]:
             continue
         lock_dir = directory / "uv.lock.d"
         if lock_dir.is_dir():
-            yield from sorted(lock_dir.glob("pylock.*.toml"))
+            canonical = sorted(
+                lockfile
+                for lockfile in lock_dir.glob("pylock.*.toml")
+                if lockfile.name not in {f"pylock.{flavor}.toml" for flavor in ("cpu", "cuda", "rocm")}
+            )
+            yield from canonical or sorted(lock_dir.glob("pylock.*.toml"))
         else:
             yield pyproject_path.with_name("pylock.toml")
+
+
+def _pylock_profile_for_manifests_dir(manifests_directory: pathlib.Path) -> str:
+    if manifests_directory == manifests.MANIFESTS_ODH_DIR:
+        return "pypi"
+    if manifests_directory == manifests.MANIFESTS_RHOAI_DIR:
+        return "rhds"
+    raise ValueError(f"Unsupported manifests directory: {manifests_directory}")
 
 
 def _warn_on_pylock_version_mismatch_for_packages(package_names: frozenset[str]) -> None:
@@ -194,7 +207,16 @@ def test_image_pyprojects(subtests: pytest_subtests.plugin.SubTests, manifests_d
                     )
 
             if (f := file.parent / "uv.lock.d").is_dir():
-                pylock_candidates = sorted(f.glob("pylock.*.toml"))
+                desired_profile = _pylock_profile_for_manifests_dir(manifests_directory)
+                pylock_candidates = sorted(f.glob(f"pylock.{desired_profile}.*.toml"))
+                if not pylock_candidates:
+                    pylock_candidates = sorted(
+                        lockfile
+                        for lockfile in f.glob("pylock.*.toml")
+                        if lockfile.name not in {f"pylock.{flavor}.toml" for flavor in ("cpu", "cuda", "rocm")}
+                    )
+                if not pylock_candidates:
+                    pylock_candidates = sorted(f.glob("pylock.*.toml"))
                 assert pylock_candidates, (
                     f"uv.lock.d directory exists at {f} but contains no pylock.*.toml files. "
                     f"This likely means pylocks_generator.py failed. "
