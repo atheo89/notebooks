@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -135,3 +136,140 @@ class TestEnsureJsonFormatParam:
         result = pg.ensure_json_format_param(url)
         assert result == url + "?format=json"
         assert pg.ensure_json_format_param(result) == result
+
+
+def test_get_index_flags_uses_mode_specific_conf_file(tmp_path: Path) -> None:
+    build_args = tmp_path / "build-args"
+    build_args.mkdir()
+    (build_args / "cpu.conf").write_text("INDEX_URL=https://pypi.org/simple/\n", encoding="utf-8")
+    (build_args / "konflux.cpu.conf").write_text(
+        "INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cpu-ubi9/simple/\n",
+        encoding="utf-8",
+    )
+    log = pg.LogBuffer()
+
+    public_flags = pg.get_index_flags(tmp_path, "cpu", pg.IndexMode.public_index, log)
+    rhds_flags = pg.get_index_flags(tmp_path, "cpu", pg.IndexMode.rh_index, log)
+
+    assert public_flags == ["--default-index=https://pypi.org/simple/?format=json"]
+    assert rhds_flags == [
+        "--default-index=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cpu-ubi9/simple/?format=json"
+    ]
+
+
+def test_generate_requirements_txt_uses_konflux_index_for_rh_locks(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    build_args = tmp_path / "build-args"
+    build_args.mkdir()
+    (build_args / "cpu.conf").write_text("INDEX_URL=https://pypi.org/simple/\n", encoding="utf-8")
+    (build_args / "konflux.cpu.conf").write_text(
+        "INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cpu-ubi9/simple/\n",
+        encoding="utf-8",
+    )
+    pylock_dir = tmp_path / "uv.lock.d"
+    pylock_dir.mkdir()
+    (pylock_dir / "pylock.cpu.toml").write_text('lock-version = "1.0"\n', encoding="utf-8")
+
+    captured: dict[str, list[str]] = {}
+
+    def fake_run(cmd: list[str], **_: object) -> SimpleNamespace:
+        captured["cmd"] = cmd
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(pg.subprocess, "run", fake_run)
+
+    assert pg.generate_requirements_txt(tmp_path, "cpu", pg.IndexMode.rh_index, pg.LogBuffer()) is True
+    assert captured["cmd"][2].endswith("uv.lock.d/pylock.cpu.toml")
+    assert captured["cmd"][3].endswith("requirements.cpu.txt")
+    assert captured["cmd"][-1] == "https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cpu-ubi9/simple/"
+
+
+def test_generate_requirements_txt_uses_pypi_paths_for_public_locks(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    build_args = tmp_path / "build-args"
+    build_args.mkdir()
+    (build_args / "cpu.conf").write_text("INDEX_URL=https://pypi.org/simple/\n", encoding="utf-8")
+    pylock_dir = tmp_path / "uv.lock.d"
+    pylock_dir.mkdir()
+    (pylock_dir / "pylock.pypi.cpu.toml").write_text('lock-version = "1.0"\n', encoding="utf-8")
+
+    captured: dict[str, list[str]] = {}
+
+    def fake_run(cmd: list[str], **_: object) -> SimpleNamespace:
+        captured["cmd"] = cmd
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(pg.subprocess, "run", fake_run)
+
+    assert pg.generate_requirements_txt(tmp_path, "cpu", pg.IndexMode.public_index, pg.LogBuffer()) is True
+    assert captured["cmd"][2].endswith("uv.lock.d/pylock.pypi.cpu.toml")
+    assert captured["cmd"][3].endswith("requirements.pypi.cpu.txt")
+    assert captured["cmd"][-1] == "https://pypi.org/simple/"
+
+
+def test_process_directory_auto_generates_both_public_and_konflux_artifacts(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    project_dir = tmp_path / "jupyter" / "minimal" / "ubi9-python-3.12"
+    project_dir.mkdir(parents=True)
+    (project_dir / "Dockerfile.cpu").write_text("", encoding="utf-8")
+    (project_dir / "Dockerfile.konflux.cpu").write_text("", encoding="utf-8")
+    build_args = project_dir / "build-args"
+    build_args.mkdir()
+    (build_args / "cpu.conf").write_text("INDEX_URL=https://pypi.org/simple/\n", encoding="utf-8")
+    (build_args / "konflux.cpu.conf").write_text(
+        "INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cpu-ubi9/simple/\n",
+        encoding="utf-8",
+    )
+
+    lock_calls: list[tuple[str, pg.IndexMode]] = []
+    requirements_calls: list[tuple[str, pg.IndexMode]] = []
+
+    def fake_run_lock(
+        project_dir: Path,
+        flavor: str,
+        index_flags: list[str],
+        mode: pg.IndexMode,
+        python_version: str,
+        upgrade: bool,
+        ci_check: bool,
+        live_timestamp: str,
+        log: pg.LogBuffer,
+    ) -> bool:
+        lock_calls.append((flavor, mode))
+        return True
+
+    def fake_generate_requirements_txt(
+        project_dir: Path,
+        flavor: str,
+        mode: pg.IndexMode,
+        log: pg.LogBuffer,
+    ) -> bool:
+        requirements_calls.append((flavor, mode))
+        return True
+
+    monkeypatch.setattr(pg, "run_lock", fake_run_lock)
+    monkeypatch.setattr(pg, "generate_requirements_txt", fake_generate_requirements_txt)
+
+    _tdir, success, _log = pg.process_directory(
+        project_dir,
+        pg.IndexMode.auto,
+        upgrade=False,
+        ci_check=False,
+        live_timestamp="2020-01-01T00:00:00Z",
+    )
+
+    assert success is True
+    assert lock_calls == [
+        ("cpu", pg.IndexMode.public_index),
+        ("cpu", pg.IndexMode.rh_index),
+    ]
+    assert requirements_calls == [
+        ("cpu", pg.IndexMode.public_index),
+        ("cpu", pg.IndexMode.rh_index),
+    ]

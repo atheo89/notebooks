@@ -390,6 +390,17 @@ validate-codeserver-image: bin/kubectl
 	done
 
 # ======================================================================================
+# Sync build-args files from versions_config.yml
+# Usage examples:
+#   gmake sync-build-args-from-versions
+#   gmake sync-build-args-from-versions SYNC_BUILD_ARGS_ARGS="--dry-run"
+# ======================================================================================
+SYNC_BUILD_ARGS_ARGS ?=
+.PHONY: sync-build-args-from-versions
+sync-build-args-from-versions:
+	@cd $(ROOT_DIR) && ./uv run scripts/update_build_args_from_versions.py $(SYNC_BUILD_ARGS_ARGS)
+
+# ======================================================================================
 # Refresh lock files
 # Usage examples:
 #   gmake refresh-lock-files                                                   <- auto mode (rh-index if uv.lock.d/ exists, else public-index)

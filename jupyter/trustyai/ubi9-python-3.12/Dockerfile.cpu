@@ -162,7 +162,7 @@ dnf install -y --setopt=tsflags=nodocs "${PACKAGES[@]}"
 dnf -y clean all --enablerepo='*'
 EOF
 
-COPY ${TRUSTYAI_SOURCE_CODE}/requirements.${PYLOCK_FLAVOR}.txt ./requirements-trustyai.txt
+COPY ${TRUSTYAI_SOURCE_CODE}/requirements.pypi.${PYLOCK_FLAVOR}.txt ./requirements-trustyai.txt
 
 RUN /bin/bash <<'EOF'
 set -Eeuxo pipefail

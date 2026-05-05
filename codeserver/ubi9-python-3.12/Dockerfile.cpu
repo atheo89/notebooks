@@ -172,8 +172,8 @@ EOF
 COPY .git /root/.git
 
 # Copy requirements files
-COPY ${CODESERVER_SOURCE_CODE}/uv.lock.d/pylock.${PYLOCK_FLAVOR}.toml ./pylock.toml
-COPY ${CODESERVER_SOURCE_CODE}/requirements.${PYLOCK_FLAVOR}.txt ./requirements.txt
+COPY ${CODESERVER_SOURCE_CODE}/uv.lock.d/pylock.pypi.${PYLOCK_FLAVOR}.toml ./pylock.toml
+COPY ${CODESERVER_SOURCE_CODE}/requirements.pypi.${PYLOCK_FLAVOR}.txt ./requirements.txt
 
 # Install uv from cachi2 pip cache
 RUN pip install --no-cache-dir --no-index --find-links /cachi2/output/deps/pip uv
@@ -411,8 +411,8 @@ ENV SHELL=/bin/bash
 ENV PYTHONPATH=/opt/app-root/lib/python3.12/site-packages
 
 # Copy requirements files (pylock.toml for metadata; requirements.txt used for installation)
-COPY ${CODESERVER_SOURCE_CODE}/uv.lock.d/pylock.${PYLOCK_FLAVOR}.toml ./pylock.toml
-COPY ${CODESERVER_SOURCE_CODE}/requirements.${PYLOCK_FLAVOR}.txt ./requirements.txt
+COPY ${CODESERVER_SOURCE_CODE}/uv.lock.d/pylock.pypi.${PYLOCK_FLAVOR}.toml ./pylock.toml
+COPY ${CODESERVER_SOURCE_CODE}/requirements.pypi.${PYLOCK_FLAVOR}.txt ./requirements.txt
 
 # Wait for whl-cache stage (builds/caches Python wheels).
 COPY --from=whl-cache /tmp/control /dev/null

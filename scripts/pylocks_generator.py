@@ -7,15 +7,19 @@ directories using either internal Red Hat wheel indexes or the public PyPI index
 
 Features:
   - Supports multiple Python project directories, detected by pyproject.toml.
-  - Detects available Dockerfile flavors (CPU, CUDA, ROCm) for rh-index mode.
+  - Detects available Dockerfile flavors separately for Konflux and non-Konflux images.
   - Validates Python version extracted from directory name (expects format .../ubi9-python-X.Y).
-  - Generates per-flavor locks in 'uv.lock.d/' for rh-index mode.
-  - Overwrites existing pylock.toml in-place for public PyPI index mode.
+  - Generates RHDS locks as ``uv.lock.d/pylock.<flavor>.toml`` and ``requirements.<flavor>.txt``.
+  - Generates public PyPI locks as ``uv.lock.d/pylock.pypi.<flavor>.toml`` and
+    ``requirements.pypi.<flavor>.txt``.
 
 Index Modes:
-  auto (default) -- Uses rh-index if uv.lock.d/ exists, public-index otherwise.
-  rh-index       -- Uses internal Red Hat wheel indexes. Generates uv.lock.d/pylock.<flavor>.toml.
-  public-index   -- Uses public PyPI index and updates pylock.toml in place.
+  auto (default) -- Generates public-index outputs for non-Konflux Dockerfiles and
+                    rh-index outputs for Konflux Dockerfiles.
+  rh-index       -- Uses internal Red Hat wheel indexes. Generates
+                    ``uv.lock.d/pylock.<flavor>.toml`` and ``requirements.<flavor>.txt``.
+  public-index   -- Uses the non-Konflux ``*.conf`` files. Generates
+                    ``uv.lock.d/pylock.pypi.<flavor>.toml`` and ``requirements.pypi.<flavor>.txt``.
 
 Usage:
   1. Lock using auto mode (default) for all projects in MAIN_DIRS::
@@ -54,7 +58,6 @@ Reproducible CI checks (PYLOCKS_CI_CHECK):
 
 Notes:
   - If the script fails for a directory, it lists the failed directories at the end.
-  - Public index mode does not create uv.lock.d directories and keeps the old format.
   - Python version extraction depends on directory naming convention; invalid formats are skipped.
 """
 
@@ -79,7 +82,6 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 UV = ROOT_DIR / "uv"
 CVE_CONSTRAINTS_FILE = ROOT_DIR / "dependencies" / "cve-constraints.txt"
 PYLOCK_TO_REQUIREMENTS = ROOT_DIR / "scripts" / "lockfile-generators" / "helpers" / "pylock-to-requirements.py"
-PUBLIC_INDEX = "--default-index=https://pypi.org/simple"
 MAIN_DIRS = ("jupyter", "runtimes", "codeserver")
 UV_MIN_VERSION = (0, 4, 0)
 
@@ -222,9 +224,15 @@ def find_target_dirs(target_dir: Path | None, log: LogBuffer) -> list[Path]:
     return sorted(dirs)
 
 
-def detect_flavors(project_dir: Path) -> set[str]:
-    """Detect available Dockerfile flavors (cpu, cuda, rocm) in a directory."""
-    return {f for f in FLAVORS if (project_dir / f"Dockerfile.{f}").is_file()}
+def detect_flavors(project_dir: Path, mode: IndexMode) -> set[str]:
+    """Detect available Dockerfile flavors (cpu, cuda, rocm) for one lock family."""
+    if mode == IndexMode.rh_index:
+        pattern = "Dockerfile.konflux.{flavor}"
+    elif mode == IndexMode.public_index:
+        pattern = "Dockerfile.{flavor}"
+    else:
+        raise ValueError(f"Unsupported index mode for flavor detection: {mode}")
+    return {flavor for flavor in FLAVORS if (project_dir / pattern.format(flavor=flavor)).is_file()}
 
 
 def extract_python_version(project_dir: Path) -> str | None:
@@ -302,12 +310,32 @@ def resolve_exclude_newer(
 
 
 # region Lock generation
-def get_index_flags(project_dir: Path, flavor: str, log: LogBuffer) -> list[str] | None:
-    """Build uv index flags from build-args/<flavor>.conf.
+def build_args_conf_file(project_dir: Path, flavor: str, mode: IndexMode) -> Path:
+    conf_name = f"konflux.{flavor}.conf" if mode == IndexMode.rh_index else f"{flavor}.conf"
+    return project_dir / "build-args" / conf_name
+
+
+def lockfile_path(project_dir: Path, flavor: str, mode: IndexMode) -> Path:
+    filename = f"pylock.{flavor}.toml" if mode == IndexMode.rh_index else f"pylock.pypi.{flavor}.toml"
+    return project_dir / "uv.lock.d" / filename
+
+
+def requirements_path(project_dir: Path, flavor: str, mode: IndexMode) -> Path:
+    filename = f"requirements.{flavor}.txt" if mode == IndexMode.rh_index else f"requirements.pypi.{flavor}.txt"
+    return project_dir / filename
+
+
+def get_index_flags(
+    project_dir: Path,
+    flavor: str,
+    mode: IndexMode,
+    log: LogBuffer,
+) -> list[str] | None:
+    """Build uv index flags from the mode-appropriate build-args conf.
 
     Returns None on failure (missing conf or INDEX_URL).
     """
-    conf_file = project_dir / "build-args" / f"{flavor}.conf"
+    conf_file = build_args_conf_file(project_dir, flavor, mode)
     if not conf_file.is_file():
         log.warning(f"Missing build-args config for {flavor}: {conf_file}")
         return None
@@ -358,15 +386,15 @@ def run_lock(
     log: LogBuffer,
 ) -> bool:
     """Run uv pip compile to generate a lock file. Returns True on success."""
+    output_path = lockfile_path(project_dir, flavor, mode)
+    output_path.parent.mkdir(exist_ok=True)
+    output = os.path.relpath(output_path, project_dir)
     if mode == IndexMode.public_index:
-        output = "pylock.toml"
-        desc = "pylock.toml (public index)"
-        log.print("➡️ Generating pylock.toml from public PyPI index...")
+        desc = f"{flavor.upper()} PyPI lock file"
+        log.print(f"➡️ Generating {output_path.name} from public PyPI index...")
     else:
-        (project_dir / "uv.lock.d").mkdir(exist_ok=True)
-        output = f"uv.lock.d/pylock.{flavor}.toml"
-        desc = f"{flavor.upper()} lock file"
-        log.print(f"➡️ Generating {flavor.upper()} lock file...")
+        desc = f"{flavor.upper()} RHDS lock file"
+        log.print(f"➡️ Generating {output_path.name} from RH index...")
 
     # Tag filtering was added in uv 0.9.16 (https://github.com/astral-sh/uv/pull/16956)
     # but bypassed in --universal mode. uv 0.10.5 (https://github.com/astral-sh/uv/pull/18081)
@@ -406,7 +434,7 @@ def run_lock(
         relative_constraints = os.path.relpath(CVE_CONSTRAINTS_FILE, project_dir)
         cmd.extend(["--constraints", relative_constraints])
 
-    lock_path = project_dir / output
+    lock_path = output_path
     exclude_newer = resolve_exclude_newer(
         lock_path, ci_check=ci_check, live_timestamp=live_timestamp
     )
@@ -458,15 +486,16 @@ def run_lock(
 def generate_requirements_txt(
     project_dir: Path,
     flavor: str,
+    mode: IndexMode,
     log: LogBuffer,
 ) -> bool:
-    """Convert pylock.<flavor>.toml → requirements.<flavor>.txt via helper script."""
-    pylock_path = project_dir / "uv.lock.d" / f"pylock.{flavor}.toml"
-    requirements_path = project_dir / f"requirements.{flavor}.txt"
+    """Convert one mode-specific pylock file into its matching requirements file."""
+    pylock_path = lockfile_path(project_dir, flavor, mode)
+    output_path = requirements_path(project_dir, flavor, mode)
 
-    index_url = read_conf_value(project_dir / "build-args" / f"{flavor}.conf", "INDEX_URL") or ""
+    index_url = read_conf_value(build_args_conf_file(project_dir, flavor, mode), "INDEX_URL") or ""
 
-    cmd = [sys.executable, str(PYLOCK_TO_REQUIREMENTS), str(pylock_path), str(requirements_path)]
+    cmd = [sys.executable, str(PYLOCK_TO_REQUIREMENTS), str(pylock_path), str(output_path)]
     if index_url:
         cmd.append(index_url)
 
@@ -476,9 +505,9 @@ def generate_requirements_txt(
     if result.stderr:
         log.print(result.stderr.rstrip())
     if result.returncode != 0:
-        log.warning(f"Failed to generate {requirements_path}")
+        log.warning(f"Failed to generate {output_path}")
         return False
-    log.ok(f"requirements.{flavor}.txt generated.")
+    log.ok(f"{output_path.name} generated.")
     return True
 
 
@@ -504,53 +533,51 @@ def process_directory(
         log.warning("Expected directory format: .../ubi9-python-X.Y")
         return tdir, False, log
 
-    flavors = detect_flavors(tdir)
-    if not flavors:
-        log.warning(f"No Dockerfiles found in {tdir} (cpu/cuda/rocm). Skipping.")
+    public_flavors = detect_flavors(tdir, IndexMode.public_index)
+    rh_flavors = detect_flavors(tdir, IndexMode.rh_index)
+    all_flavors = public_flavors | rh_flavors
+    if not all_flavors:
+        log.warning(f"No matching Dockerfiles found in {tdir} (cpu/cuda/rocm). Skipping.")
         return tdir, False, log
 
     log.print(f"📦 Python version: {python_version}")
-    log.print("🧩 Detected flavors:")
-    for f in sorted(flavors):
-        log.print(f"  • {f.upper()}")
+    log.print("🧩 Detected lock targets:")
+    for flavor in sorted(all_flavors):
+        families: list[str] = []
+        if flavor in public_flavors:
+            families.append("pypi")
+        if flavor in rh_flavors:
+            families.append("konflux")
+        log.print(f"  • {flavor.upper()} ({', '.join(families)})")
     log.print("")
-
-    if index_mode == IndexMode.auto:
-        effective_mode = IndexMode.rh_index if (tdir / "uv.lock.d").is_dir() else IndexMode.public_index
-    else:
-        effective_mode = index_mode
-    log.info(f"Effective mode for this directory: {effective_mode.value}")
 
     dir_success = True
 
-    if effective_mode == IndexMode.public_index:
-        if not requirements_only:
-            if not run_lock(
-                tdir,
-                "cpu",
-                [PUBLIC_INDEX],
-                effective_mode,
-                python_version,
-                upgrade,
-                ci_check,
-                live_timestamp,
-                log,
-            ):
-                dir_success = False
+    if index_mode == IndexMode.auto:
+        mode_targets = [
+            (IndexMode.public_index, public_flavors),
+            (IndexMode.rh_index, rh_flavors),
+        ]
+        log.info("Effective modes for this directory: public-index + rh-index")
     else:
+        selected_flavors = detect_flavors(tdir, index_mode)
+        mode_targets = [(index_mode, selected_flavors)]
+        log.info(f"Effective mode for this directory: {index_mode.value}")
+
+    for mode, mode_flavors in mode_targets:
         for flavor in ("cpu", "cuda", "rocm"):
-            if flavor not in flavors:
+            if flavor not in mode_flavors:
                 continue
             if requirements_only:
-                pylock_path = tdir / "uv.lock.d" / f"pylock.{flavor}.toml"
+                pylock_path = lockfile_path(tdir, flavor, mode)
                 if not pylock_path.is_file():
-                    log.warning(f"No {pylock_path} found, skipping {flavor}.")
+                    log.warning(f"No {pylock_path} found, skipping {flavor} ({mode.value}).")
                     dir_success = False
                     continue
-                if not generate_requirements_txt(tdir, flavor, log):
+                if not generate_requirements_txt(tdir, flavor, mode, log):
                     dir_success = False
                 continue
-            flags = get_index_flags(tdir, flavor, log)
+            flags = get_index_flags(tdir, flavor, mode, log)
             if flags is None:
                 dir_success = False
                 continue
@@ -558,7 +585,7 @@ def process_directory(
                 tdir,
                 flavor,
                 flags,
-                effective_mode,
+                mode,
                 python_version,
                 upgrade,
                 ci_check,
@@ -566,7 +593,7 @@ def process_directory(
                 log,
             ):
                 dir_success = False
-            elif not generate_requirements_txt(tdir, flavor, log):
+            elif not generate_requirements_txt(tdir, flavor, mode, log):
                 dir_success = False
 
     return tdir, dir_success, log
@@ -588,7 +615,7 @@ def main(
         bool, typer.Option("--requirements-only", help="Only regenerate requirements.txt from existing pylock files, skip lock generation")
     ] = False,
 ) -> None:
-    """Generate pylock.toml lock files for Python project directories."""
+    """Generate split RHDS and PyPI lock files for Python project directories."""
     log = LogBuffer(buffered=False)
 
     # PRE-FLIGHT
@@ -622,7 +649,17 @@ def main(
     failed_dirs: list[Path] = []
 
     for tdir in target_dirs:
-        flavor_names = ", ".join(f.upper() for f in sorted(detect_flavors(tdir)))
+        public_flavors = detect_flavors(tdir, IndexMode.public_index)
+        rh_flavors = detect_flavors(tdir, IndexMode.rh_index)
+        labels: list[str] = []
+        for flavor in sorted(public_flavors | rh_flavors):
+            families: list[str] = []
+            if flavor in public_flavors:
+                families.append("PyPI")
+            if flavor in rh_flavors:
+                families.append("Konflux")
+            labels.append(f"{flavor.upper()} ({'/'.join(families)})")
+        flavor_names = ", ".join(labels)
         log.info(f"Scheduled: {tdir} [{flavor_names}]")
 
     def _run(directory: Path) -> tuple[Path, bool, LogBuffer]:

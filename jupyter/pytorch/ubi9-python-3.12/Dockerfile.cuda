@@ -141,8 +141,8 @@ LABEL name="odh-notebook-jupyter-cuda-pytorch-ubi9-python-3.12" \
     io.openshift.build.image="quay.io/opendatahub/workbench-images:cuda-jupyter-pytorch-ubi9-python-3.12"
 
 # pylock.toml documents the graph; requirements.cuda.txt drives Cachi2 prefetch and hermetic uv install
-COPY ${PYTORCH_SOURCE_CODE}/uv.lock.d/pylock.${PYLOCK_FLAVOR}.toml ./pylock.toml
-COPY ${PYTORCH_SOURCE_CODE}/requirements.${PYLOCK_FLAVOR}.txt ./requirements.txt
+COPY ${PYTORCH_SOURCE_CODE}/uv.lock.d/pylock.pypi.${PYLOCK_FLAVOR}.toml ./pylock.toml
+COPY ${PYTORCH_SOURCE_CODE}/requirements.pypi.${PYLOCK_FLAVOR}.txt ./requirements.txt
 
 RUN /bin/bash <<'EOF'
 set -Eeuxo pipefail

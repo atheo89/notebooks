@@ -159,7 +159,7 @@ LABEL name="odh-notebook-jupyter-rocm-tensorflow-ubi9-python-3.12" \
     io.openshift.build.image="quay.io/opendatahub/workbench-images:rocm-jupyter-tensorflow-ubi9-python-3.12"
 
 # Install Python packages from lockfile (requirements.rocm.txt used only for Cachi2 prefetch)
-COPY ${TENSORFLOW_SOURCE_CODE}/requirements.${PYLOCK_FLAVOR}.txt ./requirements.txt
+COPY ${TENSORFLOW_SOURCE_CODE}/requirements.pypi.${PYLOCK_FLAVOR}.txt ./requirements.txt
 
 RUN /bin/bash <<'EOF'
 set -Eeuxo pipefail

@@ -139,8 +139,8 @@ LABEL name="odh-notebook-jupyter-rocm-pytorch-ubi9-python-3.12" \
     io.openshift.build.source-location="https://github.com/opendatahub-io/notebooks/tree/main/jupyter/rocm/pytorch/ubi9-python-3.12" \
     io.openshift.build.image="quay.io/opendatahub/workbench-images:rocm-jupyter-pytorch-ubi9-python-3.12"
 
-COPY ${PYTORCH_SOURCE_CODE}/uv.lock.d/pylock.${PYLOCK_FLAVOR}.toml ./pylock.toml
-COPY ${PYTORCH_SOURCE_CODE}/requirements.${PYLOCK_FLAVOR}.txt ./requirements.txt
+COPY ${PYTORCH_SOURCE_CODE}/uv.lock.d/pylock.pypi.${PYLOCK_FLAVOR}.toml ./pylock.toml
+COPY ${PYTORCH_SOURCE_CODE}/requirements.pypi.${PYLOCK_FLAVOR}.txt ./requirements.txt
 COPY ${PYTORCH_SOURCE_CODE}/de-vendor-torch.py ./
 
 USER 0

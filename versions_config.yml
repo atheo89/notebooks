@@ -1,0 +1,61 @@
+# Update this file, then run:
+#   gmake sync-build-args-from-versions
+# If any INDEX_URL values change, refresh locks with:
+#   gmake refresh-lock-files
+# `release.full_version` only resolves explicit `<full_version>` placeholders.
+# RHDS release version/phase for `konflux.*.conf` are derived from the current
+# `BASE_IMAGE` tag, not from this file.
+# `release.rhds_os_base` controls the RHDS image OS segment, e.g. `el9.6`.
+# `python_index.*.channel` is used only for `mode: rh-index`:
+#   auto -> prefer production if it exists, else fall back to *-test
+#   test -> always use the *-test RH index
+#   production -> always use the production RH index
+# `python_index.odh` uses public PyPI:
+#   mode: public-index
+#   url: https://pypi.org/simple/
+schema_version: 1
+
+release:
+  full_version: "3.5.0"
+  rhds_os_base: el9.6
+
+python_index:
+  rhds:
+    mode: rh-index
+    channel: auto
+  odh:
+    mode: public-index
+    url: https://pypi.org/simple/
+
+artifacts:
+  base_image:
+    cpu:
+      rhds:
+        acc_version: <full_version>
+      odh:
+        acc_version: latest
+
+    cuda:
+      minimal:
+        rhds: { acc_version: 13.0 }
+        odh:  { acc_version: v13.0 }
+      pytorch:
+        rhds: { acc_version: 13.0 }
+        odh:  { acc_version: v13.0 }
+      pytorch-llmcompressor:
+        rhds: { acc_version: 13.0 }
+        odh:  { acc_version: v13.0 }
+      tensorflow:
+        rhds: { acc_version: 12.9 }
+        odh:  { acc_version: v12.9 }
+
+    rocm:
+      minimal:
+        rhds: { acc_version: 7.1 }
+        odh:  { acc_version: v7.1 }
+      pytorch:
+        rhds: { acc_version: 7.1 }
+        odh:  { acc_version: v7.1 }
+      tensorflow:
+        rhds: { acc_version: 7.1 }
+        odh:  { acc_version: v7.1 }

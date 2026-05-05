@@ -46,8 +46,8 @@ LABEL name="odh-notebook-rocm-runtime-tensorflow-ubi9-python-3.12" \
 
 WORKDIR /opt/app-root/bin
 
-COPY --chown=1001:0 ${TENSORFLOW_SOURCE_CODE}/uv.lock.d/pylock.${PYLOCK_FLAVOR}.toml ./pylock.toml
-COPY --chown=1001:0 ${TENSORFLOW_SOURCE_CODE}/requirements.${PYLOCK_FLAVOR}.txt ./requirements.txt
+COPY --chown=1001:0 ${TENSORFLOW_SOURCE_CODE}/uv.lock.d/pylock.pypi.${PYLOCK_FLAVOR}.toml ./pylock.toml
+COPY --chown=1001:0 ${TENSORFLOW_SOURCE_CODE}/requirements.pypi.${PYLOCK_FLAVOR}.txt ./requirements.txt
 COPY --chown=1001:0 ${TENSORFLOW_SOURCE_CODE}/utils ./utils/
 
 USER 0
