@@ -250,6 +250,19 @@ def rewrite_image_name(name: str, acc_version: str, release: ReleaseConfig) -> s
     return f"{prefix}{slash}{updated_repo_name}"
 
 
+def rewrite_rhds_tag(tag: str, release: ReleaseConfig) -> str:
+    match = RELEASE_TAG_RE.fullmatch(tag)
+    if not match:
+        raise ValueError(f"BASE_IMAGE tag does not encode RHDS release info: {tag}")
+
+    phase = match.group("phase")
+    build = match.group("build") or ""
+    updated_tag = release.full_version
+    if phase:
+        updated_tag = f"{updated_tag}-{phase}"
+    return f"{updated_tag}{build}"
+
+
 def rewrite_base_image(base_image: str, acc_version: str, release: ReleaseConfig, *, distribution: str) -> str:
     name, separator, tag = base_image.rpartition(":")
     if not separator:
@@ -257,7 +270,7 @@ def rewrite_base_image(base_image: str, acc_version: str, release: ReleaseConfig
 
     updated_name = rewrite_image_name(name, acc_version, release)
     if distribution == "rhds":
-        updated_tag = tag
+        updated_tag = rewrite_rhds_tag(tag, release)
     elif tag == "latest" or tag.startswith("v"):
         updated_tag = acc_version
     else:
@@ -527,13 +540,7 @@ def plan_updates(root_dir: Path, config: VersionsConfig) -> list[PlannedUpdate]:
         current_base_image = assignments.get("BASE_IMAGE")
         replacements: dict[str, str] = {}
         replacements["PROFILE"] = profile
-
-        if target.manage_index_url:
-            replacements["INDEX_URL"] = resolve_index_url(
-                config.index_config(index_distribution_for_target(target)),
-                stream_token_for_target(target, config),
-                base_image=current_base_image,
-            )
+        resolved_base_image = current_base_image
 
         if target.manage_base_image:
             if target.accelerator is None or target.distribution is None:
@@ -541,11 +548,19 @@ def plan_updates(root_dir: Path, config: VersionsConfig) -> list[PlannedUpdate]:
             if current_base_image is None:
                 raise ValueError(f"Missing BASE_IMAGE in {target.path}")
             acc_version = config.acc_version(target.accelerator, target.distribution, target.flavor)
-            replacements["BASE_IMAGE"] = rewrite_base_image(
+            resolved_base_image = rewrite_base_image(
                 current_base_image,
                 acc_version,
                 config.release,
                 distribution=target.distribution,
+            )
+            replacements["BASE_IMAGE"] = resolved_base_image
+
+        if target.manage_index_url:
+            replacements["INDEX_URL"] = resolve_index_url(
+                config.index_config(index_distribution_for_target(target)),
+                stream_token_for_target(target, config),
+                base_image=resolved_base_image,
             )
 
         updates.append(

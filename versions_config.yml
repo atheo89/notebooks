@@ -2,9 +2,10 @@
 #   gmake sync-build-args-from-versions
 # If any INDEX_URL values change, refresh locks with:
 #   gmake refresh-lock-files
-# `release.full_version` only resolves explicit `<full_version>` placeholders.
-# RHDS release version/phase for `konflux.*.conf` are derived from the current
-# `BASE_IMAGE` tag, not from this file.
+# `release.full_version` is authoritative for the RHDS release version.
+# For `konflux.*.conf`, the sync rewrites the `BASE_IMAGE` tag version to this
+# value, preserves the existing phase/build suffix, and then derives `INDEX_URL`
+# from the rewritten `BASE_IMAGE`.
 # `release.rhds_os_base` controls the RHDS image OS segment, e.g. `el9.6`.
 # `python_index.*.channel` is used only for `mode: rh-index`:
 #   auto -> prefer production if it exists, else fall back to *-test
@@ -16,7 +17,7 @@
 schema_version: 1
 
 release:
-  full_version: "3.5.0"
+  full_version: "3.4.0"
   rhds_os_base: el9.6
 
 python_index:

@@ -177,7 +177,7 @@ def test_rewrite_base_image_updates_accelerator_and_release_parts() -> None:
     image = "quay.io/aipcc/base-images/cuda-13.0-el9.6:3.5.0-ea.1-1777919771"
 
     assert updater.rewrite_base_image(image, "25.0", release, distribution="rhds") == (
-        "quay.io/aipcc/base-images/cuda-25.0-el9.6:3.5.0-ea.1-1777919771"
+        "quay.io/aipcc/base-images/cuda-25.0-el9.6:3.6.0-ea.1-1777919771"
     )
 
 
@@ -190,12 +190,12 @@ def test_rewrite_base_image_updates_rhds_os_base_when_requested() -> None:
     )
 
 
-def test_rewrite_base_image_uses_ga_tag_without_phase_suffix() -> None:
-    release = updater.ReleaseConfig(full_version="3.5.0", rhds_os_base="el9.6")
-    image = "quay.io/aipcc/base-images/cuda-13.0-el9.6:3.5.0-ea.1-1777919771"
+def test_rewrite_base_image_updates_ga_tag_without_phase_suffix() -> None:
+    release = updater.ReleaseConfig(full_version="3.6.0", rhds_os_base="el9.6")
+    image = "quay.io/aipcc/base-images/cpu:3.5.0-1777920567"
 
     assert updater.rewrite_base_image(image, "13.0", release, distribution="rhds") == (
-        "quay.io/aipcc/base-images/cuda-13.0-el9.6:3.5.0-ea.1-1777919771"
+        "quay.io/aipcc/base-images/cpu:3.6.0-1777920567"
     )
 
 
@@ -414,8 +414,47 @@ def test_main_updates_file_in_place(tmp_path: Path, capsys: pytest.CaptureFixtur
     output = capsys.readouterr().out
     assert "Updated jupyter/minimal/ubi9-python-3.12/build-args/konflux.cuda.conf" in output
     text = conf_file.read_text(encoding="utf-8")
-    assert "INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cuda25.0-ubi9-test/simple/" in text
-    assert "BASE_IMAGE=quay.io/aipcc/base-images/cuda-25.0-el9.6:3.5.0-ea.1-1777919771" in text
+    assert "INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.6-EA1/cuda25.0-ubi9-test/simple/" in text
+    assert "BASE_IMAGE=quay.io/aipcc/base-images/cuda-25.0-el9.6:3.6.0-ea.1-1777919771" in text
+    assert "PROFILE=rhds" in text
+
+
+def test_main_updates_konflux_cpu_release_version_from_full_version(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _write_versions_config(tmp_path / "versions_config.yml")
+
+    conf_file = tmp_path / "jupyter" / "minimal" / "ubi9-python-3.12" / "build-args" / "konflux.cpu.conf"
+    conf_file.parent.mkdir(parents=True)
+    conf_file.write_text(
+        textwrap.dedent(
+            """\
+            INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cpu-ubi9-test/simple/
+            BASE_IMAGE=quay.io/aipcc/base-images/cpu:3.5.0-ea.1-1777920678
+            PROFILE=stale
+            PYLOCK_FLAVOR=cpu
+            """
+        ),
+        encoding="utf-8",
+    )
+
+    assert (
+        updater.main(
+            [
+                "--root",
+                str(tmp_path),
+                "--config",
+                str(tmp_path / "versions_config.yml"),
+            ]
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "Updated jupyter/minimal/ubi9-python-3.12/build-args/konflux.cpu.conf" in output
+    text = conf_file.read_text(encoding="utf-8")
+    assert "INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.6-EA1/cpu-ubi9-test/simple/" in text
+    assert "BASE_IMAGE=quay.io/aipcc/base-images/cpu:3.6.0-ea.1-1777920678" in text
     assert "PROFILE=rhds" in text
 
 
