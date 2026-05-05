@@ -13,6 +13,7 @@ import scripts.update_build_args_from_versions as updater  # noqa: E402
 def _write_versions_config(
     path: Path,
     *,
+    full_version: str = "3.6.0",
     rhds_channel: str = "test",
     odh_mode: str = "public-index",
     odh_channel: str | None = None,
@@ -32,13 +33,13 @@ def _write_versions_config(
         schema_version: 1
 
         release:
-          full_version: "3.6.0"
+          full_version: "%s"
           rhds_os_base: el9.6
 
         python_index:
           rhds:
         """
-    )
+    ) % full_version
     config_text += f"{rhds_block}\n"
     config_text += "  odh:\n"
     config_text += f"{odh_block}\n\n"
@@ -190,11 +191,17 @@ def test_rewrite_base_image_updates_rhds_os_base_when_requested() -> None:
     )
 
 
-def test_rewrite_base_image_updates_ga_tag_without_phase_suffix() -> None:
+def test_rewrite_base_image_uses_ga_override_without_phase_suffix() -> None:
     release = updater.ReleaseConfig(full_version="3.6.0", rhds_os_base="el9.6")
     image = "quay.io/aipcc/base-images/cpu:3.5.0-1777920567"
 
-    assert updater.rewrite_base_image(image, "13.0", release, distribution="rhds") == (
+    assert updater.rewrite_base_image(
+        image,
+        "13.0",
+        release,
+        distribution="rhds",
+        rhds_phase_override="ga",
+    ) == (
         "quay.io/aipcc/base-images/cpu:3.6.0-1777920567"
     )
 
@@ -205,6 +212,28 @@ def test_rewrite_base_image_updates_odh_v_tag() -> None:
 
     assert updater.rewrite_base_image(image, "v25.0", release, distribution="odh") == (
         "quay.io/opendatahub/odh-base-image-cuda-py312-c9s:v25.0"
+    )
+
+
+def test_rewrite_base_image_uses_explicit_rhds_phase_override() -> None:
+    release = updater.ReleaseConfig(full_version="3.6.0", rhds_os_base="el9.6")
+    image = "quay.io/aipcc/base-images/cuda-13.0-el9.6:3.5.0-ea.1-1777919771"
+
+    assert updater.rewrite_base_image(
+        image,
+        "25.0",
+        release,
+        distribution="rhds",
+        rhds_phase_override="ea.2",
+    ) == "quay.io/aipcc/base-images/cuda-25.0-el9.6:3.6.0-ea.2-1777919771"
+
+
+def test_rewrite_base_image_preserves_current_phase_when_version_is_not_higher() -> None:
+    release = updater.ReleaseConfig(full_version="3.5.0", rhds_os_base="el9.6")
+    image = "quay.io/aipcc/base-images/cuda-13.0-el9.6:3.5.0-ea.2-1777919771"
+
+    assert updater.rewrite_base_image(image, "25.0", release, distribution="rhds") == (
+        "quay.io/aipcc/base-images/cuda-25.0-el9.6:3.5.0-ea.2-1777919771"
     )
 
 
@@ -419,6 +448,47 @@ def test_main_updates_file_in_place(tmp_path: Path, capsys: pytest.CaptureFixtur
     assert "PROFILE=rhds" in text
 
 
+def test_main_uses_rhds_phase_override_for_release_bump(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _write_versions_config(tmp_path / "versions_config.yml")
+
+    conf_file = tmp_path / "jupyter" / "minimal" / "ubi9-python-3.12" / "build-args" / "konflux.cuda.conf"
+    conf_file.parent.mkdir(parents=True)
+    conf_file.write_text(
+        textwrap.dedent(
+            """\
+            INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cuda13.0-ubi9-test/simple/
+            BASE_IMAGE=quay.io/aipcc/base-images/cuda-13.0-el9.6:3.5.0-ea.1-1777919771
+            PROFILE=stale
+            PYLOCK_FLAVOR=cuda
+            """
+        ),
+        encoding="utf-8",
+    )
+
+    assert (
+        updater.main(
+            [
+                "--root",
+                str(tmp_path),
+                "--config",
+                str(tmp_path / "versions_config.yml"),
+                "--rhds-phase",
+                "ea2",
+            ]
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "Updated jupyter/minimal/ubi9-python-3.12/build-args/konflux.cuda.conf" in output
+    text = conf_file.read_text(encoding="utf-8")
+    assert "INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.6-EA2/cuda25.0-ubi9-test/simple/" in text
+    assert "BASE_IMAGE=quay.io/aipcc/base-images/cuda-25.0-el9.6:3.6.0-ea.2-1777919771" in text
+    assert "PROFILE=rhds" in text
+
+
 def test_main_updates_konflux_cpu_release_version_from_full_version(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -455,6 +525,47 @@ def test_main_updates_konflux_cpu_release_version_from_full_version(
     text = conf_file.read_text(encoding="utf-8")
     assert "INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.6-EA1/cpu-ubi9-test/simple/" in text
     assert "BASE_IMAGE=quay.io/aipcc/base-images/cpu:3.6.0-ea.1-1777920678" in text
+    assert "PROFILE=rhds" in text
+
+
+def test_main_keeps_current_phase_when_full_version_is_not_higher(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _write_versions_config(tmp_path / "versions_config.yml", full_version="3.5.0")
+
+    conf_file = tmp_path / "jupyter" / "minimal" / "ubi9-python-3.12" / "build-args" / "konflux.cuda.conf"
+    conf_file.parent.mkdir(parents=True)
+    conf_file.write_text(
+        textwrap.dedent(
+            """\
+            INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA2/cuda13.0-ubi9-test/simple/
+            BASE_IMAGE=quay.io/aipcc/base-images/cuda-13.0-el9.6:3.5.0-ea.2-1777919771
+            PROFILE=stale
+            PYLOCK_FLAVOR=cuda
+            """
+        ),
+        encoding="utf-8",
+    )
+
+    assert (
+        updater.main(
+            [
+                "--root",
+                str(tmp_path),
+                "--config",
+                str(tmp_path / "versions_config.yml"),
+                "--rhds-phase",
+                "ga",
+            ]
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "Updated jupyter/minimal/ubi9-python-3.12/build-args/konflux.cuda.conf" in output
+    text = conf_file.read_text(encoding="utf-8")
+    assert "INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA2/cuda25.0-ubi9-test/simple/" in text
+    assert "BASE_IMAGE=quay.io/aipcc/base-images/cuda-25.0-el9.6:3.5.0-ea.2-1777919771" in text
     assert "PROFILE=rhds" in text
 
 

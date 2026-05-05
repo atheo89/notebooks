@@ -157,6 +157,24 @@ def release_minor_version(full_version: str) -> str:
     return ".".join(parts[:2])
 
 
+def parse_release_version(full_version: str) -> tuple[int, ...]:
+    try:
+        return tuple(int(part) for part in full_version.split("."))
+    except ValueError as exc:
+        raise ValueError(f"Expected semantic version, got '{full_version}'") from exc
+
+
+def normalize_rhds_phase_input(phase: str) -> str:
+    normalized = phase.strip().lower()
+    if normalized == "ga":
+        return "ga"
+
+    match = PHASE_WITH_NUMBER_RE.fullmatch(normalized)
+    if match is None:
+        raise ValueError(f"Unsupported RHDS phase override: {phase}")
+    return f"{match.group('name')}.{match.group('number')}"
+
+
 def normalize_phase_for_index(phase: str) -> str:
     normalized = phase.strip().lower().replace(".", "")
     if not normalized or normalized == "ga":
@@ -250,12 +268,27 @@ def rewrite_image_name(name: str, acc_version: str, release: ReleaseConfig) -> s
     return f"{prefix}{slash}{updated_repo_name}"
 
 
-def rewrite_rhds_tag(tag: str, release: ReleaseConfig) -> str:
+def select_rhds_phase(tag: str, release: ReleaseConfig, rhds_phase_override: str | None = None) -> str | None:
     match = RELEASE_TAG_RE.fullmatch(tag)
     if not match:
         raise ValueError(f"BASE_IMAGE tag does not encode RHDS release info: {tag}")
 
-    phase = match.group("phase")
+    current_version = match.group("version")
+    current_phase = match.group("phase")
+    if parse_release_version(release.full_version) > parse_release_version(current_version):
+        if rhds_phase_override is not None:
+            selected_phase = normalize_rhds_phase_input(rhds_phase_override)
+            return None if selected_phase == "ga" else selected_phase
+        return "ea.1"
+    return current_phase
+
+
+def rewrite_rhds_tag(tag: str, release: ReleaseConfig, rhds_phase_override: str | None = None) -> str:
+    match = RELEASE_TAG_RE.fullmatch(tag)
+    if not match:
+        raise ValueError(f"BASE_IMAGE tag does not encode RHDS release info: {tag}")
+
+    phase = select_rhds_phase(tag, release, rhds_phase_override)
     build = match.group("build") or ""
     updated_tag = release.full_version
     if phase:
@@ -263,14 +296,21 @@ def rewrite_rhds_tag(tag: str, release: ReleaseConfig) -> str:
     return f"{updated_tag}{build}"
 
 
-def rewrite_base_image(base_image: str, acc_version: str, release: ReleaseConfig, *, distribution: str) -> str:
+def rewrite_base_image(
+    base_image: str,
+    acc_version: str,
+    release: ReleaseConfig,
+    *,
+    distribution: str,
+    rhds_phase_override: str | None = None,
+) -> str:
     name, separator, tag = base_image.rpartition(":")
     if not separator:
         raise ValueError(f"BASE_IMAGE is missing a tag: {base_image}")
 
     updated_name = rewrite_image_name(name, acc_version, release)
     if distribution == "rhds":
-        updated_tag = rewrite_rhds_tag(tag, release)
+        updated_tag = rewrite_rhds_tag(tag, release, rhds_phase_override)
     elif tag == "latest" or tag.startswith("v"):
         updated_tag = acc_version
     else:
@@ -530,7 +570,12 @@ def profile_for_distribution(distribution: str) -> str:
     raise ValueError(f"Unsupported profile distribution: {distribution}")
 
 
-def plan_updates(root_dir: Path, config: VersionsConfig) -> list[PlannedUpdate]:
+def plan_updates(
+    root_dir: Path,
+    config: VersionsConfig,
+    *,
+    rhds_phase_override: str | None = None,
+) -> list[PlannedUpdate]:
     updates: list[PlannedUpdate] = []
     for target in collect_conf_targets(root_dir):
         original_text = target.path.read_text(encoding="utf-8")
@@ -553,6 +598,7 @@ def plan_updates(root_dir: Path, config: VersionsConfig) -> list[PlannedUpdate]:
                 acc_version,
                 config.release,
                 distribution=target.distribution,
+                rhds_phase_override=rhds_phase_override,
             )
             replacements["BASE_IMAGE"] = resolved_base_image
 
@@ -593,6 +639,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=ROOT_DIR, help="Repository root to scan")
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH, help="Path to versions_config.yml")
+    parser.add_argument(
+        "--rhds-phase",
+        help="Optional RHDS phase override for release-line bumps (for example: ea.1, ea2, ga)",
+    )
     parser.add_argument("--dry-run", action="store_true", help="Show changes without writing files")
     parser.add_argument("--check", action="store_true", help="Exit non-zero if files need updates")
     return parser.parse_args(argv)
@@ -601,7 +651,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     config = load_versions_config(args.config)
-    updates = plan_updates(args.root, config)
+    updates = plan_updates(args.root, config, rhds_phase_override=args.rhds_phase)
     changed_updates = [update for update in updates if update.original_text != update.updated_text]
 
     if args.dry_run or args.check:
