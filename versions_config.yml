@@ -1,14 +1,8 @@
 # Update this file, then run:
 #   gmake sync-build-args-from-versions
 # Then refresh locks with:
-#   gmake refresh-lock-files
-# `release.full_version` is authoritative for the RHDS release version.
-# For `konflux.*.conf`, the sync rewrites the `BASE_IMAGE` tag version to this
-# value and preserves the existing phase/build suffix.
-# `release.rhds_os_base` controls the RHDS image OS segment, e.g. `el9.6`.
-# Non-`base-images` build-args no longer store `INDEX_URL`.
-# Lock generation derives the effective index dynamically from `PROFILE`
-# and `BASE_IMAGE`.
+#   gmake FORCE_LOCKFILES_UPGRADE=1 refresh-lock-files
+
 schema_version: 1
 
 release:

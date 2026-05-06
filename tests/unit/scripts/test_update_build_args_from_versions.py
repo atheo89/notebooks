@@ -10,6 +10,25 @@ import pytest
 import scripts.update_build_args_from_versions as updater  # noqa: E402
 
 
+REAL_LOOKUP_TESTS = {
+    "test_select_latest_matching_rhds_tag_prefers_highest_build_for_exact_ea_family",
+    "test_select_latest_matching_rhds_tag_prefers_highest_build_for_exact_ga_family",
+    "test_select_latest_matching_rhds_tag_raises_when_no_exact_family_match",
+    "test_resolve_latest_published_rhds_image_uses_skopeo_tags",
+    "test_resolve_latest_published_rhds_image_raises_on_skopeo_failure",
+}
+
+
+@pytest.fixture(autouse=True)
+def default_latest_rhds_image_lookup(
+    monkeypatch: pytest.MonkeyPatch,
+    request: pytest.FixtureRequest,
+) -> None:
+    if request.node.name in REAL_LOOKUP_TESTS:
+        return
+    monkeypatch.setattr(updater, "resolve_latest_published_rhds_image", lambda image: image, raising=False)
+
+
 def _write_versions_config(
     path: Path,
     *,
@@ -153,6 +172,76 @@ def test_rewrite_base_image_preserves_current_phase_when_version_is_not_higher()
     assert updater.rewrite_base_image(image, "25.0", release, distribution="rhds") == (
         "quay.io/aipcc/base-images/cuda-25.0-el9.6:3.5.0-ea.2-1777919771"
     )
+
+
+def test_select_latest_matching_rhds_tag_prefers_highest_build_for_exact_ea_family() -> None:
+    assert updater.select_latest_matching_rhds_tag(
+        [
+            "3.6.0-ea.1-1777919771",
+            "3.6.0-ea.1-1777919999",
+            "3.6.0-ea.2-1777920000",
+            "3.6.0-1777920001",
+        ],
+        "3.6.0-ea.1-1777000000",
+    ) == "3.6.0-ea.1-1777919999"
+
+
+def test_select_latest_matching_rhds_tag_prefers_highest_build_for_exact_ga_family() -> None:
+    assert updater.select_latest_matching_rhds_tag(
+        [
+            "3.6.0-ea.2-1777919771",
+            "3.6.0-1777919900",
+            "3.6.0-1777920000",
+        ],
+        "3.6.0-1777000000",
+    ) == "3.6.0-1777920000"
+
+
+def test_select_latest_matching_rhds_tag_raises_when_no_exact_family_match() -> None:
+    with pytest.raises(ValueError, match="No matching published RHDS tag"):
+        updater.select_latest_matching_rhds_tag(
+            [
+                "3.6.0-ea.2-1777919771",
+                "3.6.0-1777920000",
+            ],
+            "3.6.0-ea.1-1777000000",
+        )
+
+
+def test_resolve_latest_published_rhds_image_uses_skopeo_tags(monkeypatch: pytest.MonkeyPatch) -> None:
+    def fake_run(*_args: object, **_kwargs: object) -> object:
+        class _Result:
+            returncode = 0
+            stdout = (
+                '{"Repository":"quay.io/aipcc/base-images/cuda-25.0-el9.6","Tags":'
+                '["3.6.0-ea.1-1777919771","3.6.0-ea.1-1777919999","3.6.0-ea.2-1777920000"]}'
+            )
+            stderr = ""
+
+        return _Result()
+
+    monkeypatch.setattr(updater.subprocess, "run", fake_run)
+
+    assert updater.resolve_latest_published_rhds_image(
+        "quay.io/aipcc/base-images/cuda-25.0-el9.6:3.6.0-ea.1-1777000000"
+    ) == "quay.io/aipcc/base-images/cuda-25.0-el9.6:3.6.0-ea.1-1777919999"
+
+
+def test_resolve_latest_published_rhds_image_raises_on_skopeo_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    def fake_run(*_args: object, **_kwargs: object) -> object:
+        class _Result:
+            returncode = 1
+            stdout = ""
+            stderr = "manifest unknown"
+
+        return _Result()
+
+    monkeypatch.setattr(updater.subprocess, "run", fake_run)
+
+    with pytest.raises(ValueError, match="skopeo"):
+        updater.resolve_latest_published_rhds_image(
+            "quay.io/aipcc/base-images/cuda-25.0-el9.6:3.6.0-ea.1-1777000000"
+        )
 
 
 def test_rewrite_conf_text_preserves_other_lines() -> None:
@@ -409,6 +498,49 @@ def test_main_updates_file_in_place(tmp_path: Path, capsys: pytest.CaptureFixtur
     assert "PROFILE=rhds" in text
 
 
+def test_main_updates_konflux_conf_to_latest_published_rhds_tag(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _write_versions_config(tmp_path / "versions_config.yml")
+
+    conf_file = tmp_path / "jupyter" / "minimal" / "ubi9-python-3.12" / "build-args" / "konflux.cuda.conf"
+    conf_file.parent.mkdir(parents=True)
+    conf_file.write_text(
+        textwrap.dedent(
+            """\
+            INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cuda13.0-ubi9-test/simple/
+            BASE_IMAGE=quay.io/aipcc/base-images/cuda-13.0-el9.6:3.5.0-ea.1-1777919771
+            PROFILE=stale
+            PYLOCK_FLAVOR=cuda
+            """
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        updater,
+        "resolve_latest_published_rhds_image",
+        lambda image: "quay.io/aipcc/base-images/cuda-25.0-el9.6:3.6.0-ea.1-1777929999",
+    )
+
+    assert (
+        updater.main(
+            [
+                "--root",
+                str(tmp_path),
+                "--config",
+                str(tmp_path / "versions_config.yml"),
+            ]
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "Updated jupyter/minimal/ubi9-python-3.12/build-args/konflux.cuda.conf" in output
+    text = conf_file.read_text(encoding="utf-8")
+    assert "BASE_IMAGE=quay.io/aipcc/base-images/cuda-25.0-el9.6:3.6.0-ea.1-1777929999" in text
+
+
 def test_main_removes_index_url_even_when_other_values_already_match(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -599,3 +731,44 @@ def test_main_updates_odh_conf_to_public_index(tmp_path: Path, capsys: pytest.Ca
     text = conf_file.read_text(encoding="utf-8")
     assert "INDEX_URL=" not in text
     assert "PROFILE=odh" in text
+
+
+def test_main_does_not_invoke_latest_rhds_lookup_for_odh(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _write_versions_config(tmp_path / "versions_config.yml")
+
+    conf_file = tmp_path / "jupyter" / "minimal" / "ubi9-python-3.12" / "build-args" / "cpu.conf"
+    conf_file.parent.mkdir(parents=True)
+    conf_file.write_text(
+        textwrap.dedent(
+            """\
+            INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cpu-ubi9-test/simple/
+            BASE_IMAGE=quay.io/opendatahub/odh-base-image-cpu-py312-c9s:latest
+            PROFILE=stale
+            PYLOCK_FLAVOR=cpu
+            """
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        updater,
+        "resolve_latest_published_rhds_image",
+        lambda _image: (_ for _ in ()).throw(AssertionError("ODH path should not resolve RHDS tags")),
+    )
+
+    assert (
+        updater.main(
+            [
+                "--root",
+                str(tmp_path),
+                "--config",
+                str(tmp_path / "versions_config.yml"),
+            ]
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "Updated jupyter/minimal/ubi9-python-3.12/build-args/cpu.conf" in output

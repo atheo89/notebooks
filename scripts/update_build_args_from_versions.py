@@ -1,12 +1,20 @@
 #!/usr/bin/env python3
 
-"""Sync build-args/*.conf files from versions_config.yml."""
+"""Sync build-args/*.conf files from versions_config.yml.
+
+For Konflux/RHDS targets, the updater rewrites the desired base-image repo/tag
+from config and then resolves the newest published tag in that exact rewritten
+version/phase family via ``skopeo list-tags``. This requires registry access
+and ``skopeo`` on ``PATH``.
+"""
 
 from __future__ import annotations
 
 import argparse
 import difflib
+import json
 import re
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -234,6 +242,77 @@ def rewrite_base_image(
     return f"{updated_name}:{updated_tag}"
 
 
+def split_image_ref(image: str) -> tuple[str, str]:
+    name, separator, tag = image.rpartition(":")
+    if not separator:
+        raise ValueError(f"Image reference is missing a tag: {image}")
+    return name, tag
+
+
+def build_rhds_tag_family_regex(candidate_tag: str) -> re.Pattern[str]:
+    match = RELEASE_TAG_RE.fullmatch(candidate_tag)
+    if not match:
+        raise ValueError(f"RHDS tag does not encode release info: {candidate_tag}")
+
+    prefix = match.group("version")
+    phase = match.group("phase")
+    if phase:
+        prefix = f"{prefix}-{phase}"
+    return re.compile(rf"^{re.escape(prefix)}-(?P<build>\d+)$")
+
+
+def select_latest_matching_rhds_tag(tags: list[str], candidate_tag: str) -> str:
+    family_regex = build_rhds_tag_family_regex(candidate_tag)
+    matches: list[tuple[int, str]] = []
+    for tag in tags:
+        match = family_regex.fullmatch(tag)
+        if match is None:
+            continue
+        matches.append((int(match.group("build")), tag))
+
+    if not matches:
+        raise ValueError(f"No matching published RHDS tag found for family '{candidate_tag}'")
+
+    _build, latest_tag = max(matches, key=lambda item: item[0])
+    return latest_tag
+
+
+def resolve_latest_published_rhds_image(candidate_image: str) -> str:
+    """Return the newest published RHDS image for the candidate version/phase family."""
+    repository, candidate_tag = split_image_ref(candidate_image)
+    try:
+        result = subprocess.run(
+            [
+                "skopeo",
+                "list-tags",
+                "--retry-times",
+                "3",
+                f"docker://{repository}",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError as exc:
+        raise ValueError("skopeo is required to resolve latest RHDS tags") from exc
+
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout).strip() or f"exit code {result.returncode}"
+        raise ValueError(f"skopeo list-tags failed for {repository}: {detail}")
+
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"skopeo list-tags returned invalid JSON for {repository}") from exc
+
+    tags = payload.get("Tags")
+    if not isinstance(tags, list) or not all(isinstance(tag, str) for tag in tags):
+        raise ValueError(f"skopeo list-tags returned invalid tags for {repository}")
+
+    latest_tag = select_latest_matching_rhds_tag(tags, candidate_tag)
+    return f"{repository}:{latest_tag}"
+
+
 def rewrite_conf_text(text: str, replacements: dict[str, str]) -> str:
     lines = text.splitlines(keepends=True)
     missing_keys = set(replacements)
@@ -455,6 +534,8 @@ def plan_updates(
                 distribution=target.distribution,
                 rhds_phase_override=rhds_phase_override,
             )
+            if target.distribution == "rhds":
+                resolved_base_image = resolve_latest_published_rhds_image(resolved_base_image)
             replacements["BASE_IMAGE"] = resolved_base_image
 
         updates.append(
