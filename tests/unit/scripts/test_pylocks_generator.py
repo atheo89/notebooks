@@ -138,15 +138,30 @@ class TestEnsureJsonFormatParam:
         assert pg.ensure_json_format_param(result) == result
 
 
-def test_get_index_flags_uses_mode_specific_conf_file(tmp_path: Path) -> None:
+def test_get_index_flags_uses_mode_specific_conf_file(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     build_args = tmp_path / "build-args"
     build_args.mkdir()
-    (build_args / "cpu.conf").write_text("INDEX_URL=https://pypi.org/simple/\n", encoding="utf-8")
+    (build_args / "cpu.conf").write_text(
+        "BASE_IMAGE=quay.io/opendatahub/odh-base-image-cpu-py312-c9s:latest\nPROFILE=odh\n",
+        encoding="utf-8",
+    )
     (build_args / "konflux.cpu.conf").write_text(
-        "INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cpu-ubi9/simple/\n",
+        "BASE_IMAGE=quay.io/aipcc/base-images/cpu:3.5.0-ea.1-1777920678\nPROFILE=rhds\n",
         encoding="utf-8",
     )
     log = pg.LogBuffer()
+    calls: list[tuple[str, str | None]] = []
+
+    def fake_resolve(profile: str, base_image: str | None, **_: object) -> str:
+        calls.append((profile, base_image))
+        if profile == "odh":
+            return "https://pypi.org/simple/"
+        return "https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cpu-ubi9/simple/"
+
+    monkeypatch.setattr(pg, "resolve_effective_index_url", fake_resolve, raising=False)
 
     public_flags = pg.get_index_flags(tmp_path, "cpu", pg.IndexMode.public_index, log)
     rhds_flags = pg.get_index_flags(tmp_path, "cpu", pg.IndexMode.rh_index, log)
@@ -155,6 +170,16 @@ def test_get_index_flags_uses_mode_specific_conf_file(tmp_path: Path) -> None:
     assert rhds_flags == [
         "--default-index=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cpu-ubi9/simple/?format=json"
     ]
+    assert calls == [
+        ("odh", "quay.io/opendatahub/odh-base-image-cpu-py312-c9s:latest"),
+        ("rhds", "quay.io/aipcc/base-images/cpu:3.5.0-ea.1-1777920678"),
+    ]
+    assert any("PyPI lock index URL: https://pypi.org/simple/?format=json" in line for line in log._lines)
+    assert any(
+        "RH index lock URL: https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cpu-ubi9/simple/?format=json"
+        in line
+        for line in log._lines
+    )
 
 
 def test_generate_requirements_txt_uses_konflux_index_for_rh_locks(
@@ -163,9 +188,8 @@ def test_generate_requirements_txt_uses_konflux_index_for_rh_locks(
 ) -> None:
     build_args = tmp_path / "build-args"
     build_args.mkdir()
-    (build_args / "cpu.conf").write_text("INDEX_URL=https://pypi.org/simple/\n", encoding="utf-8")
     (build_args / "konflux.cpu.conf").write_text(
-        "INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cpu-ubi9/simple/\n",
+        "BASE_IMAGE=quay.io/aipcc/base-images/cpu:3.5.0-ea.1-1777920678\nPROFILE=rhds\n",
         encoding="utf-8",
     )
     pylock_dir = tmp_path / "uv.lock.d"
@@ -180,6 +204,12 @@ def test_generate_requirements_txt_uses_konflux_index_for_rh_locks(
         return SimpleNamespace(returncode=0, stdout="", stderr="")
 
     monkeypatch.setattr(pg.subprocess, "run", fake_run)
+    monkeypatch.setattr(
+        pg,
+        "resolve_effective_index_url",
+        lambda profile, base_image, **_: "https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cpu-ubi9/simple/",
+        raising=False,
+    )
 
     assert pg.generate_requirements_txt(tmp_path, "cpu", pg.IndexMode.rh_index, pg.LogBuffer()) is True
     assert captured["cmd"][2].endswith("uv.lock.d/pylock.rhds.cpu.toml")
@@ -224,7 +254,10 @@ def test_generate_requirements_txt_uses_odh_paths_for_public_locks(
 ) -> None:
     build_args = tmp_path / "build-args"
     build_args.mkdir()
-    (build_args / "cpu.conf").write_text("INDEX_URL=https://pypi.org/simple/\n", encoding="utf-8")
+    (build_args / "cpu.conf").write_text(
+        "BASE_IMAGE=quay.io/opendatahub/odh-base-image-cpu-py312-c9s:latest\nPROFILE=odh\n",
+        encoding="utf-8",
+    )
     pylock_dir = tmp_path / "uv.lock.d"
     pylock_dir.mkdir()
     (pylock_dir / "pylock.odh.cpu.toml").write_text('lock-version = "1.0"\n', encoding="utf-8")
@@ -236,6 +269,12 @@ def test_generate_requirements_txt_uses_odh_paths_for_public_locks(
         return SimpleNamespace(returncode=0, stdout="", stderr="")
 
     monkeypatch.setattr(pg.subprocess, "run", fake_run)
+    monkeypatch.setattr(
+        pg,
+        "resolve_effective_index_url",
+        lambda profile, base_image, **_: "https://pypi.org/simple/",
+        raising=False,
+    )
 
     assert pg.generate_requirements_txt(tmp_path, "cpu", pg.IndexMode.public_index, pg.LogBuffer()) is True
     assert captured["cmd"][2].endswith("uv.lock.d/pylock.odh.cpu.toml")
@@ -253,9 +292,12 @@ def test_process_directory_auto_generates_both_public_and_konflux_artifacts(
     (project_dir / "Dockerfile.konflux.cpu").write_text("", encoding="utf-8")
     build_args = project_dir / "build-args"
     build_args.mkdir()
-    (build_args / "cpu.conf").write_text("INDEX_URL=https://pypi.org/simple/\n", encoding="utf-8")
+    (build_args / "cpu.conf").write_text(
+        "BASE_IMAGE=quay.io/opendatahub/odh-base-image-cpu-py312-c9s:latest\nPROFILE=odh\n",
+        encoding="utf-8",
+    )
     (build_args / "konflux.cpu.conf").write_text(
-        "INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cpu-ubi9/simple/\n",
+        "BASE_IMAGE=quay.io/aipcc/base-images/cpu:3.5.0-ea.1-1777920678\nPROFILE=rhds\n",
         encoding="utf-8",
     )
 
@@ -287,6 +329,14 @@ def test_process_directory_auto_generates_both_public_and_konflux_artifacts(
 
     monkeypatch.setattr(pg, "run_lock", fake_run_lock)
     monkeypatch.setattr(pg, "generate_requirements_txt", fake_generate_requirements_txt)
+    monkeypatch.setattr(
+        pg,
+        "resolve_effective_index_url",
+        lambda profile, base_image, **_: "https://pypi.org/simple/"
+        if profile == "odh"
+        else "https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cpu-ubi9/simple/",
+        raising=False,
+    )
 
     _tdir, success, _log = pg.process_directory(
         project_dir,

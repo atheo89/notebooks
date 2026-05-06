@@ -9,22 +9,15 @@ import difflib
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+from typing import Any
 
 import yaml
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG_PATH = ROOT_DIR / "versions_config.yml"
-INDEX_URL_PREFIX = "https://console.redhat.com/api/pypi/public-rhai/rhoai"
 RELEASE_SCHEMA = {
     "full_version": None,
     "rhds_os_base": None,
-}
-PYTHON_INDEX_SCHEMA = {
-    "rhds": None,
-    "odh": None,
 }
 BASE_IMAGE_SCHEMA = {
     "cpu": {
@@ -67,7 +60,6 @@ BASE_IMAGE_SCHEMA = {
 ROOT_SCHEMA = {
     "schema_version": None,
     "release": RELEASE_SCHEMA,
-    "python_index": PYTHON_INDEX_SCHEMA,
     "artifacts": {
         "base_image": BASE_IMAGE_SCHEMA,
     },
@@ -86,13 +78,6 @@ class ReleaseConfig:
 
 
 @dataclass(frozen=True)
-class PythonIndexConfig:
-    mode: str
-    channel: str | None
-    url: str | None
-
-
-@dataclass(frozen=True)
 class RhdsReleaseInfo:
     full_version: str
     phase: str
@@ -101,7 +86,6 @@ class RhdsReleaseInfo:
 @dataclass(frozen=True)
 class VersionsConfig:
     release: ReleaseConfig
-    python_index: dict[str, PythonIndexConfig]
     base_image: dict[str, Any]
 
     def acc_version(self, accelerator: str, distribution: str, flavor: str | None = None) -> str:
@@ -113,19 +97,13 @@ class VersionsConfig:
             raw = self.base_image[accelerator][flavor][distribution]["acc_version"]
         return resolve_acc_version(raw, self.release)
 
-    def index_config(self, distribution: str) -> PythonIndexConfig:
-        return self.python_index[distribution]
-
-
 @dataclass(frozen=True)
 class ConfTarget:
     path: Path
     accelerator: str | None
     distribution: str | None
     flavor: str | None
-    stream_token: str | None
     manage_base_image: bool
-    manage_index_url: bool
 
 
 @dataclass(frozen=True)
@@ -175,13 +153,6 @@ def normalize_rhds_phase_input(phase: str) -> str:
     return f"{match.group('name')}.{match.group('number')}"
 
 
-def normalize_phase_for_index(phase: str) -> str:
-    normalized = phase.strip().lower().replace(".", "")
-    if not normalized or normalized == "ga":
-        return ""
-    return normalized.upper()
-
-
 def parse_rhds_release_from_base_image(base_image: str) -> RhdsReleaseInfo:
     _name, separator, tag = base_image.rpartition(":")
     if not separator:
@@ -193,61 +164,6 @@ def parse_rhds_release_from_base_image(base_image: str) -> RhdsReleaseInfo:
 
     phase = (match.group("phase") or "").replace(".", "")
     return RhdsReleaseInfo(full_version=match.group("version"), phase=phase)
-
-
-def build_rh_index_url(release: RhdsReleaseInfo, stream_token: str, *, use_test_index: bool) -> str:
-    release_segment = release_minor_version(release.full_version)
-    phase_suffix = normalize_phase_for_index(release.phase)
-    if phase_suffix:
-        release_segment = f"{release_segment}-{phase_suffix}"
-    stream_suffix = "-ubi9-test" if use_test_index else "-ubi9"
-    return f"{INDEX_URL_PREFIX}/{release_segment}/{stream_token}{stream_suffix}/simple/"
-
-
-def probe_url_exists(url: str) -> bool:
-    request = Request(url, headers={"User-Agent": "notebooks-index-probe"})
-    try:
-        with urlopen(request, timeout=10) as response:
-            return 200 <= getattr(response, "status", 200) < 300
-    except HTTPError as exc:
-        if exc.code == 404:
-            return False
-        raise ValueError(f"Failed to probe production RH index {url}: HTTP {exc.code}") from exc
-    except URLError as exc:
-        raise ValueError(f"Failed to probe production RH index {url}: {exc.reason}") from exc
-
-
-def resolve_index_url(
-    index_config: PythonIndexConfig,
-    stream_token: str,
-    *,
-    base_image: str | None = None,
-    probe_url_exists: Callable[[str], bool] = probe_url_exists,
-) -> str:
-    if index_config.mode == "rh-index":
-        if base_image is None:
-            raise ValueError("BASE_IMAGE is required for rh-index mode")
-        release = parse_rhds_release_from_base_image(base_image)
-        if index_config.channel == "test":
-            return build_rh_index_url(release, stream_token, use_test_index=True)
-        if index_config.channel == "production":
-            return build_rh_index_url(release, stream_token, use_test_index=False)
-        if index_config.channel == "auto":
-            production_url = build_rh_index_url(release, stream_token, use_test_index=False)
-            try:
-                if probe_url_exists(production_url):
-                    return production_url
-            except ValueError:
-                raise
-            except OSError as exc:
-                raise ValueError(f"Failed to probe production RH index {production_url}: {exc}") from exc
-            return build_rh_index_url(release, stream_token, use_test_index=True)
-        raise ValueError(f"Unsupported rh-index channel: {index_config.channel}")
-    if index_config.mode == "public-index":
-        if index_config.url is None:
-            raise ValueError("python_index.<distribution>.url is required for public-index mode")
-        return index_config.url
-    raise ValueError(f"Unsupported python index mode: {index_config.mode}")
 
 
 def normalize_stream_version(acc_version: str) -> str:
@@ -346,6 +262,20 @@ def rewrite_conf_text(text: str, replacements: dict[str, str]) -> str:
     return "".join(updated_lines)
 
 
+def remove_conf_key(text: str, key: str) -> str:
+    kept_lines: list[str] = []
+    for line in text.splitlines(keepends=True):
+        stripped = line.strip()
+        if stripped.startswith("#") or "=" not in stripped:
+            kept_lines.append(line)
+            continue
+        existing_key, _, _value = stripped.partition("=")
+        if existing_key.strip() == key:
+            continue
+        kept_lines.append(line)
+    return "".join(kept_lines)
+
+
 def ensure_conf_key(text: str, key: str, value: str, *, before_key: str | None = None) -> str:
     assignments = read_conf_assignments(text)
     if key in assignments:
@@ -397,41 +327,6 @@ def validate_mapping_schema(data: object, expected: dict[str, Any], context: str
             validate_mapping_schema(data[key], child_schema, f"{context}.{key}")
 
 
-def parse_python_index_config(data: object, context: str) -> PythonIndexConfig:
-    if not isinstance(data, dict):
-        raise ValueError(f"Expected mapping at {context}")
-
-    actual_keys = set(data)
-    allowed_keys = {"mode", "channel", "url"}
-    unexpected_keys = sorted(actual_keys - allowed_keys)
-    if unexpected_keys:
-        keys = ", ".join(unexpected_keys)
-        raise ValueError(f"Unexpected keys under {context}: {keys}")
-
-    if "mode" not in data:
-        raise ValueError(f"Missing keys under {context}: mode")
-
-    mode = scalar_to_string(data["mode"])
-    if mode == "rh-index":
-        if "channel" not in data:
-            raise ValueError(f"{context}.channel is required for rh-index mode")
-        channel = scalar_to_string(data["channel"])
-        if channel not in {"auto", "test", "production"}:
-            raise ValueError(f"{context}.channel must be one of: auto, test, production")
-        if "url" in data:
-            raise ValueError(f"{context}.url is not supported for rh-index mode")
-        return PythonIndexConfig(mode=mode, channel=channel, url=None)
-
-    if mode == "public-index":
-        if "url" not in data:
-            raise ValueError(f"{context}.url is required for public-index mode")
-        if "channel" in data:
-            raise ValueError(f"{context}.channel is not supported for public-index mode")
-        return PythonIndexConfig(mode=mode, channel=None, url=scalar_to_string(data["url"]))
-
-    raise ValueError(f"Unsupported python index mode at {context}: {mode}")
-
-
 def load_versions_config(path: Path) -> VersionsConfig:
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
@@ -444,11 +339,7 @@ def load_versions_config(path: Path) -> VersionsConfig:
         full_version=scalar_to_string(release_data["full_version"]),
         rhds_os_base=scalar_to_string(release_data["rhds_os_base"]),
     )
-    python_index = {
-        distribution: parse_python_index_config(index_data, f"python_index.{distribution}")
-        for distribution, index_data in data["python_index"].items()
-    }
-    return VersionsConfig(release=release, python_index=python_index, base_image=data["artifacts"]["base_image"])
+    return VersionsConfig(release=release, base_image=data["artifacts"]["base_image"])
 
 
 def classify_conf_name(name: str) -> tuple[str, str] | None:
@@ -503,26 +394,6 @@ def collect_conf_targets(root_dir: Path) -> list[ConfTarget]:
         relative_path = path.relative_to(root_dir)
 
         if relative_path.parts[:2] == ("base-images", "build-args"):
-            static_streams = {
-                "cpu.conf": "cpu",
-                "cuda12.9.conf": "cuda12.9",
-                "cuda13.0.conf": "cuda13.0",
-                "rocm7.1.conf": "rocm7.1",
-            }
-            stream_token = static_streams.get(path.name)
-            if stream_token is None:
-                continue
-            targets.append(
-                ConfTarget(
-                    path=path,
-                    accelerator=None,
-                    distribution=None,
-                    flavor=None,
-                    stream_token=stream_token,
-                    manage_base_image=False,
-                    manage_index_url=True,
-                )
-            )
             continue
 
         classification = classify_conf_name(path.name)
@@ -536,30 +407,10 @@ def collect_conf_targets(root_dir: Path) -> list[ConfTarget]:
                 accelerator=accelerator,
                 distribution=distribution,
                 flavor=classify_flavor(relative_path, accelerator),
-                stream_token=None,
                 manage_base_image=True,
-                manage_index_url=True,
             )
         )
     return targets
-
-
-def stream_token_for_target(target: ConfTarget, config: VersionsConfig) -> str:
-    if target.stream_token is not None:
-        return target.stream_token
-    if target.accelerator == "cpu":
-        return "cpu"
-    if target.accelerator is None or target.distribution is None:
-        raise ValueError(f"Target is missing accelerator metadata: {target.path}")
-    acc_version = config.acc_version(target.accelerator, target.distribution, target.flavor)
-    return f"{target.accelerator}{normalize_stream_version(acc_version)}"
-
-
-def index_distribution_for_target(target: ConfTarget) -> str:
-    if target.distribution is not None:
-        return target.distribution
-    # base-images/build-args/*.conf are non-Konflux inputs, so they follow the ODH/public side.
-    return "odh"
 
 
 def profile_for_distribution(distribution: str) -> str:
@@ -579,9 +430,13 @@ def plan_updates(
     updates: list[PlannedUpdate] = []
     for target in collect_conf_targets(root_dir):
         original_text = target.path.read_text(encoding="utf-8")
-        profile = profile_for_distribution(index_distribution_for_target(target))
-        original_text = ensure_conf_key(original_text, "PROFILE", profile, before_key="PYLOCK_FLAVOR")
-        assignments = read_conf_assignments(original_text)
+        if target.distribution is None:
+            raise ValueError(f"Target is missing distribution metadata: {target.path}")
+
+        profile = profile_for_distribution(target.distribution)
+        working_text = remove_conf_key(original_text, "INDEX_URL")
+        working_text = ensure_conf_key(working_text, "PROFILE", profile, before_key="PYLOCK_FLAVOR")
+        assignments = read_conf_assignments(working_text)
         current_base_image = assignments.get("BASE_IMAGE")
         replacements: dict[str, str] = {}
         replacements["PROFILE"] = profile
@@ -602,18 +457,11 @@ def plan_updates(
             )
             replacements["BASE_IMAGE"] = resolved_base_image
 
-        if target.manage_index_url:
-            replacements["INDEX_URL"] = resolve_index_url(
-                config.index_config(index_distribution_for_target(target)),
-                stream_token_for_target(target, config),
-                base_image=resolved_base_image,
-            )
-
         updates.append(
             PlannedUpdate(
                 target=target,
                 original_text=original_text,
-                updated_text=rewrite_conf_text(original_text, replacements),
+                updated_text=rewrite_conf_text(working_text, replacements),
             )
         )
     return updates

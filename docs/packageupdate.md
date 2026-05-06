@@ -22,7 +22,7 @@ Each notebook image has a `pyproject.toml` file that declares its Python depende
 
 ### pylock.toml
 
-Lock files (`pylock.toml`) contain the exact resolved versions with SHA256 hashes for reproducible builds. These are generated from `pyproject.toml` files.
+Lock files (`pylock.odh.<flavor>.toml` and `pylock.rhds.<flavor>.toml`) contain the exact resolved versions with SHA256 hashes for reproducible builds. These are generated from `pyproject.toml` files.
 
 ### Manifest Files
 
@@ -64,9 +64,9 @@ The `scripts/pylocks_generator.sh` script supports three modes:
 
 | Mode | Description |
 |------|-------------|
-| `auto` (default) | Uses `rh-index` if `uv.lock.d/` exists, otherwise `public-index` |
-| `public-index` | Uses public PyPI, generates/updates `pylock.toml` |
-| `rh-index` | Uses internal AIPCC indexes, generates `uv.lock.d/pylock.<flavor>.toml` |
+| `auto` (default) | Generates both `odh` and `rhds` artifacts when both Dockerfile variants exist |
+| `public-index` | Uses public PyPI and generates `uv.lock.d/pylock.odh.<flavor>.toml` |
+| `rh-index` | Uses the RHDS index derived from `PROFILE` and `BASE_IMAGE`, and generates `uv.lock.d/pylock.rhds.<flavor>.toml` |
 
 #### Force Upgrade
 

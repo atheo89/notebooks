@@ -1,32 +1,19 @@
 # Update this file, then run:
 #   gmake sync-build-args-from-versions
-# If any INDEX_URL values change, refresh locks with:
+# Then refresh locks with:
 #   gmake refresh-lock-files
 # `release.full_version` is authoritative for the RHDS release version.
 # For `konflux.*.conf`, the sync rewrites the `BASE_IMAGE` tag version to this
-# value, preserves the existing phase/build suffix, and then derives `INDEX_URL`
-# from the rewritten `BASE_IMAGE`.
+# value and preserves the existing phase/build suffix.
 # `release.rhds_os_base` controls the RHDS image OS segment, e.g. `el9.6`.
-# `python_index.*.channel` is used only for `mode: rh-index`:
-#   auto -> prefer production if it exists, else fall back to *-test
-#   test -> always use the *-test RH index
-#   production -> always use the production RH index
-# `python_index.odh` uses public PyPI:
-#   mode: public-index
-#   url: https://pypi.org/simple/
+# Non-`base-images` build-args no longer store `INDEX_URL`.
+# Lock generation derives the effective index dynamically from `PROFILE`
+# and `BASE_IMAGE`.
 schema_version: 1
 
 release:
   full_version: "3.5.0"
   rhds_os_base: el9.6
-
-python_index:
-  rhds:
-    mode: rh-index
-    channel: auto
-  odh:
-    mode: public-index
-    url: https://pypi.org/simple/
 
 artifacts:
   base_image:

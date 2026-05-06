@@ -11,8 +11,8 @@ This document describes the automation flow implemented on this branch for:
 
 The automation work on this branch has four main goals:
 
-1. Make `versions_config.yml` the operator-facing entry point for routine image/index updates.
-2. Keep `BASE_IMAGE`, `INDEX_URL`, and `PROFILE` values synchronized across all supported `build-args/*.conf` files.
+1. Make `versions_config.yml` the operator-facing entry point for routine image updates.
+2. Keep `BASE_IMAGE` and `PROFILE` synchronized across all supported non-`base-images` `build-args/*.conf` files.
 3. Split generated Python lock artifacts into explicit `odh` and `rhds` profiles.
 4. Preserve RHDS release/phase behavior that still needs to cooperate with Renovate-driven image tag bumps.
 
@@ -47,26 +47,17 @@ flowchart TD
     N --> P[Resolved BASE_IMAGE]
     O --> P
 
-    G -->|no| P2[Keep existing BASE_IMAGE]
-
-    P --> Q[Resolve INDEX_URL]
-    P2 --> Q
-    Q --> R{python_index mode}
-    R -->|public-index| S[Use configured public URL]
-    R -->|rh-index| T[Derive release and phase from resolved BASE_IMAGE]
-    T --> U{channel}
-    U -->|test| V[Use -ubi9-test RH index]
-    U -->|production| W[Use -ubi9 production RH index]
-    U -->|auto| X[Probe production URL, else fall back to -test]
-
-    S --> Y[Write INDEX_URL, BASE_IMAGE, PROFILE]
-    V --> Y
-    W --> Y
+    P --> Q[Remove stored INDEX_URL from non-base-images confs]
+    Q --> R[Write BASE_IMAGE and PROFILE]
+    R --> S[Optionally run gmake refresh-lock-files]
+    S --> T[Read PROFILE and BASE_IMAGE from build-args]
+    T --> U{PROFILE}
+    U -->|odh| V[Use https://pypi.org/simple/]
+    U -->|rhds| W[Derive RHDS release and stream from BASE_IMAGE]
+    W --> X[Prefer production RH index, else fall back to -test]
+    V --> Y[Generate pylock.odh/rhds and requirements.odh/rhds]
     X --> Y
-
-    Y --> Z[Optionally run gmake refresh-lock-files]
-    Z --> AA[Generate pylock.odh/rhds and requirements.odh/rhds]
-    AA --> AB[Dockerfiles and helpers consume profile-specific artifacts]
+    Y --> Z[Dockerfiles and helpers consume profile-specific artifacts]
 ```
 
 ## Current Design
@@ -77,8 +68,6 @@ flowchart TD
 
 - `release.full_version`
 - `release.rhds_os_base`
-- `python_index.rhds.mode/channel`
-- `python_index.odh.mode/url`
 - `artifacts.base_image.*` accelerator versions
 
 The sync script validates this structure before touching any `*.conf` files.
@@ -91,7 +80,7 @@ The sync script validates this structure before touching any `*.conf` files.
 - path: used to infer flavor like `minimal`, `pytorch`, `tensorflow`, or `pytorch-llmcompressor`
 - distribution: `odh` for non-Konflux, `rhds` for Konflux
 
-It also handles `base-images/build-args/*.conf` as index-only targets with static stream tokens like `cpu`, `cuda12.9`, `cuda13.0`, and `rocm7.1`.
+It intentionally skips `base-images/build-args/*.conf`, which remain out of scope for this automation.
 
 ### 3. `PROFILE` is now a first-class build input
 
@@ -115,9 +104,7 @@ For Konflux targets, the sync:
 2. compares the current tag version against `release.full_version`
 3. rewrites the tag version to `release.full_version`
 4. preserves the existing build/timestamp suffix
-5. derives `INDEX_URL` from the rewritten `BASE_IMAGE`
-
-This keeps RHDS `BASE_IMAGE` and `INDEX_URL` aligned.
+5. leaves lock-generation consumers to derive the effective RHDS index from the rewritten `BASE_IMAGE`
 
 ### 5. RHDS phase selection rules
 
@@ -144,15 +131,11 @@ Examples:
 - `3.4.0 -> 3.5.0 --rhds-phase ga` becomes `3.5.0-...`
 - `3.5.0-ea.1 -> 3.5.0-ea.2` is still left to Renovate because the version did not increase
 
-### 6. RHDS index resolution
+### 6. Dynamic RHDS index resolution
 
-`python_index.rhds` uses `mode: rh-index` with:
+Non-`base-images` build-args no longer store `INDEX_URL`.
 
-- `channel: test`
-- `channel: production`
-- `channel: auto`
-
-When `channel: auto` is selected, the script probes the production RH index first and falls back to `*-test` when production is not available.
+Instead, the lock-generation side resolves the effective RHDS index dynamically from `PROFILE=rhds` and `BASE_IMAGE`.
 
 The release segment used in the RH index is taken from the resolved RHDS `BASE_IMAGE`:
 
@@ -160,11 +143,15 @@ The release segment used in the RH index is taken from the resolved RHDS `BASE_I
 - `3.5.0-ea.2-...` -> `3.5-EA2`
 - `3.5.0-...` -> `3.5`
 
-### 7. ODH index resolution
+It then prefers the production RH index and falls back to the `*-test` variant when production is not available.
 
-`python_index.odh` uses `mode: public-index` and an explicit `url`, which currently points to public PyPI.
+### 7. Dynamic ODH index resolution
 
-Non-Konflux `*.conf` files use that URL directly.
+For `PROFILE=odh`, the effective index is always public PyPI:
+
+- `https://pypi.org/simple/`
+
+Non-Konflux `*.conf` files do not store that URL directly.
 
 ## Lockfile Split and Naming
 
@@ -219,7 +206,7 @@ The automation branch also aligned the main consumers of lock artifacts:
    ```
 
 4. Review the updated `build-args/*.conf` files.
-5. If any `INDEX_URL` or lock inputs changed, regenerate locks:
+5. If any build-args or lock inputs changed, regenerate locks:
 
    ```bash
    gmake refresh-lock-files
@@ -231,17 +218,18 @@ The automation branch also aligned the main consumers of lock artifacts:
 
 - New RHDS release line bump: `full_version` drives the tag version
 - Same RHDS release line: Renovate keeps driving `ea.1 -> ea.2 -> ga`
-- ODH/public side: `versions_config.yml` directly controls the public index and accelerator versions
+- ODH/public side: `versions_config.yml` controls accelerator versions, while lock refresh derives the public index from `PROFILE=odh`
 
 ## Planning Notes
 
 ### What is complete on this branch
 
 - central `versions_config.yml` schema for build-args automation
-- automatic sync of `BASE_IMAGE`, `INDEX_URL`, and `PROFILE`
+- automatic sync of `BASE_IMAGE` and `PROFILE`
 - RHDS release precedence moved to `release.full_version`
 - RHDS phase override support via `--rhds-phase`
-- auto/test/production RH index channel handling
+- dynamic RHDS/public index resolution during lock generation
+- removal of stored non-`base-images` `INDEX_URL`
 - split `odh` / `rhds` lockfile generation
 - unified Dockerfile artifact lookup through `PROFILE`
 - removal of legacy RHDS compatibility alias generation

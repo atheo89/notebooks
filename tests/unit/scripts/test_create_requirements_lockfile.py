@@ -18,6 +18,13 @@ def _write_stub_repo(tmp_path: Path) -> Path:
         source_script.read_text(encoding="utf-8"),
         encoding="utf-8",
     )
+    (repo_root / "scripts" / "index_url_resolver.py").write_text(
+        "def resolve_effective_index_url(profile, base_image, **_kwargs):\n"
+        "    if profile == 'odh':\n"
+        "        return 'https://pypi.org/simple/'\n"
+        "    return 'https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cpu-ubi9-test/simple/'\n",
+        encoding="utf-8",
+    )
     (repo_root / "scripts" / "pylocks_generator.py").write_text(
         "# stubbed by tests\n",
         encoding="utf-8",
@@ -25,7 +32,8 @@ def _write_stub_repo(tmp_path: Path) -> Path:
     (helper_dir / "pylock-to-requirements.py").write_text(
         "import sys\n"
         "from pathlib import Path\n"
-        "Path(sys.argv[2]).write_text('generated\\n', encoding='utf-8')\n",
+        "index_url = sys.argv[3] if len(sys.argv) > 3 else ''\n"
+        "Path(sys.argv[2]).write_text(f'generated:{index_url}\\n', encoding='utf-8')\n",
         encoding="utf-8",
     )
     (repo_root / "uv").write_text(
@@ -56,7 +64,7 @@ def test_create_requirements_lockfile_uses_profile_specific_rhds_artifacts(
         encoding="utf-8",
     )
     (project_dir / "build-args" / "konflux.cpu.conf").write_text(
-        "INDEX_URL=https://example.invalid/simple/\n",
+        "BASE_IMAGE=quay.io/aipcc/base-images/cpu:3.5.0-ea.1-1777920678\nPROFILE=rhds\n",
         encoding="utf-8",
     )
 
@@ -74,5 +82,7 @@ def test_create_requirements_lockfile_uses_profile_specific_rhds_artifacts(
     )
 
     assert result.returncode == 0, result.stdout + result.stderr
-    assert (project_dir / "requirements.rhds.cpu.txt").read_text(encoding="utf-8") == "generated\n"
+    assert (project_dir / "requirements.rhds.cpu.txt").read_text(encoding="utf-8") == (
+        "generated:https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cpu-ubi9-test/simple/\n"
+    )
     assert not (project_dir / "requirements.cpu.txt").exists()

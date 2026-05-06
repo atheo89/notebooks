@@ -109,6 +109,7 @@ for _d in "${PUBLIC_INDEX_PROJECTS[@]}"; do
 done
 
 PROFILE="rhds"
+BASE_IMAGE=""
 CONF_FILE="${PROJECT_DIR}/build-args/konflux.${FLAVOR}.conf"
 REQUIREMENTS_INDEX_URL=""
 if [[ "$PYLOCKS_MODE" == "public-index" ]]; then
@@ -118,12 +119,29 @@ fi
 PYLOCK_FILE="${PROJECT_DIR}/uv.lock.d/pylock.${PROFILE}.${FLAVOR}.toml"
 REQUIREMENTS_FILE="${PROJECT_DIR}/requirements.${PROFILE}.${FLAVOR}.txt"
 
-INDEX_URL=""
-if [[ "$PYLOCKS_MODE" == "rh-index" && -f "$CONF_FILE" ]]; then
+if [[ -f "$CONF_FILE" ]]; then
   # shellcheck source=/dev/null
   source "$CONF_FILE"
-  REQUIREMENTS_INDEX_URL="${INDEX_URL:-}"
 fi
+
+REQUIREMENTS_INDEX_URL="$(
+  PROFILE="${PROFILE:-}" BASE_IMAGE="${BASE_IMAGE:-}" python3 - <<'PY'
+import importlib.util
+import os
+from pathlib import Path
+
+resolver_path = Path("scripts/index_url_resolver.py")
+spec = importlib.util.spec_from_file_location("_index_url_resolver", resolver_path)
+if spec is None or spec.loader is None:
+    raise RuntimeError(f"Failed to load resolver from {resolver_path}")
+resolver = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(resolver)
+
+profile = os.environ.get("PROFILE", "").strip()
+base_image = os.environ.get("BASE_IMAGE", "").strip() or None
+print(resolver.resolve_effective_index_url(profile, base_image))
+PY
+)"
 
 # =========================================================================
 # Step 1: Generate pylock.toml via pylocks_generator.py

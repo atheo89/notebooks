@@ -65,6 +65,7 @@ Notes:
 
 from __future__ import annotations
 
+import importlib.util
 import os
 import re
 import subprocess
@@ -78,6 +79,15 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
+
+_resolver_path = Path(__file__).with_name("index_url_resolver.py")
+_resolver_spec = importlib.util.spec_from_file_location("_index_url_resolver", _resolver_path)
+if _resolver_spec is None or _resolver_spec.loader is None:
+    raise RuntimeError(f"Failed to load resolver from {_resolver_path}")
+_resolver_module = importlib.util.module_from_spec(_resolver_spec)
+sys.modules[_resolver_spec.name] = _resolver_module
+_resolver_spec.loader.exec_module(_resolver_module)
+resolve_effective_index_url = _resolver_module.resolve_effective_index_url
 
 # region Configuration
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -335,27 +345,46 @@ def requirements_path(project_dir: Path, flavor: str, mode: IndexMode) -> Path:
     return project_dir / filename
 
 
+def effective_index_url(
+    project_dir: Path,
+    flavor: str,
+    mode: IndexMode,
+    log: LogBuffer,
+) -> str | None:
+    conf_file = build_args_conf_file(project_dir, flavor, mode)
+    if not conf_file.is_file():
+        log.warning(f"Missing build-args config for {flavor}: {conf_file}")
+        return None
+
+    profile = read_conf_value(conf_file, "PROFILE")
+    if not profile:
+        log.warning(f"PROFILE not found in {conf_file}")
+        return None
+
+    base_image = read_conf_value(conf_file, "BASE_IMAGE")
+    try:
+        return resolve_effective_index_url(profile, base_image)
+    except ValueError as exc:
+        log.warning(str(exc))
+        return None
+
+
 def get_index_flags(
     project_dir: Path,
     flavor: str,
     mode: IndexMode,
     log: LogBuffer,
 ) -> list[str] | None:
-    """Build uv index flags from the mode-appropriate build-args conf.
-
-    Returns None on failure (missing conf or INDEX_URL).
-    """
-    conf_file = build_args_conf_file(project_dir, flavor, mode)
-    if not conf_file.is_file():
-        log.warning(f"Missing build-args config for {flavor}: {conf_file}")
-        return None
-
-    index_url = read_conf_value(conf_file, "INDEX_URL")
+    """Build uv index flags from the mode-appropriate build-args conf."""
+    index_url = effective_index_url(project_dir, flavor, mode, log)
     if not index_url:
-        log.warning(f"INDEX_URL not found in {conf_file}")
         return None
 
     index_url = ensure_json_format_param(index_url)
+    if mode == IndexMode.public_index:
+        log.info(f"PyPI lock index URL: {index_url}")
+    elif mode == IndexMode.rh_index:
+        log.info(f"RH index lock URL: {index_url}")
     flags = [f"--default-index={index_url}"]
 
     return flags
@@ -504,7 +533,7 @@ def generate_requirements_txt(
     pylock_path = lockfile_path(project_dir, flavor, mode)
     output_path = requirements_path(project_dir, flavor, mode)
 
-    index_url = read_conf_value(build_args_conf_file(project_dir, flavor, mode), "INDEX_URL") or ""
+    index_url = effective_index_url(project_dir, flavor, mode, log) or ""
 
     cmd = [sys.executable, str(PYLOCK_TO_REQUIREMENTS), str(pylock_path), str(output_path)]
     if index_url:

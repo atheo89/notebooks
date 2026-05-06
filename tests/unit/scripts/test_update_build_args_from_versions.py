@@ -14,37 +14,15 @@ def _write_versions_config(
     path: Path,
     *,
     full_version: str = "3.6.0",
-    rhds_channel: str = "test",
-    odh_mode: str = "public-index",
-    odh_channel: str | None = None,
-    odh_url: str | None = "https://pypi.org/simple/",
 ) -> None:
-    rhds_block = textwrap.indent(f"mode: rh-index\nchannel: {rhds_channel}", " " * 4)
-
-    odh_lines = [f"mode: {odh_mode}"]
-    if odh_channel is not None:
-        odh_lines.append(f"channel: {odh_channel}")
-    if odh_url is not None:
-        odh_lines.append(f'url: "{odh_url}"')
-    odh_block = textwrap.indent("\n".join(odh_lines), " " * 4)
-
     config_text = textwrap.dedent(
-        """\
+        f"""\
         schema_version: 1
 
         release:
-          full_version: "%s"
+          full_version: "{full_version}"
           rhds_os_base: el9.6
 
-        python_index:
-          rhds:
-        """
-    ) % full_version
-    config_text += f"{rhds_block}\n"
-    config_text += "  odh:\n"
-    config_text += f"{odh_block}\n\n"
-    config_text += textwrap.dedent(
-        """\
         artifacts:
           base_image:
             cpu:
@@ -55,28 +33,28 @@ def _write_versions_config(
 
             cuda:
               minimal:
-                rhds: { acc_version: 25.0 }
-                odh:  { acc_version: v25.0 }
+                rhds: {{ acc_version: 25.0 }}
+                odh:  {{ acc_version: v25.0 }}
               pytorch:
-                rhds: { acc_version: 25.0 }
-                odh:  { acc_version: v25.0 }
+                rhds: {{ acc_version: 25.0 }}
+                odh:  {{ acc_version: v25.0 }}
               pytorch-llmcompressor:
-                rhds: { acc_version: 25.0 }
-                odh:  { acc_version: v25.0 }
+                rhds: {{ acc_version: 25.0 }}
+                odh:  {{ acc_version: v25.0 }}
               tensorflow:
-                rhds: { acc_version: 24.9 }
-                odh:  { acc_version: v24.9 }
+                rhds: {{ acc_version: 24.9 }}
+                odh:  {{ acc_version: v24.9 }}
 
             rocm:
               minimal:
-                rhds: { acc_version: 8.0 }
-                odh:  { acc_version: v8.0 }
+                rhds: {{ acc_version: 8.0 }}
+                odh:  {{ acc_version: v8.0 }}
               pytorch:
-                rhds: { acc_version: 8.0 }
-                odh:  { acc_version: v8.0 }
+                rhds: {{ acc_version: 8.0 }}
+                odh:  {{ acc_version: v8.0 }}
               tensorflow:
-                rhds: { acc_version: 8.0 }
-                odh:  { acc_version: v8.0 }
+                rhds: {{ acc_version: 8.0 }}
+                odh:  {{ acc_version: v8.0 }}
         """
     )
 
@@ -86,11 +64,6 @@ def _write_versions_config(
 @pytest.fixture
 def release() -> updater.ReleaseConfig:
     return updater.ReleaseConfig(full_version="3.5.0", rhds_os_base="el9.6")
-
-
-@pytest.fixture
-def rhds_index() -> updater.PythonIndexConfig:
-    return updater.PythonIndexConfig(mode="rh-index", channel="test", url=None)
 
 
 @pytest.fixture
@@ -116,61 +89,6 @@ def test_parse_rhds_release_from_base_image_ga_tag() -> None:
 
     assert parsed.full_version == "3.5.0"
     assert parsed.phase == ""
-
-
-def test_resolve_index_url_formats_rh_index_test_channel(
-    rhds_index: updater.PythonIndexConfig,
-    rhds_base_image: str,
-) -> None:
-    assert updater.resolve_index_url(rhds_index, "cuda13.0", base_image=rhds_base_image) == (
-        "https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cuda13.0-ubi9-test/simple/"
-    )
-
-
-def test_resolve_index_url_formats_rh_index_production_channel(rhds_base_image: str) -> None:
-    production_index = updater.PythonIndexConfig(mode="rh-index", channel="production", url=None)
-
-    assert updater.resolve_index_url(production_index, "cuda13.0", base_image=rhds_base_image) == (
-        "https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cuda13.0-ubi9/simple/"
-    )
-
-
-def test_resolve_index_url_auto_prefers_production_when_available(rhds_base_image: str) -> None:
-    auto_index = updater.PythonIndexConfig(mode="rh-index", channel="auto", url=None)
-
-    assert updater.resolve_index_url(
-        auto_index,
-        "cuda13.0",
-        base_image=rhds_base_image,
-        probe_url_exists=lambda _url: True,
-    ) == "https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cuda13.0-ubi9/simple/"
-
-
-def test_resolve_index_url_auto_falls_back_to_test_on_missing_production(rhds_base_image: str) -> None:
-    auto_index = updater.PythonIndexConfig(mode="rh-index", channel="auto", url=None)
-
-    assert updater.resolve_index_url(
-        auto_index,
-        "cuda13.0",
-        base_image=rhds_base_image,
-        probe_url_exists=lambda _url: False,
-    ) == "https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA1/cuda13.0-ubi9-test/simple/"
-
-
-def test_resolve_index_url_auto_raises_on_probe_error(rhds_base_image: str) -> None:
-    auto_index = updater.PythonIndexConfig(mode="rh-index", channel="auto", url=None)
-
-    def _raise(_url: str) -> bool:
-        raise OSError("network down")
-
-    with pytest.raises(ValueError, match="Failed to probe production RH index"):
-        updater.resolve_index_url(auto_index, "cuda13.0", base_image=rhds_base_image, probe_url_exists=_raise)
-
-
-def test_resolve_index_url_returns_public_index_url() -> None:
-    public_index = updater.PythonIndexConfig(mode="public-index", channel=None, url="https://pypi.org/simple/")
-
-    assert updater.resolve_index_url(public_index, "cpu") == "https://pypi.org/simple/"
 
 
 def test_rewrite_base_image_updates_accelerator_and_release_parts() -> None:
@@ -249,7 +167,6 @@ def test_rewrite_conf_text_preserves_other_lines() -> None:
     updated = updater.rewrite_conf_text(
         original,
         {
-            "INDEX_URL": "new-index",
             "BASE_IMAGE": "new-image",
             "PROFILE": "rhds",
         },
@@ -257,9 +174,24 @@ def test_rewrite_conf_text_preserves_other_lines() -> None:
 
     assert updated == (
         "# comment\n"
-        "INDEX_URL=new-index\n"
+        "INDEX_URL=old-index\n"
         "BASE_IMAGE=new-image\n"
         "PROFILE=rhds\n"
+        "PYLOCK_FLAVOR=cuda\n"
+    )
+
+
+def test_remove_conf_key_drops_assignment_line() -> None:
+    original = (
+        "# comment\n"
+        "INDEX_URL=old-index\n"
+        "BASE_IMAGE=old-image\n"
+        "PYLOCK_FLAVOR=cuda\n"
+    )
+
+    assert updater.remove_conf_key(original, "INDEX_URL") == (
+        "# comment\n"
+        "BASE_IMAGE=old-image\n"
         "PYLOCK_FLAVOR=cuda\n"
     )
 
@@ -296,11 +228,11 @@ def test_collect_conf_targets_classifies_synthetic_tree(tmp_path: Path) -> None:
     targets = updater.collect_conf_targets(tmp_path)
     by_path = {target.path.relative_to(tmp_path).as_posix(): target for target in targets}
 
-    assert len(targets) == 4
+    assert len(targets) == 3
     assert by_path["jupyter/minimal/ubi9-python-3.12/build-args/konflux.cuda.conf"].flavor == "minimal"
     assert by_path["runtimes/rocm-pytorch/ubi9-python-3.12/build-args/rocm.conf"].flavor == "pytorch"
     assert by_path["rstudio/rhel9-python-3.12/build-args/konflux.cuda.conf"].flavor == "tensorflow"
-    assert by_path["base-images/build-args/cpu.conf"].stream_token == "cpu"
+    assert "base-images/build-args/cpu.conf" not in by_path
     assert "base-images/build-args/rocm6.4.conf" not in by_path
 
 
@@ -313,13 +245,6 @@ def test_load_versions_config_rejects_unexpected_keys(tmp_path: Path) -> None:
             release:
               full_version: "3.5.0"
               rhds_os_base: el9.6
-            python_index:
-              rhds:
-                mode: rh-index
-                channel: test
-              odh:
-                mode: public-index
-                url: "https://pypi.org/simple/"
             artifacts:
               base_image:
                 cpu:
@@ -361,19 +286,55 @@ def test_load_versions_config_rejects_unexpected_keys(tmp_path: Path) -> None:
         updater.load_versions_config(bad_config)
 
 
-def test_load_versions_config_rejects_public_index_without_url(tmp_path: Path) -> None:
+def test_load_versions_config_rejects_legacy_python_index_key(tmp_path: Path) -> None:
     bad_config = tmp_path / "versions_config.yml"
-    _write_versions_config(bad_config, odh_mode="public-index", odh_channel=None, odh_url=None)
+    bad_config.write_text(
+        textwrap.dedent(
+            """\
+            schema_version: 1
+            release:
+              full_version: "3.5.0"
+              rhds_os_base: el9.6
+            python_index:
+              rhds:
+                mode: rh-index
+                channel: auto
+            artifacts:
+              base_image:
+                cpu:
+                  rhds:
+                    acc_version: <full_version>
+                  odh:
+                    acc_version: latest
+                cuda:
+                  minimal:
+                    rhds: { acc_version: 13.0 }
+                    odh: { acc_version: v13.0 }
+                  pytorch:
+                    rhds: { acc_version: 13.0 }
+                    odh: { acc_version: v13.0 }
+                  pytorch-llmcompressor:
+                    rhds: { acc_version: 13.0 }
+                    odh: { acc_version: v13.0 }
+                  tensorflow:
+                    rhds: { acc_version: 12.9 }
+                    odh: { acc_version: v12.9 }
+                rocm:
+                  minimal:
+                    rhds: { acc_version: 7.1 }
+                    odh: { acc_version: v7.1 }
+                  pytorch:
+                    rhds: { acc_version: 7.1 }
+                    odh: { acc_version: v7.1 }
+                  tensorflow:
+                    rhds: { acc_version: 7.1 }
+                    odh: { acc_version: v7.1 }
+            """
+        ),
+        encoding="utf-8",
+    )
 
-    with pytest.raises(ValueError, match="python_index.odh.url"):
-        updater.load_versions_config(bad_config)
-
-
-def test_load_versions_config_rejects_rh_index_without_channel(tmp_path: Path) -> None:
-    bad_config = tmp_path / "versions_config.yml"
-    _write_versions_config(bad_config, odh_mode="rh-index", odh_channel=None)
-
-    with pytest.raises(ValueError, match="python_index.odh.channel"):
+    with pytest.raises(ValueError, match=r"Unexpected keys under root: python_index"):
         updater.load_versions_config(bad_config)
 
 
@@ -443,9 +404,45 @@ def test_main_updates_file_in_place(tmp_path: Path, capsys: pytest.CaptureFixtur
     output = capsys.readouterr().out
     assert "Updated jupyter/minimal/ubi9-python-3.12/build-args/konflux.cuda.conf" in output
     text = conf_file.read_text(encoding="utf-8")
-    assert "INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.6-EA1/cuda25.0-ubi9-test/simple/" in text
+    assert "INDEX_URL=" not in text
     assert "BASE_IMAGE=quay.io/aipcc/base-images/cuda-25.0-el9.6:3.6.0-ea.1-1777919771" in text
     assert "PROFILE=rhds" in text
+
+
+def test_main_removes_index_url_even_when_other_values_already_match(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _write_versions_config(tmp_path / "versions_config.yml")
+
+    conf_file = tmp_path / "jupyter" / "minimal" / "ubi9-python-3.12" / "build-args" / "konflux.cuda.conf"
+    conf_file.parent.mkdir(parents=True)
+    conf_file.write_text(
+        textwrap.dedent(
+            """\
+            INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.6-EA1/cuda25.0-ubi9-test/simple/
+            BASE_IMAGE=quay.io/aipcc/base-images/cuda-25.0-el9.6:3.6.0-ea.1-1777919771
+            PROFILE=rhds
+            PYLOCK_FLAVOR=cuda
+            """
+        ),
+        encoding="utf-8",
+    )
+
+    assert (
+        updater.main(
+            [
+                "--root",
+                str(tmp_path),
+                "--config",
+                str(tmp_path / "versions_config.yml"),
+            ]
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "Updated jupyter/minimal/ubi9-python-3.12/build-args/konflux.cuda.conf" in output
+    assert "INDEX_URL=" not in conf_file.read_text(encoding="utf-8")
 
 
 def test_main_uses_rhds_phase_override_for_release_bump(
@@ -484,7 +481,7 @@ def test_main_uses_rhds_phase_override_for_release_bump(
     output = capsys.readouterr().out
     assert "Updated jupyter/minimal/ubi9-python-3.12/build-args/konflux.cuda.conf" in output
     text = conf_file.read_text(encoding="utf-8")
-    assert "INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.6-EA2/cuda25.0-ubi9-test/simple/" in text
+    assert "INDEX_URL=" not in text
     assert "BASE_IMAGE=quay.io/aipcc/base-images/cuda-25.0-el9.6:3.6.0-ea.2-1777919771" in text
     assert "PROFILE=rhds" in text
 
@@ -523,7 +520,7 @@ def test_main_updates_konflux_cpu_release_version_from_full_version(
     output = capsys.readouterr().out
     assert "Updated jupyter/minimal/ubi9-python-3.12/build-args/konflux.cpu.conf" in output
     text = conf_file.read_text(encoding="utf-8")
-    assert "INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.6-EA1/cpu-ubi9-test/simple/" in text
+    assert "INDEX_URL=" not in text
     assert "BASE_IMAGE=quay.io/aipcc/base-images/cpu:3.6.0-ea.1-1777920678" in text
     assert "PROFILE=rhds" in text
 
@@ -564,18 +561,13 @@ def test_main_keeps_current_phase_when_full_version_is_not_higher(
     output = capsys.readouterr().out
     assert "Updated jupyter/minimal/ubi9-python-3.12/build-args/konflux.cuda.conf" in output
     text = conf_file.read_text(encoding="utf-8")
-    assert "INDEX_URL=https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA2/cuda25.0-ubi9-test/simple/" in text
+    assert "INDEX_URL=" not in text
     assert "BASE_IMAGE=quay.io/aipcc/base-images/cuda-25.0-el9.6:3.5.0-ea.2-1777919771" in text
     assert "PROFILE=rhds" in text
 
 
 def test_main_updates_odh_conf_to_public_index(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    _write_versions_config(
-        tmp_path / "versions_config.yml",
-        odh_mode="public-index",
-        odh_channel=None,
-        odh_url="https://pypi.org/simple/",
-    )
+    _write_versions_config(tmp_path / "versions_config.yml")
 
     conf_file = tmp_path / "jupyter" / "minimal" / "ubi9-python-3.12" / "build-args" / "cpu.conf"
     conf_file.parent.mkdir(parents=True)
@@ -605,5 +597,5 @@ def test_main_updates_odh_conf_to_public_index(tmp_path: Path, capsys: pytest.Ca
     output = capsys.readouterr().out
     assert "Updated jupyter/minimal/ubi9-python-3.12/build-args/cpu.conf" in output
     text = conf_file.read_text(encoding="utf-8")
-    assert "INDEX_URL=https://pypi.org/simple/" in text
+    assert "INDEX_URL=" not in text
     assert "PROFILE=odh" in text
