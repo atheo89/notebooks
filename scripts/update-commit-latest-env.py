@@ -6,6 +6,7 @@ Run after changing ``params-latest.env`` (e.g. pinning workbench images to diges
 """
 from __future__ import annotations
 
+import argparse
 import asyncio
 import json
 import pathlib
@@ -15,9 +16,13 @@ import typing
 
 import structlog
 
-from ci.logging_config import configure_logging
-
 PROJECT_ROOT = pathlib.Path(__file__).parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from ci.logging_config import configure_logging
+from manifests.tools.commit_env_refs import parse_env_file
+
 
 log = structlog.get_logger()
 
@@ -105,27 +110,86 @@ async def inspect(images_to_inspect: typing.Iterable[str]) -> list[tuple[str, st
     return await asyncio.gather(*tasks)
 
 
-async def main():
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--keep-existing-on-failure",
+        action="store_true",
+        help="Preserve existing commit-latest.env values for image refs that cannot be inspected.",
+    )
+    return parser
+
+
+def _load_params_latest_entries() -> list[tuple[str, str]]:
     with open(PROJECT_ROOT / "manifests/odh/base/params-latest.env", "rt") as file:
-        images_to_inspect: list[list[str]] = [line.strip().split('=', 1) for line in file.readlines()
-                                              if line.strip() and not line.strip().startswith("#")]
+        return [
+            tuple(line.strip().split("=", 1))
+            for line in file.readlines()
+            if line.strip() and not line.strip().startswith("#")
+        ]
 
-    results = await inspect(value for _, value in images_to_inspect)
-    if any(commit_hash is None for variable, commit_hash in results):
-        log.error("Failed to get commit hash for some images. Quitting, please try again to try again, like.")
-        sys.exit(1)
 
-    output = []
+def merge_commit_latest_results(
+    images_to_inspect: typing.Sequence[tuple[str, str]],
+    results: typing.Sequence[tuple[str, str | None]],
+    *,
+    existing_commit_entries: dict[str, str],
+    keep_existing_on_failure: bool = False,
+) -> list[tuple[str, str]]:
+    output: list[tuple[str, str]] = []
+    missing_keys: list[str] = []
+
     for image, result in zip(images_to_inspect, results, strict=True):
-        variable, image_digest = image
-        _, commit_hash = result
-        output.append((re.sub(r'-n$', "-commit-n", variable), commit_hash[:7]))
+        variable, image_ref = image
+        _inspected_image, commit_hash = result
+        commit_key = re.sub(r"-n$", "-commit-n", variable)
+
+        if commit_hash is not None:
+            output.append((commit_key, commit_hash[:7]))
+            continue
+
+        if keep_existing_on_failure and commit_key in existing_commit_entries:
+            preserved = existing_commit_entries[commit_key]
+            log.warning(
+                f"Keeping existing commit hash for unresolved image ref: {variable} -> {image_ref} ({preserved})"
+            )
+            output.append((commit_key, preserved[:7]))
+            continue
+
+        missing_keys.append(commit_key)
+
+    if missing_keys:
+        raise ValueError(
+            "No refreshed or existing commit hash available for: "
+            + ", ".join(sorted(missing_keys))
+        )
+
+    return sorted(output)
+
+
+async def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+
+    images_to_inspect = _load_params_latest_entries()
+    results = await inspect(value for _, value in images_to_inspect)
+
+    try:
+        output = merge_commit_latest_results(
+            images_to_inspect,
+            results,
+            existing_commit_entries=parse_env_file(PROJECT_ROOT / "manifests/odh/base/commit-latest.env"),
+            keep_existing_on_failure=args.keep_existing_on_failure,
+        )
+    except ValueError as exc:
+        log.error(f"Failed to get commit hash for some images: {exc}")
+        return 1
 
     with open(PROJECT_ROOT / "manifests/odh/base/commit-latest.env", "wt") as file:
         for line in sorted(output):
             print(*line, file=file, sep="=", end="\n")
+    return 0
 
 
 if __name__ == '__main__':
     configure_logging()
-    asyncio.run(main())
+    raise SystemExit(asyncio.run(main()))
