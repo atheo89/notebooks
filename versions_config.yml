@@ -22,7 +22,7 @@ artifacts:
         rhds: { acc_version: 13.0 }
         odh:  { acc_version: v13.0 }
       pytorch:
-        rhds: { acc_version: 13.0 }
+        rhds: { acc_version: 12.9 }
         odh:  { acc_version: v13.0 }
       pytorch-llmcompressor:
         rhds: { acc_version: 13.0 }
