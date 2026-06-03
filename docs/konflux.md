@@ -170,7 +170,7 @@ project: `rhoai-tenant` on cluster **stone-prod-p02** (GitHub checks: **Konflux 
 Each notebook image (workbench or pipeline runtime) has:
 - A `Dockerfile.<variant>` (e.g., `Dockerfile.cpu`, `Dockerfile.cuda`, `Dockerfile.rocm`)
 - A `Dockerfile.konflux.<variant>` path for the downstream RHOAI naming convention
-- Build-args conf files in `build-args/` (e.g., `cpu.conf`, `konflux.cpu.conf`) containing `BASE_IMAGE`, `PYLOCK_FLAVOR`, and related metadata. For `konflux.*.conf`, the effective `INDEX_URL` is derived dynamically from `BASE_IMAGE`.
+- Build-args conf files in `build-args/` (e.g., `cpu.conf`, `konflux.cpu.conf`) containing `BASE_IMAGE`, `PYLOCK_FLAVOR`, and related metadata. For `konflux.*.conf`, the effective `INDEX_URL` is resolved dynamically by inspecting the configured `BASE_IMAGE` metadata.
 
 `KONFLUX` selects the **product variant**, not whether the build runs on Konflux itself:
 

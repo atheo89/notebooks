@@ -97,8 +97,8 @@ This will fail with a 403 error if the entitlement is missing or does not includ
 ## Step 3: Build
 
 Build with the downstream RHOAI/AIPCC variant. The build-args config files in
-`build-args/konflux.*.conf` specify the correct base image, and the build derives the matching
-Python index URL from that `BASE_IMAGE`.
+`build-args/konflux.*.conf` specify the correct base image, and the build resolves the matching
+Python index URL by inspecting metadata from that `BASE_IMAGE`.
 
 ```bash
 # Example: runtime-minimal CPU

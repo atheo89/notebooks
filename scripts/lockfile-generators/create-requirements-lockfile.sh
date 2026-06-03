@@ -9,6 +9,8 @@ set -euo pipefail
 #   1. Delegates to pylocks_generator.py to generate a lockfile
 #      (PUBLIC_INDEX_PROJECTS → public-index → root pylock.toml; else rh-index → uv.lock.d/pylock.<flavor>.toml).
 #      (ensures consistency with CI's check-generated-code).
+#      RH-index mode resolves the matching Python index by running
+#      scripts/index_url_resolver.py, which requires `skopeo` on PATH.
 #   2. Converts the pylock to a pip-compatible requirements.<flavor>.txt.
 #   3. (--download) Downloads every wheel into cachi2/output/deps/pip/.
 #
@@ -53,6 +55,10 @@ Options:
   --download             After generating, download all wheels into
                          cachi2/output/deps/pip/ for offline builds.
   -h, --help             Show this help message and exit
+
+Notes:
+  RH-index flows call scripts/index_url_resolver.py, which inspects the
+  configured BASE_IMAGE with `skopeo` to resolve INDEX_URL.
 
 Steps performed:
   1. pylocks_generator.py rh-index or public-index (see PUBLIC_INDEX_PROJECTS in script)

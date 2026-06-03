@@ -15,6 +15,27 @@ import scripts.index_url_resolver as resolver  # noqa: E402
 import scripts.pylocks_generator as pg  # noqa: E402
 
 
+def inspect_config(*, labels: dict[str, str]) -> dict[str, object]:
+    return {"config": {"Labels": labels}}
+
+
+def structured_labels(
+    *,
+    release: str,
+    accelerator: str,
+    version: str | None = None,
+) -> dict[str, str]:
+    labels = {
+        "com.redhat.aiplatform.index_version": release,
+        "com.redhat.aiplatform.accelerator": accelerator,
+    }
+    if accelerator == "cuda" and version is not None:
+        labels["com.redhat.aiplatform.cuda_version"] = version
+    if accelerator == "rocm" and version is not None:
+        labels["com.redhat.aiplatform.rocm_version"] = version
+    return labels
+
+
 @pytest.fixture
 def repo_root() -> Path:
     return _REPO_ROOT
@@ -154,6 +175,11 @@ def test_get_index_flags_uses_konflux_conf(
         "index_url_exists",
         lambda url: url == "https://console.redhat.com/api/pypi/public-rhai/rhoai/3.5-EA2/cpu-ubi9/simple/",
     )
+    monkeypatch.setattr(
+        resolver,
+        "_inspect_base_image_config",
+        lambda base_image: inspect_config(labels=structured_labels(release="3.5-EA2", accelerator="cpu")),
+    )
 
     flags = pg.get_index_flags(project_dir, "cpu", pg.LogBuffer())
 
@@ -178,6 +204,11 @@ def test_get_index_flags_falls_back_to_test_index(
         resolver,
         "index_url_exists",
         lambda url: url.endswith("/cpu-ubi9-test/simple/"),
+    )
+    monkeypatch.setattr(
+        resolver,
+        "_inspect_base_image_config",
+        lambda base_image: inspect_config(labels=structured_labels(release="3.5-EA2", accelerator="cpu")),
     )
 
     flags = pg.get_index_flags(project_dir, "cpu", pg.LogBuffer())

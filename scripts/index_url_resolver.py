@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import re
+import subprocess
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
@@ -15,6 +17,8 @@ import typer
 
 RHOAI_INDEX_ROOT = "https://console.redhat.com/api/pypi/public-rhai/rhoai"
 INDEX_CHECK_TIMEOUT_SECONDS = 5.0
+SKOPEO_TIMEOUT_SECONDS = 60
+SUPPORTED_BASE_IMAGE_PREFIX = "quay.io/aipcc/base-images/"
 
 
 class IndexResolutionError(ValueError):
@@ -33,15 +37,12 @@ class ResolvedIndexConfig:
     index_url: str
 
 
-_BASE_IMAGE_RE = re.compile(
-    r"^quay\.io/aipcc/base-images/(?P<image>[^:]+):(?P<tag>[^:]+)$",
+_DESCRIPTION_INDEX_RE = re.compile(
+    r"\bindex\s+(?P<release>[^/\s,]+)/(?P<accelerator>[a-z0-9.]+)-ubi9\b",
+    flags=re.IGNORECASE,
 )
-_ACCELERATOR_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
-    (re.compile(r"^cpu$"), "cpu"),
-    (re.compile(r"^cuda-(?P<version>\d+\.\d+)-el\d+(?:\.\d+)?$"), "cuda"),
-    (re.compile(r"^rocm-(?P<version>\d+\.\d+)-el\d+(?:\.\d+)?$"), "rocm"),
-)
-_TAG_RE = re.compile(r"^(?P<minor>\d+\.\d+)\.\d+(?:-ea\.(?P<ea>\d+))?(?:[-.].+)?$")
+_RELEASE_RE = re.compile(r"^(?P<minor>\d+\.\d+)(?:-(?P<ea>EA\d+))?$", flags=re.IGNORECASE)
+_MAJOR_MINOR_VERSION_RE = re.compile(r"^(?P<major_minor>\d+\.\d+)(?:\.\d+)?(?:[-+].+)?$")
 
 app = typer.Typer(add_completion=False, no_args_is_help=True)
 
@@ -80,23 +81,144 @@ def resolve_flavor(conf_file: Path, entries: dict[str, str]) -> str:
     return stem
 
 
-def parse_accelerator(image_name: str, conf_file: Path) -> str:
-    for pattern, prefix in _ACCELERATOR_PATTERNS:
-        match = pattern.fullmatch(image_name)
-        if not match:
-            continue
-        version = match.groupdict().get("version")
-        return prefix if version is None else f"{prefix}{version}"
-    raise IndexResolutionError(f"Unsupported BASE_IMAGE accelerator in {conf_file}: {image_name}")
-
-
-def parse_release(tag: str, conf_file: Path) -> str:
-    match = _TAG_RE.fullmatch(tag)
+def normalize_release(release: str, conf_file: Path) -> str:
+    match = _RELEASE_RE.fullmatch(release.strip())
     if match is None:
-        raise IndexResolutionError(f"Unsupported BASE_IMAGE tag in {conf_file}: {tag}")
-    release = match.group("minor")
+        raise IndexResolutionError(f"Unsupported index release in image metadata for {conf_file}: {release}")
+    normalized_release = match.group("minor")
     ea = match.group("ea")
-    return release if ea is None else f"{release}-EA{int(ea)}"
+    return normalized_release if ea is None else f"{normalized_release}-EA{int(ea[2:])}"
+
+
+def normalize_version(version: str, *, kind: str, conf_file: Path) -> str:
+    match = _MAJOR_MINOR_VERSION_RE.fullmatch(version.strip())
+    if match is None:
+        raise IndexResolutionError(
+            f"Unsupported {kind} version in image metadata for {conf_file}: {version}"
+        )
+    return match.group("major_minor")
+
+
+def normalize_accelerator(accelerator: str, *, version: str | None, conf_file: Path) -> str:
+    normalized = accelerator.strip().lower()
+    if normalized == "cpu":
+        return "cpu"
+    if normalized == "cuda":
+        if version is None:
+            raise IndexResolutionError(f"CUDA version label is missing for {conf_file}")
+        return f"cuda{normalize_version(version, kind='CUDA', conf_file=conf_file)}"
+    if normalized == "rocm":
+        if version is None:
+            raise IndexResolutionError(f"ROCm version label is missing for {conf_file}")
+        return f"rocm{normalize_version(version, kind='ROCm', conf_file=conf_file)}"
+    if normalized.startswith("cuda"):
+        return f"cuda{normalize_version(normalized.removeprefix('cuda'), kind='CUDA', conf_file=conf_file)}"
+    if normalized.startswith("rocm"):
+        return f"rocm{normalize_version(normalized.removeprefix('rocm'), kind='ROCm', conf_file=conf_file)}"
+    raise IndexResolutionError(f"Unsupported accelerator label in image metadata for {conf_file}: {accelerator}")
+
+
+def validate_base_image(base_image: str, conf_file: Path) -> None:
+    if not base_image.startswith(SUPPORTED_BASE_IMAGE_PREFIX) or ":" not in base_image:
+        raise IndexResolutionError(f"Unsupported BASE_IMAGE format in {conf_file}: {base_image}")
+
+
+@cache
+def _inspect_base_image_config(base_image: str) -> dict[str, object]:
+    command = [
+        "skopeo",
+        "inspect",
+        "--override-os=linux",
+        "--override-arch=amd64",
+        "--retry-times=5",
+        "--config",
+        f"docker://{base_image}",
+    ]
+    try:
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=SKOPEO_TIMEOUT_SECONDS,
+        )
+    except FileNotFoundError as exc:
+        raise IndexResolutionError(f"skopeo is required to inspect {base_image}") from exc
+    except subprocess.TimeoutExpired as exc:
+        raise IndexResolutionError(f"skopeo inspect timed out for {base_image}") from exc
+    except subprocess.CalledProcessError as exc:
+        stderr = exc.stderr.strip() if exc.stderr else "unknown error"
+        raise IndexResolutionError(f"skopeo inspect failed for {base_image}: {stderr}") from exc
+
+    try:
+        loaded = json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        raise IndexResolutionError(f"skopeo inspect returned invalid JSON for {base_image}") from exc
+
+    if not isinstance(loaded, dict):
+        raise IndexResolutionError(f"skopeo inspect returned an unsupported payload for {base_image}")
+    return loaded
+
+
+def extract_image_labels(image_config: dict[str, object], conf_file: Path) -> dict[str, str]:
+    config_block = image_config.get("config")
+    if isinstance(config_block, dict):
+        labels = config_block.get("Labels")
+        if isinstance(labels, dict):
+            return {str(key): str(value) for key, value in labels.items()}
+
+    labels = image_config.get("Labels")
+    if isinstance(labels, dict):
+        return {str(key): str(value) for key, value in labels.items()}
+
+    raise IndexResolutionError(f"skopeo inspect did not expose image labels for {conf_file}")
+
+
+def resolve_from_structured_labels(labels: dict[str, str], conf_file: Path) -> tuple[str, str] | None:
+    release = labels.get("com.redhat.aiplatform.index_version")
+    accelerator = labels.get("com.redhat.aiplatform.accelerator")
+    if not release or not accelerator:
+        return None
+
+    version_label = None
+    normalized_accelerator = accelerator.strip().lower()
+    if normalized_accelerator == "cuda":
+        version_label = labels.get("com.redhat.aiplatform.cuda_version")
+    elif normalized_accelerator == "rocm":
+        version_label = labels.get("com.redhat.aiplatform.rocm_version")
+
+    return normalize_release(release, conf_file), normalize_accelerator(
+        accelerator,
+        version=version_label,
+        conf_file=conf_file,
+    )
+
+
+def resolve_from_description_label(labels: dict[str, str], conf_file: Path) -> tuple[str, str] | None:
+    for key in ("description", "io.k8s.description"):
+        description = labels.get(key)
+        if not description:
+            continue
+        match = _DESCRIPTION_INDEX_RE.search(description)
+        if match is None:
+            continue
+        return normalize_release(match.group("release"), conf_file), normalize_accelerator(
+            match.group("accelerator"),
+            version=None,
+            conf_file=conf_file,
+        )
+    return None
+
+
+def resolve_release_and_accelerator(labels: dict[str, str], conf_file: Path) -> tuple[str, str]:
+    if resolved := resolve_from_structured_labels(labels, conf_file):
+        return resolved
+    if resolved := resolve_from_description_label(labels, conf_file):
+        return resolved
+    raise IndexResolutionError(
+        f"Image metadata for {conf_file} is missing supported index labels "
+        "(expected com.redhat.aiplatform.* or a description label with 'index <release>/<accelerator>-ubi9')"
+    )
 
 
 def build_rhoai_index_url(*, release: str, accelerator: str) -> str:
@@ -164,13 +286,10 @@ def resolve_index_config(
     base_image = entries.get("BASE_IMAGE")
     if not base_image:
         raise IndexResolutionError(f"BASE_IMAGE is missing in {conf_file}")
+    validate_base_image(base_image, conf_file)
 
-    match = _BASE_IMAGE_RE.fullmatch(base_image)
-    if match is None:
-        raise IndexResolutionError(f"Unsupported BASE_IMAGE format in {conf_file}: {base_image}")
-
-    accelerator = parse_accelerator(match.group("image"), conf_file)
-    release = parse_release(match.group("tag"), conf_file)
+    labels = extract_image_labels(_inspect_base_image_config(base_image), conf_file)
+    release, accelerator = resolve_release_and_accelerator(labels, conf_file)
     flavor = resolve_flavor(conf_file, entries)
     production_url, test_url = index_url_candidates(release=release, accelerator=accelerator)
 
