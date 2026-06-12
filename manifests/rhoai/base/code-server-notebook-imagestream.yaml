@@ -25,37 +25,6 @@ spec:
         # language=json
         opendatahub.io/notebook-python-dependencies: |
           [
-            {"name": "Boto3", "version": "1.43"},
-            {"name": "Kafka-Python-ng", "version": "2.2"},
-            {"name": "Matplotlib", "version": "3.10"},
-            {"name": "Numpy", "version": "2.4"},
-            {"name": "Pandas", "version": "2.3"},
-            {"name": "Scikit-learn", "version": "1.9"},
-            {"name": "Scipy", "version": "1.17"},
-            {"name": "Sklearn-onnx", "version": "1.20"},
-            {"name": "ipykernel", "version": "7.2"},
-            {"name": "Kubeflow-Training", "version": "1.9"},
-            {"name": "MLflow", "version": "3.13"},
-            {"name": "Feast", "version": "0.63"}
-          ]
-        openshift.io/imported-from: quay.io/opendatahub/workbench-images
-        opendatahub.io/workbench-image-recommended: 'true'
-        opendatahub.io/notebook-build-commit: odh-workbench-codeserver-datascience-cpu-py312-ubi9-commit-n_PLACEHOLDER
-      from:
-        kind: DockerImage
-        name: odh-workbench-codeserver-datascience-cpu-py312-ubi9-n_PLACEHOLDER
-      name: "3.5"
-      referencePolicy:
-        type: Source
-    # N - 1 Version of the image
-    - annotations:
-        opendatahub.io/notebook-software: |
-          [
-            {"name": "code-server", "version": "4.106"},
-            {"name": "Python", "version": "v3.12"}
-          ]
-        opendatahub.io/notebook-python-dependencies: |
-          [
             {"name": "Boto3", "version": "1.42"},
             {"name": "Kafka-Python-ng", "version": "2.2"},
             {"name": "Matplotlib", "version": "3.10"},
@@ -69,14 +38,15 @@ spec:
             {"name": "MLflow", "version": "3.10"}
           ]
         openshift.io/imported-from: quay.io/opendatahub/workbench-images
-        opendatahub.io/workbench-image-recommended: 'false'
-        opendatahub.io/notebook-build-commit: odh-workbench-codeserver-datascience-cpu-py312-ubi9-commit-3-4_PLACEHOLDER
+        opendatahub.io/workbench-image-recommended: 'true'
+        opendatahub.io/notebook-build-commit: odh-workbench-codeserver-datascience-cpu-py312-ubi9-commit-n_PLACEHOLDER
       from:
         kind: DockerImage
-        name: odh-workbench-codeserver-datascience-cpu-py312-ubi9-3-4_PLACEHOLDER
+        name: odh-workbench-codeserver-datascience-cpu-py312-ubi9-n_PLACEHOLDER
       name: "3.4"
       referencePolicy:
         type: Source
+    # N - 1 Version of the image
     - annotations:
         # language=json
         opendatahub.io/notebook-software: |
@@ -136,5 +106,80 @@ spec:
         kind: DockerImage
         name: odh-workbench-codeserver-datascience-cpu-py311-ubi9-2025-1_PLACEHOLDER
       name: "2025.1"
+      referencePolicy:
+        type: Source
+    # N - 3 Version of the image
+    - annotations:
+        # language=json
+        opendatahub.io/notebook-software: |
+          [
+            {"name": "code-server", "version": "4.92"},
+            {"name": "Python", "version": "v3.11"}
+          ]
+        # language=json
+        opendatahub.io/notebook-python-dependencies: |
+          [
+            {"name": "Boto3", "version": "1.34"},
+            {"name": "Kafka-Python", "version": "2.0"},
+            {"name": "Matplotlib", "version": "3.8"},
+            {"name": "Numpy", "version": "1.26"},
+            {"name": "Pandas", "version": "2.2"},
+            {"name": "Scikit-learn", "version": "1.4"},
+            {"name": "Scipy", "version": "1.12"},
+            {"name": "Sklearn-onnx", "version": "1.16"},
+            {"name": "ipykernel", "version": "6.29"},
+            {"name": "Kubeflow-Training", "version": "1.8"}
+          ]
+        openshift.io/imported-from: quay.io/modh/codeserver
+        opendatahub.io/image-tag-outdated: "true"
+        opendatahub.io/notebook-build-commit: odh-workbench-codeserver-datascience-cpu-py311-ubi9-commit-2024-2_PLACEHOLDER
+      from:
+        kind: DockerImage
+        name: odh-workbench-codeserver-datascience-cpu-py311-ubi9-2024-2_PLACEHOLDER
+      name: "2024.2"
+      referencePolicy:
+        type: Source
+    # N - 4 Version of the image
+    - annotations:
+        # language=json
+        opendatahub.io/notebook-software: |
+          [
+            {"name": "code-server", "version": "4.22"},
+            {"name": "Python", "version": "v3.9"}
+          ]
+        # language=json
+        opendatahub.io/notebook-python-dependencies: |
+          [
+            {"name": "Boto3", "version": "1.34"},
+            {"name": "Kafka-Python", "version": "2.0"},
+            {"name": "Matplotlib", "version": "3.8"},
+            {"name": "Numpy", "version": "1.26"},
+            {"name": "Pandas", "version": "2.2"},
+            {"name": "Plotly", "version": "5.19"},
+            {"name": "Scikit-learn", "version": "1.4"},
+            {"name": "Scipy", "version": "1.12"},
+            {"name": "Sklearn-onnx", "version": "1.16"},
+            {"name": "ipykernel", "version": "6.29"}
+          ]
+        openshift.io/imported-from: quay.io/modh/codeserver
+        opendatahub.io/image-tag-outdated: "true"
+        opendatahub.io/notebook-build-commit: odh-workbench-codeserver-datascience-cpu-py311-ubi9-commit-2024-1_PLACEHOLDER
+      from:
+        kind: DockerImage
+        name: odh-workbench-codeserver-datascience-cpu-py311-ubi9-2024-1_PLACEHOLDER
+      name: "2024.1"
+      referencePolicy:
+        type: Source
+    # N - 5 Version of the image
+    - annotations:
+        opendatahub.io/notebook-software: '[{"name":"Python","version":"v3.9"}]'
+        opendatahub.io/notebook-python-dependencies: '[{"name":"code-server","version":"4.16"}]'
+        openshift.io/imported-from: quay.io/modh/codeserver
+        opendatahub.io/image-tag-outdated: 'true'
+        opendatahub.io/notebook-build-commit: odh-workbench-codeserver-datascience-cpu-py311-ubi9-commit-2023-2_PLACEHOLDER
+      from:
+        kind: DockerImage
+        name: odh-workbench-codeserver-datascience-cpu-py311-ubi9-2023-2_PLACEHOLDER
+      name: "2023.2"
       referencePolicy:
         type: Source
