@@ -1,21 +1,29 @@
 #!/usr/bin/env -S uv run --project=../..
 """Roll workbench ImageStream tags forward from ``versions_config.yml``.
 
-This updates only ImageStream YAML files under ``manifests/<variant>/base``.
-Runtime ImageStreams are skipped. For ODH, the tool keeps exactly two tags
-(``N`` and ``N-1``). For RHOAI, it prepends a new ``N`` tag and preserves the
-existing history.
+This updates workbench ImageStream YAML files under ``manifests/<variant>/base``.
+Runtime ImageStreams are skipped. For ODH, the tool also synchronizes released
+``params.env`` / ``commit.env`` entries and regenerates ``kustomization.yaml``.
+ODH keeps exactly two tags (``N`` and ``N-1``). RHOAI prepends a new ``N`` tag
+and preserves existing history.
 """
 
 from __future__ import annotations
 
 import argparse
 import copy
+import importlib
 import re
+import sys
+from contextlib import contextmanager
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
+from consolio import Consolio
 import yaml
+from manifests.tools.commit_env_refs import commit_field_key, parse_env_file
+from manifests.tools.generate_kustomization import generate as generate_kustomization
 from ruamel.yaml import YAML
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString, SingleQuotedScalarString
 
@@ -26,6 +34,55 @@ _RECOMMENDED_KEY = "opendatahub.io/workbench-image-recommended"
 _OUTDATED_KEY = "opendatahub.io/image-tag-outdated"
 _COMMIT_KEY = "opendatahub.io/notebook-build-commit"
 _PLACEHOLDER_RE = re.compile(r"^(?P<prefix>.+?)(?P<suffix>-(?:n|\d+(?:-\d+)*))_PLACEHOLDER$")
+_VERSIONED_KEY_RE = re.compile(r"^(?P<base>.+?)(?P<suffix>-(?:n|\d+(?:-\d+)*))$")
+_ODH_RELEASE_FAMILY_RE = re.compile(r"^(?P<major>\d+)\.(?P<minor>\d+)$")
+_ODH_TAG_RE = re.compile(r"^(?P<major>\d+)\.(?P<minor>\d+)(?P<rest>.*)$")
+_SKOPEO_INSPECT = importlib.import_module("manifests.tools.skopeo_inspect")
+
+
+@dataclass(frozen=True)
+class ReleasedOdhImage:
+    base_key: str
+    released_suffix: str
+    released_param_key: str
+    released_commit_key: str
+    repository: str
+    published_tag: str
+    digest_ref: str
+    commit_sha: str
+
+
+class StepReporter:
+    def __init__(self, stream: Any | None = None) -> None:
+        self.stream = sys.stdout if stream is None else stream
+        self.is_tty = bool(getattr(self.stream, "isatty", lambda: False)())
+        self.console = Consolio(
+            spinner_type="dots",
+            no_colors=not self.is_tty,
+            no_animation=not self.is_tty,
+        )
+
+    def print_step(self, message: str) -> None:
+        if not self.is_tty:
+            print(message, file=self.stream, flush=True)
+            return
+        self.console.print("cmp", message)
+
+    @contextmanager
+    def running_step(self, start_message: str, done_message: str, *, animate: bool = False) -> Iterator[None]:
+        if not self.is_tty or not animate:
+            self.print_step(start_message)
+            try:
+                yield
+            except Exception:
+                raise
+            else:
+                self.print_step(done_message)
+            return
+
+        with self.console.spinner(start_message, inline=True):
+            yield
+        self.console.print("cmp", done_message)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -62,6 +119,23 @@ def load_release_tag(config_path: Path) -> str:
     return f"{int(major)}.{int(minor)}"
 
 
+def build_yaml() -> YAML:
+    yml = YAML()
+    yml.preserve_quotes = True
+    yml.width = 1024 * 1024
+    yml.explicit_start = True
+    yml.indent(mapping=2, sequence=4, offset=2)
+    return yml
+
+
+def iter_workbench_imagestream_paths(base_dir: Path) -> Iterator[Path]:
+    yield from sorted(
+        path
+        for path in base_dir.glob("*-imagestream.yaml")
+        if not path.name.startswith("runtime-")
+    )
+
+
 def update_tag_placeholders(tag: dict[str, Any], suffix: str) -> None:
     annotations = tag.setdefault("annotations", {})
     from_block = tag.setdefault("from", {})
@@ -83,6 +157,178 @@ def update_tag_placeholders(tag: dict[str, Any], suffix: str) -> None:
     if match is None:
         raise ValueError(f"Unsupported placeholder format: {commit_value!r}")
     annotations[_COMMIT_KEY] = f"{match.group('prefix')}{suffix}_PLACEHOLDER"
+
+
+def select_latest_matching_odh_tag(tags: list[str], release_family: str) -> str:
+    match = _ODH_RELEASE_FAMILY_RE.fullmatch(release_family)
+    if match is None:
+        raise ValueError(f"Unsupported ODH release family: {release_family!r}")
+    target_major = int(match.group("major"))
+    target_minor = int(match.group("minor"))
+
+    matches = []
+    for tag in tags:
+        tag_match = _ODH_TAG_RE.match(tag)
+        if tag_match is None:
+            continue
+        if int(tag_match.group("major")) != target_major or int(tag_match.group("minor")) != target_minor:
+            continue
+        numeric_suffix = tuple(int(part) for part in re.findall(r"\d+", tag_match.group("rest")))
+        matches.append((numeric_suffix, tag))
+
+    if not matches:
+        raise ValueError(f"No published ODH tag found for family '{release_family}'")
+    return max(matches, key=lambda item: (item[0], item[1]))[1]
+
+
+def repository_from_image_ref(image_ref: str) -> str:
+    repository = image_ref.split("@", 1)[0]
+    last_colon = repository.rfind(":")
+    last_slash = repository.rfind("/")
+    if last_colon > last_slash:
+        return repository[:last_colon]
+    return repository
+
+
+def extract_short_vcs_ref(config_payload: dict[str, Any], image_ref: str) -> str:
+    vcs_ref = config_payload.get("config", {}).get("Labels", {}).get("vcs-ref")
+    if not isinstance(vcs_ref, str) or len(vcs_ref) < 7:
+        raise ValueError(f"skopeo inspect --config returned invalid vcs-ref for {image_ref}")
+    return vcs_ref[:7]
+
+
+def resolve_odh_released_images(base_dir: Path) -> list[ReleasedOdhImage]:
+    params_latest = parse_env_file(base_dir / "params-latest.env")
+    tag_cache: dict[str, tuple[str, ...]] = {}
+    released_images: list[ReleasedOdhImage] = []
+
+    for path in iter_workbench_imagestream_paths(base_dir):
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        tags = data["spec"]["tags"]
+        if len(tags) < 2:
+            raise ValueError(f"{path.name} must have at least two tags to sync ODH env files")
+
+        released_placeholder = tags[1]["from"]["name"]
+        if not isinstance(released_placeholder, str):
+            raise ValueError(f"{path.name} tag 1 missing from.name placeholder")
+        match = _PLACEHOLDER_RE.match(released_placeholder)
+        if match is None:
+            raise ValueError(f"{path.name} tag 1 placeholder has unexpected format: {released_placeholder!r}")
+
+        base_key = match.group("prefix")
+        released_suffix = match.group("suffix")
+        latest_key = f"{base_key}-n"
+        latest_ref = params_latest.get(latest_key)
+        if latest_ref is None:
+            raise ValueError(f"Missing params-latest.env entry for {latest_key}")
+
+        repository = repository_from_image_ref(latest_ref)
+        repository_name = repository.rsplit("/", 1)[1]
+        if repository_name != base_key:
+            raise ValueError(
+                f"params-latest.env value for {latest_key} does not match key base {base_key!r}: {latest_ref!r}"
+            )
+
+        release_family = str(tags[1]["name"])
+        published_tag = select_latest_matching_odh_tag(
+            list(_SKOPEO_INSPECT.list_repository_tags(repository, tag_cache=tag_cache)),
+            release_family,
+        )
+        digest_ref = f"{repository}@{_SKOPEO_INSPECT.inspect_digest(f'{repository}:{published_tag}')}"
+        commit_sha = extract_short_vcs_ref(_SKOPEO_INSPECT.inspect_config(digest_ref), digest_ref)
+        released_images.append(
+            ReleasedOdhImage(
+                base_key=base_key,
+                released_suffix=released_suffix,
+                released_param_key=released_placeholder.removesuffix("_PLACEHOLDER"),
+                released_commit_key=commit_field_key(base_key, released_suffix),
+                repository=repository,
+                published_tag=published_tag,
+                digest_ref=digest_ref,
+                commit_sha=commit_sha,
+            )
+        )
+
+    return released_images
+
+
+def sync_managed_env_file(
+    path: Path,
+    desired_entries_by_base: dict[str, tuple[str, str]],
+    *,
+    managed_prefix: str,
+    dry_run: bool = False,
+) -> bool:
+    current_entries = parse_env_file(path)
+    updated_entries: list[tuple[str, str]] = []
+    seen_bases: set[str] = set()
+
+    for key, value in current_entries.items():
+        match = _VERSIONED_KEY_RE.match(key)
+        if match is None:
+            updated_entries.append((key, value))
+            continue
+
+        base_key = match.group("base")
+        if base_key in desired_entries_by_base:
+            if base_key in seen_bases:
+                continue
+            updated_entries.append(desired_entries_by_base[base_key])
+            seen_bases.add(base_key)
+            continue
+
+        if key.startswith(managed_prefix):
+            continue
+        updated_entries.append((key, value))
+
+    for base_key, entry in desired_entries_by_base.items():
+        if base_key not in seen_bases:
+            updated_entries.append(entry)
+
+    updated_text = "".join(f"{key}={value}\n" for key, value in updated_entries)
+    current_text = path.read_text(encoding="utf-8")
+    if updated_text == current_text:
+        return False
+    if not dry_run:
+        path.write_text(updated_text, encoding="utf-8")
+    return True
+
+
+def sync_odh_params_env(base_dir: Path, released_images: list[ReleasedOdhImage], *, dry_run: bool = False) -> bool:
+    desired_entries_by_base = {
+        released_image.base_key: (released_image.released_param_key, released_image.digest_ref)
+        for released_image in released_images
+    }
+    return sync_managed_env_file(
+        base_dir / "params.env",
+        desired_entries_by_base,
+        managed_prefix="odh-workbench-",
+        dry_run=dry_run,
+    )
+
+
+def sync_odh_commit_env(base_dir: Path, released_images: list[ReleasedOdhImage], *, dry_run: bool = False) -> bool:
+    desired_entries_by_base = {
+        f"{released_image.base_key}-commit": (released_image.released_commit_key, released_image.commit_sha)
+        for released_image in released_images
+    }
+    return sync_managed_env_file(
+        base_dir / "commit.env",
+        desired_entries_by_base,
+        managed_prefix="odh-workbench-",
+        dry_run=dry_run,
+    )
+
+
+def regenerate_kustomization(base_dir: Path, *, dry_run: bool = False) -> bool:
+    path = base_dir / "kustomization.yaml"
+    generated_text = generate_kustomization(base_dir)
+    current_text = path.read_text(encoding="utf-8")
+    if generated_text == current_text:
+        return False
+    if not dry_run:
+        path.write_text(generated_text, encoding="utf-8")
+    return True
 
 
 def normalize_rollout_state(tag: dict[str, Any], index: int) -> None:
@@ -144,23 +390,70 @@ def rollout_imagestream_file(path: Path, target_tag_name: str, *, keep_history: 
     return changed
 
 
-def rollout_variant(root: Path, variant: str, target_tag_name: str, *, dry_run: bool = False) -> list[Path]:
+def rollout_variant_imagestreams(root: Path, variant: str, target_tag_name: str, *, dry_run: bool = False) -> list[Path]:
     base_dir = root / "manifests" / variant / "base"
     keep_history = variant == "rhoai"
-    yml = YAML()
-    yml.preserve_quotes = True
-    yml.width = 1024 * 1024
-    yml.explicit_start = True
-    yml.indent(mapping=2, sequence=4, offset=2)
+    yml = build_yaml()
     changed_paths: list[Path] = []
 
-    for path in sorted(
-        path
-        for path in base_dir.glob("*-imagestream.yaml")
-        if not path.name.startswith("runtime-")
-    ):
+    for path in iter_workbench_imagestream_paths(base_dir):
         if rollout_imagestream_file(path, target_tag_name, keep_history=keep_history, dry_run=dry_run, yml=yml):
             changed_paths.append(path)
+    return changed_paths
+
+
+def run_odh_imagestream_rollout_step(
+    root: Path,
+    variants: tuple[str, ...],
+    target_tag_name: str,
+    *,
+    dry_run: bool,
+    reporter: StepReporter,
+) -> list[Path]:
+    with reporter.running_step(
+        "1/3 Updating imagestreams with new tag",
+        "1/3 Imagestreams updated",
+    ):
+        changed_paths: list[Path] = []
+        for variant in variants:
+            changed_paths.extend(rollout_variant_imagestreams(root, variant, target_tag_name, dry_run=dry_run))
+        return changed_paths
+
+
+def run_odh_params_step(
+    base_dir: Path,
+    *,
+    dry_run: bool,
+    reporter: StepReporter,
+) -> tuple[list[Path], list[ReleasedOdhImage]]:
+    changed_paths: list[Path] = []
+    with reporter.running_step(
+        "2/3 Updating the ODH params.env file",
+        "2/3 ODH params.env file updated",
+        animate=True,
+    ):
+        released_images = resolve_odh_released_images(base_dir)
+        if sync_odh_params_env(base_dir, released_images, dry_run=dry_run):
+            changed_paths.append(base_dir / "params.env")
+    return changed_paths, released_images
+
+
+def run_odh_commit_step(
+    base_dir: Path,
+    released_images: list[ReleasedOdhImage],
+    *,
+    dry_run: bool,
+    reporter: StepReporter,
+) -> list[Path]:
+    changed_paths: list[Path] = []
+    with reporter.running_step(
+        "3/3 Updating the ODH commit.env and kustomization.yaml files",
+        "3/3 ODH commit.env and kustomization.yaml updated",
+    ):
+        if sync_odh_commit_env(base_dir, released_images, dry_run=dry_run):
+            changed_paths.append(base_dir / "commit.env")
+        if regenerate_kustomization(base_dir, dry_run=dry_run):
+            changed_paths.append(base_dir / "kustomization.yaml")
     return changed_paths
 
 
@@ -169,13 +462,44 @@ def main(argv: list[str] | None = None) -> int:
     root = args.root.resolve()
     config_path = args.config.resolve() if args.config is not None else root / "versions_config.yml"
     target_tag_name = load_release_tag(config_path)
-
     variants = ("odh", "rhoai") if args.target == "all" else (args.target,)
+
+    reporter = StepReporter()
     changed_paths: list[Path] = []
-    for variant in variants:
-        changed_paths.extend(rollout_variant(root, variant, target_tag_name, dry_run=args.dry_run))
+
+    if "odh" in variants:
+        changed_paths.extend(
+            run_odh_imagestream_rollout_step(
+                root,
+                variants,
+                target_tag_name,
+                dry_run=args.dry_run,
+                reporter=reporter,
+            )
+        )
+        if not args.dry_run:
+            params_changed_paths, released_images = run_odh_params_step(
+                root / "manifests" / "odh" / "base",
+                dry_run=args.dry_run,
+                reporter=reporter,
+            )
+            changed_paths.extend(params_changed_paths)
+            changed_paths.extend(
+                run_odh_commit_step(
+                    root / "manifests" / "odh" / "base",
+                    released_images,
+                    dry_run=args.dry_run,
+                    reporter=reporter,
+                )
+            )
+
+    if "rhoai" in variants and "odh" not in variants:
+        changed_paths.extend(rollout_variant_imagestreams(root, "rhoai", target_tag_name, dry_run=args.dry_run))
 
     if not changed_paths:
+        if "odh" in variants and not args.dry_run:
+            print("Rollout files already match the requested state.")
+            return 0
         print("ImageStream files already match the requested rollout.")
         return 0
 

@@ -26,6 +26,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import yaml
 from manifests.tools.commit_env_refs import parse_env_file
 from ntb.strings import process_template_with_indents
 
@@ -130,49 +131,41 @@ def discover_config(base_dir: Path) -> tuple[list[str], list[Workbench], list[st
     # 2) Collect all param keys from .env files
     param_keys = set(parse_env_file(base_dir / "params.env").keys()) | set(parse_env_file(base_dir / "params-latest.env").keys())
 
-    # 3) Parse param keys into (base_key, suffix) pairs.
-    #    e.g. "odh-workbench-...-ubi9-n"      -> ("odh-workbench-...-ubi9", "-n")
-    #         "odh-workbench-...-ubi9-2025-2"  -> ("odh-workbench-...-ubi9", "-2025-2")
-    #    We group by imagestream because different py versions share the same imagestream.
-
-    # First, figure out which resource file each param key belongs to by matching
-    # against the kustomization.yaml replacement blocks.  We do this by reading the
-    # existing file structure.
-    #
-    # Simpler approach: parse the existing kustomization.yaml replacements section
-    # to extract the ordered (key, imagestream) pairs.  This gives us exact ordering.
-
+    # 3) Parse the existing replacement blocks to preserve ordering for current
+    # keys, then fill in newly introduced rollout keys from the imagestreams.
     replacements_text = kustomization[kustomization.index("replacements:"):]
     field_path_pattern = re.compile(r"fieldPath: data\.(\S+)")
     imagestream_pattern = re.compile(r"kind: ImageStream\n\s+name: (\S+)")
 
-    # Extract pairs of (fieldPath_key, imagestream_name) from replacement blocks
     field_paths = field_path_pattern.findall(replacements_text)
     imagestreams = imagestream_pattern.findall(replacements_text)
     assert len(field_paths) == len(imagestreams), (
         f"Mismatch: {len(field_paths)} fieldPaths vs {len(imagestreams)} imagestreams"
     )
 
-    # Split into params and commit blocks
-    replacement_params_pairs: list[tuple[str, str]] = []  # (full_key, imagestream)
+    replacement_params_pairs: list[tuple[str, str]] = []
     for key, istream in zip(field_paths, imagestreams, strict=True):
         if "-commit-" not in key:
             replacement_params_pairs.append((key, istream))
 
-    replacement_param_keys = {full_key for full_key, _imagestream in replacement_params_pairs}
-    missing_param_keys = sorted(param_keys - replacement_param_keys)
+    params_pairs = [
+        (full_key, istream) for full_key, istream in replacement_params_pairs if full_key in param_keys
+    ]
+    known_param_keys = {full_key for full_key, _imagestream in params_pairs}
+
+    yaml_param_pairs = [
+        (full_key, istream)
+        for full_key, istream in _discover_param_pairs_from_imagestreams(base_dir, all_resources)
+        if full_key in param_keys and full_key not in known_param_keys
+    ]
+    params_pairs.extend(yaml_param_pairs)
+
+    discovered_param_keys = {full_key for full_key, _imagestream in params_pairs}
+    missing_param_keys = sorted(param_keys - discovered_param_keys)
     assert not missing_param_keys, (
         "Missing imagestream replacement for params key(s): "
         + ", ".join(missing_param_keys)
     )
-
-    # Keep only keys that still exist in params*.env.
-    #
-    # This lets the generator recover after tag removals where stale replacements
-    # still exist in kustomization.yaml (the script should remove those blocks).
-    params_pairs = [
-        (full_key, istream) for full_key, istream in replacement_params_pairs if full_key in param_keys
-    ]
 
     # 5) Build workbenches and runtimes from the params pairs
     workbench_resource_files: list[str] = []
@@ -218,6 +211,31 @@ def discover_config(base_dir: Path) -> tuple[list[str], list[Workbench], list[st
     ordered_resources = _order_resources(all_resources)
 
     return ordered_resources, workbenches, runtime_resource_files, runtimes
+
+
+def _discover_param_pairs_from_imagestreams(
+    base_dir: Path,
+    all_resources: list[str],
+) -> list[tuple[str, str]]:
+    pairs: list[tuple[str, str]] = []
+    for resource in all_resources:
+        if not resource.endswith("-imagestream.yaml"):
+            continue
+        resource_path = base_dir / resource
+        if not resource_path.exists():
+            continue
+        document = yaml.safe_load(resource_path.read_text())
+        if not isinstance(document, dict):
+            continue
+        imagestream_name = document.get("metadata", {}).get("name")
+        tags = document.get("spec", {}).get("tags", [])
+        if not isinstance(imagestream_name, str) or not isinstance(tags, list):
+            continue
+        for tag in tags:
+            from_name = tag.get("from", {}).get("name")
+            if isinstance(from_name, str) and from_name.endswith("_PLACEHOLDER"):
+                pairs.append((from_name.removesuffix("_PLACEHOLDER"), imagestream_name))
+    return pairs
 
 
 def _build_imagestream_to_resource(base_dir: Path, all_resources: list[str]) -> dict[str, str]:

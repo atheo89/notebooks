@@ -68,6 +68,22 @@ uv run manifests/tools/generate_kustomization.py --check    # verify it matches 
 uv run manifests/tools/generate_kustomization.py --stdout   # preview without writing
 ```
 
+### Rolling ODH released tags
+
+For ODH workbench releases, use the rollout helper to move the ImageStream
+chain forward and keep the released manifest inputs aligned:
+
+```bash
+uv run manifests/tools/rollout_tag_on_imagestreams.py --target odh
+```
+
+The ODH rollout now:
+
+1. updates the workbench ImageStream tags and placeholders,
+2. refreshes released `params.env` entries from published image digests,
+3. refreshes released `commit.env` entries from the resolved image `vcs-ref`,
+4. regenerates `kustomization.yaml` using `manifests/tools/generate_kustomization.py`.
+
 ### Consistency rules
 
 Each workbench ImageStream tag must satisfy these rules:
