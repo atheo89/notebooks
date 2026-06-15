@@ -1,12 +1,12 @@
 #########################
 # configuration args    #
 #########################
-ARG BASE_IMAGE
+ARG BASE_IMAGE_WORKBENCH_MINIMAL_CPU
 
 ####################
 # cpu-base         #
 ####################
-FROM ${BASE_IMAGE} AS cpu-base
+FROM ${BASE_IMAGE_WORKBENCH_MINIMAL_CPU} AS cpu-base
 
 WORKDIR /opt/app-root/bin
 

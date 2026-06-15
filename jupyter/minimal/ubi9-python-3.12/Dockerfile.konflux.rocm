@@ -1,12 +1,12 @@
 #########################
 # configuration args    #
 #########################
-ARG BASE_IMAGE
+ARG BASE_IMAGE_WORKBENCH_MINIMAL_ROCM
 
 ####################
 # rocm-base        #
 ####################
-FROM ${BASE_IMAGE} AS rocm-base
+FROM ${BASE_IMAGE_WORKBENCH_MINIMAL_ROCM} AS rocm-base
 
 WORKDIR /opt/app-root/bin
 
