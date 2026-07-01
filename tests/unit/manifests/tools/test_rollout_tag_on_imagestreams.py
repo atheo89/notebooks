@@ -180,14 +180,25 @@ def test_main_updates_odh_env_files_and_kustomization_for_new_n_minus_one(
     assert "data.odh-workbench-jupyter-minimal-cpu-py312-ubi9-commit-2025-2" not in kustomization_text
 
     output_lines = capsys.readouterr().out.splitlines()
-    assert output_lines[:6] == [
+    assert output_lines[:2] == [
         "1/3 Updating imagestreams with new tag",
         "1/3 Imagestreams updated",
-        "2/3 Updating the ODH params.env file",
-        "2/3 ODH params.env file updated",
-        "3/3 Updating the ODH commit.env and kustomization.yaml files",
-        "3/3 ODH commit.env and kustomization.yaml updated",
     ]
+    params_start = output_lines.index("2/3 Updating the ODH params.env file")
+    params_done = output_lines.index("2/3 ODH params.env file updated")
+    progress_lines = output_lines[params_start + 1 : params_done]
+    assert progress_lines
+    expected_digest = "sha256:" + "1" * 64
+    assert all(
+        line.startswith("  [")
+        and " commit=abcdef1 " in line
+        and f" digest={expected_digest}" in line
+        for line in progress_lines
+    )
+    commit_start = output_lines.index("3/3 Updating the ODH commit.env and kustomization.yaml files")
+    commit_done = output_lines.index("3/3 ODH commit.env and kustomization.yaml updated")
+    assert commit_start == params_done + 1
+    assert commit_done == commit_start + 1
     assert "Updated manifests/odh/base/params.env" in output_lines
     assert "Updated manifests/odh/base/commit.env" in output_lines
     assert "Updated manifests/odh/base/kustomization.yaml" in output_lines

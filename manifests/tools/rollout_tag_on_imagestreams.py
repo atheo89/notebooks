@@ -18,7 +18,7 @@ import sys
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Callable, Iterator
 
 from consolio import Consolio
 import yaml
@@ -51,6 +51,10 @@ class ReleasedOdhImage:
     digest_ref: str
     commit_sha: str
 
+    def progress_message(self) -> str:
+        digest = self.digest_ref.rsplit("@", 1)[-1]
+        return f"{self.base_key} commit={self.commit_sha} digest={digest}"
+
 
 class StepReporter:
     def __init__(self, stream: Any | None = None) -> None:
@@ -69,11 +73,39 @@ class StepReporter:
         self.console.print("cmp", message)
 
     @contextmanager
-    def running_step(self, start_message: str, done_message: str, *, animate: bool = False) -> Iterator[None]:
+    def running_step(
+        self,
+        start_message: str,
+        done_message: str,
+        *,
+        animate: bool = False,
+        total: int | None = None,
+    ) -> Iterator[Callable[[str], None] | None]:
+        if total is not None:
+            self.print_step(start_message)
+            completed = 0
+
+            def track_item(message: str) -> None:
+                nonlocal completed
+                completed += 1
+                detail = f"[{completed}/{total}] {message}"
+                if self.is_tty:
+                    self.console.print(1, "inf", detail)
+                else:
+                    print(f"  {detail}", file=self.stream, flush=True)
+
+            try:
+                yield track_item
+            except Exception:
+                raise
+            else:
+                self.print_step(done_message)
+            return
+
         if not self.is_tty or not animate:
             self.print_step(start_message)
             try:
-                yield
+                yield None
             except Exception:
                 raise
             else:
@@ -81,7 +113,7 @@ class StepReporter:
             return
 
         with self.console.spinner(start_message, inline=True):
-            yield
+            yield None
         self.console.print("cmp", done_message)
 
 
@@ -197,12 +229,17 @@ def extract_short_vcs_ref(config_payload: dict[str, Any], image_ref: str) -> str
     return vcs_ref[:7]
 
 
-def resolve_odh_released_images(base_dir: Path) -> list[ReleasedOdhImage]:
+def resolve_odh_released_images(
+    base_dir: Path,
+    *,
+    paths: list[Path] | None = None,
+    on_item: Callable[[str], None] | None = None,
+) -> list[ReleasedOdhImage]:
     params_latest = parse_env_file(base_dir / "params-latest.env")
     tag_cache: dict[str, tuple[str, ...]] = {}
     released_images: list[ReleasedOdhImage] = []
 
-    for path in iter_workbench_imagestream_paths(base_dir):
+    for path in paths if paths is not None else iter_workbench_imagestream_paths(base_dir):
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
         tags = data["spec"]["tags"]
         if len(tags) < 2:
@@ -248,6 +285,8 @@ def resolve_odh_released_images(base_dir: Path) -> list[ReleasedOdhImage]:
                 commit_sha=commit_sha,
             )
         )
+        if on_item is not None:
+            on_item(released_images[-1].progress_message())
 
     return released_images
 
@@ -427,12 +466,17 @@ def run_odh_params_step(
     reporter: StepReporter,
 ) -> tuple[list[Path], list[ReleasedOdhImage]]:
     changed_paths: list[Path] = []
+    imagestream_paths = list(iter_workbench_imagestream_paths(base_dir))
     with reporter.running_step(
         "2/3 Updating the ODH params.env file",
         "2/3 ODH params.env file updated",
-        animate=True,
-    ):
-        released_images = resolve_odh_released_images(base_dir)
+        total=len(imagestream_paths),
+    ) as track_item:
+        released_images = resolve_odh_released_images(
+            base_dir,
+            paths=imagestream_paths,
+            on_item=track_item,
+        )
         if sync_odh_params_env(base_dir, released_images, dry_run=dry_run):
             changed_paths.append(base_dir / "params.env")
     return changed_paths, released_images
