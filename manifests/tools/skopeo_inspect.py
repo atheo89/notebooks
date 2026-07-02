@@ -4,7 +4,26 @@ from __future__ import annotations
 
 import json
 import subprocess
+from dataclasses import dataclass
 from typing import Any
+
+_INSPECT_BASE_ARGS = (
+    "skopeo",
+    "inspect",
+    "--retry-times",
+    "3",
+    "--no-tags",
+    "--override-arch",
+    "amd64",
+    "--override-os",
+    "linux",
+)
+
+
+@dataclass(frozen=True)
+class InspectedImage:
+    digest: str
+    payload: dict[str, Any]
 
 
 def _run_json(command: list[str], *, target: str, operation: str) -> dict[str, Any]:
@@ -58,42 +77,26 @@ def list_repository_tags(
     return resolved_tags
 
 
-def inspect_digest(image_ref: str) -> str:
+def inspect_image(image_ref: str) -> InspectedImage:
+    """Return digest and inspect payload in one registry round trip."""
     payload = _run_json(
-        [
-            "skopeo",
-            "inspect",
-            "--retry-times",
-            "3",
-            "--override-arch",
-            "amd64",
-            "--override-os",
-            "linux",
-            f"docker://{image_ref}",
-        ],
+        [*_INSPECT_BASE_ARGS, f"docker://{image_ref}"],
         target=image_ref,
         operation="inspect",
     )
     digest = payload.get("Digest")
     if not isinstance(digest, str) or not digest.startswith("sha256:"):
         raise ValueError(f"skopeo inspect returned invalid digest for {image_ref}")
-    return digest
+    return InspectedImage(digest=digest, payload=payload)
+
+
+def inspect_digest(image_ref: str) -> str:
+    return inspect_image(image_ref).digest
 
 
 def inspect_config(image_ref: str) -> dict[str, Any]:
     return _run_json(
-        [
-            "skopeo",
-            "inspect",
-            "--retry-times",
-            "3",
-            "--override-arch",
-            "amd64",
-            "--override-os",
-            "linux",
-            "--config",
-            f"docker://{image_ref}",
-        ],
+        [*_INSPECT_BASE_ARGS, "--config", f"docker://{image_ref}"],
         target=image_ref,
         operation="inspect --config",
     )

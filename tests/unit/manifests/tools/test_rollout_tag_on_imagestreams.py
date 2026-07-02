@@ -59,7 +59,7 @@ def completed_process(
 def install_skopeo_stub(
     monkeypatch: pytest.MonkeyPatch,
     *,
-    tags: tuple[str, ...] = ("3.3_ea1-v1.1", "3.4_ea1-v1.9", "3.4_ea2-v1.2"),
+    tags: tuple[str, ...] = ("3.3_ea1-v1.1", "3.4_ea1-v1.9", "3.4_ea2-v1.2", "3.4-v1.43"),
     digest: str = "sha256:" + "1" * 64,
     vcs_ref: str = "abcdef1234567890abcdef1234567890abcdef12",
 ) -> None:
@@ -77,8 +77,10 @@ def install_skopeo_stub(
             image = cmd[-1].removeprefix("docker://")
             if "--config" in cmd:
                 return completed_process(stdout=json.dumps({"config": {"Labels": {"vcs-ref": vcs_ref}}}))
-            if image.endswith(":3.4_ea2-v1.2"):
-                return completed_process(stdout=json.dumps({"Digest": digest}))
+            if image.endswith(":3.4-v1.43"):
+                return completed_process(
+                    stdout=json.dumps({"Digest": digest, "Labels": {"vcs-ref": vcs_ref}}),
+                )
             return completed_process(returncode=1, stderr="manifest unknown")
         raise AssertionError(f"Unexpected subprocess command: {cmd!r}")
 
@@ -184,7 +186,9 @@ def test_main_updates_odh_env_files_and_kustomization_for_new_n_minus_one(
         "1/3 Updating imagestreams with new tag",
         "1/3 Imagestreams updated",
     ]
-    params_start = output_lines.index("2/3 Updating the ODH params.env file")
+    params_start = next(
+        index for index, line in enumerate(output_lines) if line.startswith("2/3 Updating the ODH params.env file")
+    )
     params_done = output_lines.index("2/3 ODH params.env file updated")
     progress_lines = output_lines[params_start + 1 : params_done]
     assert progress_lines
@@ -199,9 +203,6 @@ def test_main_updates_odh_env_files_and_kustomization_for_new_n_minus_one(
     commit_done = output_lines.index("3/3 ODH commit.env and kustomization.yaml updated")
     assert commit_start == params_done + 1
     assert commit_done == commit_start + 1
-    assert "Updated manifests/odh/base/params.env" in output_lines
-    assert "Updated manifests/odh/base/commit.env" in output_lines
-    assert "Updated manifests/odh/base/kustomization.yaml" in output_lines
 
 
 def test_main_rolls_rhoai_imagestreams_before_odh_step_two_when_target_all(
@@ -265,7 +266,7 @@ def test_main_fails_when_no_previous_release_tag_matches(
     write_release_version(repo_root, "3.6.0")
     install_skopeo_stub(monkeypatch, tags=("3.3_ea1-v1.1",))
 
-    with pytest.raises(ValueError, match="No published ODH tag found"):
+    with pytest.raises(ValueError, match="No published ODH GA tag found"):
         rollout.main(["--root", str(repo_root), "--target", "odh"])
 
 

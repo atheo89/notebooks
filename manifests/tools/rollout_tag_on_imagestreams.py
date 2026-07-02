@@ -15,9 +15,11 @@ import copy
 import importlib
 import re
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
+from threading import Lock
 from typing import Any, Callable, Iterator
 
 from consolio import Consolio
@@ -36,7 +38,7 @@ _COMMIT_KEY = "opendatahub.io/notebook-build-commit"
 _PLACEHOLDER_RE = re.compile(r"^(?P<prefix>.+?)(?P<suffix>-(?:n|\d+(?:-\d+)*))_PLACEHOLDER$")
 _VERSIONED_KEY_RE = re.compile(r"^(?P<base>.+?)(?P<suffix>-(?:n|\d+(?:-\d+)*))$")
 _ODH_RELEASE_FAMILY_RE = re.compile(r"^(?P<major>\d+)\.(?P<minor>\d+)$")
-_ODH_TAG_RE = re.compile(r"^(?P<major>\d+)\.(?P<minor>\d+)(?P<rest>.*)$")
+_ODH_GA_BUILD_TAG_RE = re.compile(r"^(?P<major>\d+)\.(?P<minor>\d+)-v\d+\.(?P<build>\d+)$")
 _SKOPEO_INSPECT = importlib.import_module("manifests.tools.skopeo_inspect")
 
 
@@ -70,6 +72,7 @@ class StepReporter:
         if not self.is_tty:
             print(message, file=self.stream, flush=True)
             return
+        self.console.reset_indent()
         self.console.print("cmp", message)
 
     @contextmanager
@@ -93,6 +96,7 @@ class StepReporter:
                     self.console.print(1, "inf", detail)
                 else:
                     print(f"  {detail}", file=self.stream, flush=True)
+                self.stream.flush()
 
             try:
                 yield track_item
@@ -191,6 +195,13 @@ def update_tag_placeholders(tag: dict[str, Any], suffix: str) -> None:
     annotations[_COMMIT_KEY] = f"{match.group('prefix')}{suffix}_PLACEHOLDER"
 
 
+def _odh_ga_tag_sort_key(tag: str) -> tuple[int, str]:
+    match = _ODH_GA_BUILD_TAG_RE.fullmatch(tag)
+    if match is None:
+        raise ValueError(f"Unsupported ODH GA build tag format: {tag!r}")
+    return (int(match.group("build")), tag)
+
+
 def select_latest_matching_odh_tag(tags: list[str], release_family: str) -> str:
     match = _ODH_RELEASE_FAMILY_RE.fullmatch(release_family)
     if match is None:
@@ -198,19 +209,21 @@ def select_latest_matching_odh_tag(tags: list[str], release_family: str) -> str:
     target_major = int(match.group("major"))
     target_minor = int(match.group("minor"))
 
-    matches = []
+    matches: list[tuple[tuple[int, str], str]] = []
     for tag in tags:
-        tag_match = _ODH_TAG_RE.match(tag)
+        tag_match = _ODH_GA_BUILD_TAG_RE.fullmatch(tag)
         if tag_match is None:
             continue
         if int(tag_match.group("major")) != target_major or int(tag_match.group("minor")) != target_minor:
             continue
-        numeric_suffix = tuple(int(part) for part in re.findall(r"\d+", tag_match.group("rest")))
-        matches.append((numeric_suffix, tag))
+        matches.append((_odh_ga_tag_sort_key(tag), tag))
 
     if not matches:
-        raise ValueError(f"No published ODH tag found for family '{release_family}'")
-    return max(matches, key=lambda item: (item[0], item[1]))[1]
+        raise ValueError(
+            f"No published ODH GA tag found for family '{release_family}' "
+            "(expected format like '3.4-v1.43'; early-access tags are ignored)"
+        )
+    return max(matches, key=lambda item: item[0])[1]
 
 
 def repository_from_image_ref(image_ref: str) -> str:
@@ -223,10 +236,82 @@ def repository_from_image_ref(image_ref: str) -> str:
 
 
 def extract_short_vcs_ref(config_payload: dict[str, Any], image_ref: str) -> str:
-    vcs_ref = config_payload.get("config", {}).get("Labels", {}).get("vcs-ref")
+    labels = config_payload.get("config", {}).get("Labels")
+    if not isinstance(labels, dict):
+        labels = config_payload.get("Labels")
+    if not isinstance(labels, dict):
+        raise ValueError(f"skopeo inspect returned invalid labels for {image_ref}")
+    vcs_ref = labels.get("vcs-ref")
     if not isinstance(vcs_ref, str) or len(vcs_ref) < 7:
-        raise ValueError(f"skopeo inspect --config returned invalid vcs-ref for {image_ref}")
+        raise ValueError(f"skopeo inspect returned invalid vcs-ref for {image_ref}")
     return vcs_ref[:7]
+
+
+def _list_repository_tags_cached(
+    repository: str,
+    tag_cache: dict[str, tuple[str, ...]],
+    tag_cache_lock: Lock,
+) -> tuple[str, ...]:
+    with tag_cache_lock:
+        cached = tag_cache.get(repository)
+    if cached is not None:
+        return cached
+
+    resolved_tags = _SKOPEO_INSPECT.list_repository_tags(repository)
+    with tag_cache_lock:
+        tag_cache.setdefault(repository, resolved_tags)
+        return tag_cache[repository]
+
+
+def _resolve_odh_released_image(
+    path: Path,
+    params_latest: dict[str, str],
+    *,
+    tag_cache: dict[str, tuple[str, ...]],
+    tag_cache_lock: Lock,
+) -> ReleasedOdhImage:
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    tags = data["spec"]["tags"]
+    if len(tags) < 2:
+        raise ValueError(f"{path.name} must have at least two tags to sync ODH env files")
+
+    released_placeholder = tags[1]["from"]["name"]
+    if not isinstance(released_placeholder, str):
+        raise ValueError(f"{path.name} tag 1 missing from.name placeholder")
+    match = _PLACEHOLDER_RE.match(released_placeholder)
+    if match is None:
+        raise ValueError(f"{path.name} tag 1 placeholder has unexpected format: {released_placeholder!r}")
+
+    base_key = match.group("prefix")
+    released_suffix = match.group("suffix")
+    latest_key = f"{base_key}-n"
+    latest_ref = params_latest.get(latest_key)
+    if latest_ref is None:
+        raise ValueError(f"Missing params-latest.env entry for {latest_key}")
+
+    repository = repository_from_image_ref(latest_ref)
+    repository_name = repository.rsplit("/", 1)[1]
+    if repository_name != base_key:
+        raise ValueError(
+            f"params-latest.env value for {latest_key} does not match key base {base_key!r}: {latest_ref!r}"
+        )
+
+    release_family = str(tags[1]["name"])
+    published_tags = list(_list_repository_tags_cached(repository, tag_cache, tag_cache_lock))
+    published_tag = select_latest_matching_odh_tag(published_tags, release_family)
+    inspected = _SKOPEO_INSPECT.inspect_image(f"{repository}:{published_tag}")
+    digest_ref = f"{repository}@{inspected.digest}"
+    commit_sha = extract_short_vcs_ref(inspected.payload, digest_ref)
+    return ReleasedOdhImage(
+        base_key=base_key,
+        released_suffix=released_suffix,
+        released_param_key=released_placeholder.removesuffix("_PLACEHOLDER"),
+        released_commit_key=commit_field_key(base_key, released_suffix),
+        repository=repository,
+        published_tag=published_tag,
+        digest_ref=digest_ref,
+        commit_sha=commit_sha,
+    )
 
 
 def resolve_odh_released_images(
@@ -236,59 +321,31 @@ def resolve_odh_released_images(
     on_item: Callable[[str], None] | None = None,
 ) -> list[ReleasedOdhImage]:
     params_latest = parse_env_file(base_dir / "params-latest.env")
+    imagestream_paths = list(paths if paths is not None else iter_workbench_imagestream_paths(base_dir))
     tag_cache: dict[str, tuple[str, ...]] = {}
-    released_images: list[ReleasedOdhImage] = []
+    tag_cache_lock = Lock()
+    released_images: list[ReleasedOdhImage | None] = [None] * len(imagestream_paths)
+    worker_count = min(8, len(imagestream_paths) or 1)
 
-    for path in paths if paths is not None else iter_workbench_imagestream_paths(base_dir):
-        data = yaml.safe_load(path.read_text(encoding="utf-8"))
-        tags = data["spec"]["tags"]
-        if len(tags) < 2:
-            raise ValueError(f"{path.name} must have at least two tags to sync ODH env files")
-
-        released_placeholder = tags[1]["from"]["name"]
-        if not isinstance(released_placeholder, str):
-            raise ValueError(f"{path.name} tag 1 missing from.name placeholder")
-        match = _PLACEHOLDER_RE.match(released_placeholder)
-        if match is None:
-            raise ValueError(f"{path.name} tag 1 placeholder has unexpected format: {released_placeholder!r}")
-
-        base_key = match.group("prefix")
-        released_suffix = match.group("suffix")
-        latest_key = f"{base_key}-n"
-        latest_ref = params_latest.get(latest_key)
-        if latest_ref is None:
-            raise ValueError(f"Missing params-latest.env entry for {latest_key}")
-
-        repository = repository_from_image_ref(latest_ref)
-        repository_name = repository.rsplit("/", 1)[1]
-        if repository_name != base_key:
-            raise ValueError(
-                f"params-latest.env value for {latest_key} does not match key base {base_key!r}: {latest_ref!r}"
-            )
-
-        release_family = str(tags[1]["name"])
-        published_tag = select_latest_matching_odh_tag(
-            list(_SKOPEO_INSPECT.list_repository_tags(repository, tag_cache=tag_cache)),
-            release_family,
+    def resolve_at(index: int, path: Path) -> tuple[int, ReleasedOdhImage]:
+        return index, _resolve_odh_released_image(
+            path,
+            params_latest,
+            tag_cache=tag_cache,
+            tag_cache_lock=tag_cache_lock,
         )
-        digest_ref = f"{repository}@{_SKOPEO_INSPECT.inspect_digest(f'{repository}:{published_tag}')}"
-        commit_sha = extract_short_vcs_ref(_SKOPEO_INSPECT.inspect_config(digest_ref), digest_ref)
-        released_images.append(
-            ReleasedOdhImage(
-                base_key=base_key,
-                released_suffix=released_suffix,
-                released_param_key=released_placeholder.removesuffix("_PLACEHOLDER"),
-                released_commit_key=commit_field_key(base_key, released_suffix),
-                repository=repository,
-                published_tag=published_tag,
-                digest_ref=digest_ref,
-                commit_sha=commit_sha,
-            )
-        )
-        if on_item is not None:
-            on_item(released_images[-1].progress_message())
 
-    return released_images
+    with ThreadPoolExecutor(max_workers=worker_count) as executor:
+        futures = [
+            executor.submit(resolve_at, index, path) for index, path in enumerate(imagestream_paths)
+        ]
+        for future in as_completed(futures):
+            index, released_image = future.result()
+            released_images[index] = released_image
+            if on_item is not None:
+                on_item(released_image.progress_message())
+
+    return [image for image in released_images if image is not None]
 
 
 def sync_managed_env_file(
@@ -467,8 +524,9 @@ def run_odh_params_step(
 ) -> tuple[list[Path], list[ReleasedOdhImage]]:
     changed_paths: list[Path] = []
     imagestream_paths = list(iter_workbench_imagestream_paths(base_dir))
+    worker_count = min(8, len(imagestream_paths) or 1)
     with reporter.running_step(
-        "2/3 Updating the ODH params.env file",
+        f"2/3 Updating the ODH params.env file ({len(imagestream_paths)} images, {worker_count} concurrent skopeo workers)",
         "2/3 ODH params.env file updated",
         total=len(imagestream_paths),
     ) as track_item:
@@ -547,8 +605,6 @@ def main(argv: list[str] | None = None) -> int:
         print("ImageStream files already match the requested rollout.")
         return 0
 
-    for path in changed_paths:
-        print(f"Updated {path.relative_to(root)}")
     return 0
 
 
