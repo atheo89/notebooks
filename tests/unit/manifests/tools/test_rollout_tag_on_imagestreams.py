@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import importlib
+import io
 import json
 import shutil
 import subprocess
 import types
+import urllib.error
 from pathlib import Path
 
 import pytest
@@ -12,6 +14,10 @@ import yaml
 
 from manifests.tools.commit_env_refs import commit_field_key, parse_env_file
 from tests import PROJECT_ROOT
+
+RHOAI_BUILD_CONFIG_FIXTURE = (
+    PROJECT_ROOT / "tests/unit/manifests/tools/fixtures/rhoai-build-config-workbench-related-images.yaml"
+)
 
 
 def load_rollout():
@@ -92,10 +98,45 @@ def install_skopeo_stub(
     )
 
 
-def test_main_rolls_out_rhoai_workbench_history_by_one_tag(tmp_path: Path) -> None:
+def install_rhoai_build_config_stub(monkeypatch: pytest.MonkeyPatch) -> None:
+    rollout = load_rollout()
+    csv_text = RHOAI_BUILD_CONFIG_FIXTURE.read_text(encoding="utf-8")
+
+    class FakeResponse:
+        def __init__(self, body: str) -> None:
+            self._body = body
+
+        def read(self) -> bytes:
+            return self._body.encode("utf-8")
+
+        def __enter__(self) -> FakeResponse:
+            return self
+
+        def __exit__(self, *_args: object) -> None:
+            return None
+
+    def fake_urlopen(url: str, timeout: int = 60) -> FakeResponse:
+        url_str = str(url)
+        if "raw.githubusercontent.com/red-hat-data-services/RHOAI-Build-Config" not in url_str:
+            raise AssertionError(f"Unexpected URL opened during rollout: {url_str!r}")
+        if "rhoai-3.4-ea.2" in url_str:
+            raise urllib.error.HTTPError(url_str, 404, "Not Found", {}, io.BytesIO(b""))
+        if "rhoai-3.4/" not in url_str:
+            raise AssertionError(f"Unexpected RHOAI-Build-Config branch URL: {url_str!r}")
+        return FakeResponse(csv_text)
+
+    monkeypatch.setattr(rollout.urllib.request, "urlopen", fake_urlopen)
+
+
+def test_main_rolls_out_rhoai_workbench_history_by_one_tag(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     rollout = load_rollout()
     repo_root = prepare_repo_root(tmp_path)
     write_release_version(repo_root, "3.6.0")
+    install_rhoai_build_config_stub(monkeypatch)
+    install_skopeo_stub(monkeypatch)
     rhoai_base = repo_root / "manifests" / "rhoai" / "base"
 
     before_counts = imagestream_tag_counts(rhoai_base)
@@ -205,6 +246,82 @@ def test_main_updates_odh_env_files_and_kustomization_for_new_n_minus_one(
     assert commit_done == commit_start + 1
 
 
+def test_main_updates_rhoai_env_files_and_preserves_history_for_new_n_minus_one(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rollout = load_rollout()
+    repo_root = prepare_repo_root(tmp_path)
+    write_release_version(repo_root, "3.6.0")
+    install_rhoai_build_config_stub(monkeypatch)
+    install_skopeo_stub(monkeypatch)
+    rhoai_base = repo_root / "manifests" / "rhoai" / "base"
+    before_params = parse_env_file(rhoai_base / "params.env")
+    before_commit = parse_env_file(rhoai_base / "commit.env")
+
+    assert rollout.main(["--root", str(repo_root), "--target", "rhoai"]) == 0
+
+    params_env = parse_env_file(rhoai_base / "params.env")
+    commit_env = parse_env_file(rhoai_base / "commit.env")
+    params_text = (rhoai_base / "params.env").read_text(encoding="utf-8")
+    commit_text = (rhoai_base / "commit.env").read_text(encoding="utf-8")
+    todo_source = (
+        "https://github.com/red-hat-data-services/RHOAI-Build-Config/blob/rhoai-3.4/"
+        "bundle/manifests/rhods-operator.clusterserviceversion.yaml"
+    )
+
+    todo_header = (
+        "# TODO: Update the hashes after 3.4 official release, these values fetched from\n"
+        f"# {todo_source}\n"
+    )
+    first_param_line = params_text.split(todo_header, 1)[1].split("\n", 1)[0]
+    first_commit_line = commit_text.split(todo_header, 1)[1].split("\n", 1)[0]
+    assert "-3-4=" in first_param_line
+    assert "-commit-3-4=" in first_commit_line
+    assert params_text.index("-3-4=") < params_text.index("-2025-2")
+    assert f"{todo_header}odh-workbench-codeserver-datascience-cpu-py312-ubi9-3-4=" in params_text
+    assert "\n\nodh-workbench-jupyter-minimal-cpu-py312-ubi9-2025-2=" in params_text
+    assert "\n\nodh-workbench-jupyter-minimal-cpu-py312-ubi9-commit-2025-2=" in commit_text
+
+    expected_param_keys = []
+    expected_commit_keys = []
+    for path in sorted(rhoai_base.glob("*-imagestream.yaml")):
+        if path.name.startswith("runtime-"):
+            continue
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        tag = data["spec"]["tags"][1]
+        placeholder = tag["from"]["name"]
+        if not isinstance(placeholder, str):
+            continue
+        base_key = rollout._PLACEHOLDER_RE.match(placeholder).group("prefix")
+        if rollout.related_image_env_name(base_key) is None:
+            continue
+        expected_param_keys.append(placeholder.removesuffix("_PLACEHOLDER"))
+        expected_commit_keys.append(
+            tag["annotations"]["opendatahub.io/notebook-build-commit"].removesuffix("_PLACEHOLDER")
+        )
+
+    for key in expected_param_keys:
+        assert key.endswith("-3-4")
+        assert params_env[key].startswith("registry.redhat.io/rhoai/")
+        assert "@sha256:" in params_env[key]
+
+    for key in expected_commit_keys:
+        assert key.endswith("-commit-3-4")
+        assert commit_env[key] == "abcdef1"
+
+    assert before_params["odh-workbench-jupyter-minimal-cpu-py312-ubi9-2025-2"] == (
+        params_env["odh-workbench-jupyter-minimal-cpu-py312-ubi9-2025-2"]
+    )
+    assert before_commit["odh-workbench-jupyter-minimal-cpu-py312-ubi9-commit-2025-2"] == (
+        commit_env["odh-workbench-jupyter-minimal-cpu-py312-ubi9-commit-2025-2"]
+    )
+
+    kustomization_text = (rhoai_base / "kustomization.yaml").read_text(encoding="utf-8")
+    assert "data.odh-workbench-jupyter-minimal-cpu-py312-ubi9-3-4" in kustomization_text
+    assert "data.odh-workbench-jupyter-minimal-cpu-py312-ubi9-commit-3-4" in kustomization_text
+
+
 def test_main_rolls_rhoai_imagestreams_before_odh_step_two_when_target_all(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -213,14 +330,28 @@ def test_main_rolls_rhoai_imagestreams_before_odh_step_two_when_target_all(
     repo_root = prepare_repo_root(tmp_path)
     write_release_version(repo_root, "3.6.0")
     install_skopeo_stub(monkeypatch)
+    install_rhoai_build_config_stub(monkeypatch)
     rhoai_base = repo_root / "manifests" / "rhoai" / "base"
     before_counts = imagestream_tag_counts(rhoai_base)
     original_run_odh_params_step = rollout.run_odh_params_step
     observed_counts: dict[str, int] = {}
 
-    def wrapped_run_odh_params_step(base_dir: Path, *, dry_run: bool, reporter):
+    def wrapped_run_odh_params_step(
+        base_dir: Path,
+        *,
+        dry_run: bool,
+        reporter,
+        step_index: int,
+        step_total: int,
+    ):
         observed_counts.update(imagestream_tag_counts(rhoai_base))
-        return original_run_odh_params_step(base_dir, dry_run=dry_run, reporter=reporter)
+        return original_run_odh_params_step(
+            base_dir,
+            dry_run=dry_run,
+            reporter=reporter,
+            step_index=step_index,
+            step_total=step_total,
+        )
 
     monkeypatch.setattr(rollout, "run_odh_params_step", wrapped_run_odh_params_step)
 
@@ -327,4 +458,4 @@ def test_main_ignores_comment_only_differences(tmp_path: Path, capsys) -> None:
     assert rollout.main(["--root", str(repo_root), "--target", "rhoai"]) == 0
 
     assert target.read_text(encoding="utf-8") == original_text
-    assert capsys.readouterr().out == "ImageStream files already match the requested rollout.\n"
+    assert capsys.readouterr().out == "Rollout files already match the requested state.\n"

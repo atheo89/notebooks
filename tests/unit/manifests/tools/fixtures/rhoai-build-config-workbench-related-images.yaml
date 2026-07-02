@@ -1,0 +1,33 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+spec:
+  install:
+    spec:
+      deployments:
+        - spec:
+            template:
+              spec:
+                containers:
+                  - env:
+                      - name: RELATED_IMAGE_ODH_WORKBENCH_CODESERVER_DATASCIENCE_CPU_PY312_IMAGE
+                        value: "registry.redhat.io/rhoai/odh-workbench-codeserver-datascience-cpu-py312-rhel9@sha256:c1ba278e55494e9c3808ce2acd9e240404751493506c9ca9b18422c970187618"
+                      - name: RELATED_IMAGE_ODH_WORKBENCH_JUPYTER_DATASCIENCE_CPU_PY312_IMAGE
+                        value: "registry.redhat.io/rhoai/odh-workbench-jupyter-datascience-cpu-py312-rhel9@sha256:d07dacbceeaa335854c3aed2d93e149c122a938abf59497c8235c751dae755cb"
+                      - name: RELATED_IMAGE_ODH_WORKBENCH_JUPYTER_MINIMAL_CPU_PY312_IMAGE
+                        value: "registry.redhat.io/rhoai/odh-workbench-jupyter-minimal-cpu-py312-rhel9@sha256:1df7d2d4606883f64ada0bd0dfb2a689b854249f5e3dc6985f23670eb21f62ef"
+                      - name: RELATED_IMAGE_ODH_WORKBENCH_JUPYTER_MINIMAL_CUDA_PY312_IMAGE
+                        value: "registry.redhat.io/rhoai/odh-workbench-jupyter-minimal-cuda-py312-rhel9@sha256:0857bfae48c788d4365338f83bce247b661187a19d89f0759361d2a0b9a2b916"
+                      - name: RELATED_IMAGE_ODH_WORKBENCH_JUPYTER_MINIMAL_ROCM_PY312_IMAGE
+                        value: "registry.redhat.io/rhoai/odh-workbench-jupyter-minimal-rocm-py312-rhel9@sha256:b9ca1ce1b836b566444d46b1506dab0348fa761253dcd70092b0922102c6618d"
+                      - name: RELATED_IMAGE_ODH_WORKBENCH_JUPYTER_PYTORCH_CUDA_PY312_IMAGE
+                        value: "registry.redhat.io/rhoai/odh-workbench-jupyter-pytorch-cuda-py312-rhel9@sha256:b56799c1aa89bfb95c476ecb2f8d07b705b89706e2160eca788096f0b07ceb36"
+                      - name: RELATED_IMAGE_ODH_WORKBENCH_JUPYTER_PYTORCH_LLMCOMPRESSOR_CUDA_PY312_IMAGE
+                        value: "registry.redhat.io/rhoai/odh-workbench-jupyter-pytorch-llmcompressor-cuda-py312-rhel9@sha256:c2e904232a741674b6a3147f945bbe8d9b89068b651db3e442c85fae62b36993"
+                      - name: RELATED_IMAGE_ODH_WORKBENCH_JUPYTER_PYTORCH_ROCM_PY312_IMAGE
+                        value: "registry.redhat.io/rhoai/odh-workbench-jupyter-pytorch-rocm-py312-rhel9@sha256:f7db877ec4a0fb5df22e298041f7ae818360b1c0aab800f8456e418f5abbf7e9"
+                      - name: RELATED_IMAGE_ODH_WORKBENCH_JUPYTER_TENSORFLOW_CUDA_PY312_IMAGE
+                        value: "registry.redhat.io/rhoai/odh-workbench-jupyter-tensorflow-cuda-py312-rhel9@sha256:0b3279ff9ebb8ea924420fc69445cfd60f5041b316ae7c4c4ab39795fa405d6b"
+                      - name: RELATED_IMAGE_ODH_WORKBENCH_JUPYTER_TENSORFLOW_ROCM_PY312_IMAGE
+                        value: "registry.redhat.io/rhoai/odh-workbench-jupyter-tensorflow-rocm-py312-rhel9@sha256:c3bc391ea406095df5d92ff320dd8afc90df16d1c7810c2ebf032e27d46e0914"
+                      - name: RELATED_IMAGE_ODH_WORKBENCH_JUPYTER_TRUSTYAI_CPU_PY312_IMAGE
+                        value: "registry.redhat.io/rhoai/odh-workbench-jupyter-trustyai-cpu-py312-rhel9@sha256:3ccd04fd013ee15b9a6f808c0566265252fc6117f27f58a3d9369ea3d1e421ba"

@@ -4,8 +4,10 @@
 This updates workbench ImageStream YAML files under ``manifests/<variant>/base``.
 Runtime ImageStreams are skipped. For ODH, the tool also synchronizes released
 ``params.env`` / ``commit.env`` entries and regenerates ``kustomization.yaml``.
-ODH keeps exactly two tags (``N`` and ``N-1``). RHOAI prepends a new ``N`` tag
-and preserves existing history.
+ODH keeps exactly two tags (``N`` and ``N-1``). RHOAI prepends a new ``N`` tag,
+preserves existing ImageStream history, and synchronizes ``params.env`` /
+``commit.env`` for the new ``N-1`` tag using digest refs from
+``red-hat-data-services/RHOAI-Build-Config``.
 """
 
 from __future__ import annotations
@@ -15,6 +17,8 @@ import copy
 import importlib
 import re
 import sys
+import urllib.error
+import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -39,19 +43,26 @@ _PLACEHOLDER_RE = re.compile(r"^(?P<prefix>.+?)(?P<suffix>-(?:n|\d+(?:-\d+)*))_P
 _VERSIONED_KEY_RE = re.compile(r"^(?P<base>.+?)(?P<suffix>-(?:n|\d+(?:-\d+)*))$")
 _ODH_RELEASE_FAMILY_RE = re.compile(r"^(?P<major>\d+)\.(?P<minor>\d+)$")
 _ODH_GA_BUILD_TAG_RE = re.compile(r"^(?P<major>\d+)\.(?P<minor>\d+)-v\d+\.(?P<build>\d+)$")
+_RHOAI_WORKBENCH_BASE_KEY_RE = re.compile(
+    r"^odh-workbench-(?P<middle>.+)-py(?P<pyver>\d+)-(?P<platform>ubi9|c9s)$"
+)
+_RHOAI_BUILD_CONFIG_REPO = "red-hat-data-services/RHOAI-Build-Config"
+_RHOAI_BUILD_CONFIG_CSV_PATH = "bundle/manifests/rhods-operator.clusterserviceversion.yaml"
 _SKOPEO_INSPECT = importlib.import_module("manifests.tools.skopeo_inspect")
 
 
 @dataclass(frozen=True)
-class ReleasedOdhImage:
+class ReleasedImage:
     base_key: str
     released_suffix: str
     released_param_key: str
     released_commit_key: str
-    repository: str
-    published_tag: str
     digest_ref: str
     commit_sha: str
+    repository: str = ""
+    published_tag: str = ""
+    release_tag: str = ""
+    source_url: str = ""
 
     def progress_message(self) -> str:
         digest = self.digest_ref.rsplit("@", 1)[-1]
@@ -269,7 +280,7 @@ def _resolve_odh_released_image(
     *,
     tag_cache: dict[str, tuple[str, ...]],
     tag_cache_lock: Lock,
-) -> ReleasedOdhImage:
+) -> ReleasedImage:
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     tags = data["spec"]["tags"]
     if len(tags) < 2:
@@ -302,15 +313,16 @@ def _resolve_odh_released_image(
     inspected = _SKOPEO_INSPECT.inspect_image(f"{repository}:{published_tag}")
     digest_ref = f"{repository}@{inspected.digest}"
     commit_sha = extract_short_vcs_ref(inspected.payload, digest_ref)
-    return ReleasedOdhImage(
+    return ReleasedImage(
         base_key=base_key,
         released_suffix=released_suffix,
         released_param_key=released_placeholder.removesuffix("_PLACEHOLDER"),
         released_commit_key=commit_field_key(base_key, released_suffix),
-        repository=repository,
-        published_tag=published_tag,
         digest_ref=digest_ref,
         commit_sha=commit_sha,
+        repository=repository,
+        published_tag=published_tag,
+        release_tag=release_family,
     )
 
 
@@ -319,15 +331,15 @@ def resolve_odh_released_images(
     *,
     paths: list[Path] | None = None,
     on_item: Callable[[str], None] | None = None,
-) -> list[ReleasedOdhImage]:
+) -> list[ReleasedImage]:
     params_latest = parse_env_file(base_dir / "params-latest.env")
     imagestream_paths = list(paths if paths is not None else iter_workbench_imagestream_paths(base_dir))
     tag_cache: dict[str, tuple[str, ...]] = {}
     tag_cache_lock = Lock()
-    released_images: list[ReleasedOdhImage | None] = [None] * len(imagestream_paths)
+    released_images: list[ReleasedImage | None] = [None] * len(imagestream_paths)
     worker_count = min(8, len(imagestream_paths) or 1)
 
-    def resolve_at(index: int, path: Path) -> tuple[int, ReleasedOdhImage]:
+    def resolve_at(index: int, path: Path) -> tuple[int, ReleasedImage]:
         return index, _resolve_odh_released_image(
             path,
             params_latest,
@@ -346,6 +358,207 @@ def resolve_odh_released_images(
                 on_item(released_image.progress_message())
 
     return [image for image in released_images if image is not None]
+
+
+def related_image_env_name(base_key: str) -> str | None:
+    match = _RHOAI_WORKBENCH_BASE_KEY_RE.fullmatch(base_key)
+    if match is None or match.group("pyver") != "312" or match.group("platform") != "ubi9":
+        return None
+    middle = match.group("middle").upper().replace("-", "_")
+    return f"RELATED_IMAGE_ODH_WORKBENCH_{middle}_PY312_IMAGE"
+
+
+def rhoai_build_config_branch_candidates(release_tag: str) -> tuple[str, ...]:
+    return (f"rhoai-{release_tag}", f"rhoai-{release_tag}-ea.2")
+
+
+def rhoai_build_config_source_url(branch: str) -> str:
+    return f"https://github.com/{_RHOAI_BUILD_CONFIG_REPO}/blob/{branch}/{_RHOAI_BUILD_CONFIG_CSV_PATH}"
+
+
+def fetch_rhoai_build_config(branch: str, *, urlopen: Callable[..., Any] | None = None) -> str:
+    url = f"https://raw.githubusercontent.com/{_RHOAI_BUILD_CONFIG_REPO}/{branch}/{_RHOAI_BUILD_CONFIG_CSV_PATH}"
+    opener = urllib.request.urlopen if urlopen is None else urlopen
+    with opener(url, timeout=60) as response:
+        return response.read().decode("utf-8")
+
+
+def resolve_rhoai_build_config_source(
+    release_tag: str,
+    *,
+    urlopen: Callable[..., Any] | None = None,
+) -> tuple[str, str]:
+    last_error: urllib.error.HTTPError | None = None
+    for branch in rhoai_build_config_branch_candidates(release_tag):
+        try:
+            fetch_rhoai_build_config(branch, urlopen=urlopen)
+        except urllib.error.HTTPError as exc:
+            if exc.code == 404:
+                last_error = exc
+                continue
+            raise
+        else:
+            return branch, rhoai_build_config_source_url(branch)
+    raise ValueError(
+        f"No RHOAI-Build-Config branch found for release {release_tag!r} "
+        f"(tried {', '.join(rhoai_build_config_branch_candidates(release_tag))})"
+    ) from last_error
+
+
+def parse_workbench_related_images(csv_text: str) -> dict[str, str]:
+    data = yaml.safe_load(csv_text)
+    related: dict[str, str] = {}
+
+    def walk(node: Any) -> None:
+        if isinstance(node, dict):
+            name = node.get("name")
+            value = node.get("value")
+            if (
+                isinstance(name, str)
+                and name.startswith("RELATED_IMAGE_ODH_WORKBENCH_")
+                and isinstance(value, str)
+            ):
+                related[name] = value.strip('"')
+            for child in node.values():
+                walk(child)
+        elif isinstance(node, list):
+            for item in node:
+                walk(item)
+
+    walk(data)
+    return related
+
+
+def load_rhoai_workbench_related_images(
+    release_tag: str,
+    cache: dict[str, dict[str, str]],
+    source_urls: dict[str, str],
+    *,
+    urlopen: Callable[..., Any] | None = None,
+) -> dict[str, str]:
+    if release_tag in cache:
+        return cache[release_tag]
+
+    branch, source_url = resolve_rhoai_build_config_source(release_tag, urlopen=urlopen)
+    cache[release_tag] = parse_workbench_related_images(fetch_rhoai_build_config(branch, urlopen=urlopen))
+    source_urls[release_tag] = source_url
+    return cache[release_tag]
+
+
+def _resolve_rhoai_released_image(
+    path: Path,
+    related_images_cache: dict[str, dict[str, str]],
+    source_urls: dict[str, str],
+    *,
+    urlopen: Callable[..., Any] | None = None,
+) -> ReleasedImage | None:
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    tags = data["spec"]["tags"]
+    if len(tags) < 2:
+        raise ValueError(f"{path.name} must have at least two tags to sync RHOAI env files")
+
+    released_placeholder = tags[1]["from"]["name"]
+    if not isinstance(released_placeholder, str):
+        raise ValueError(f"{path.name} tag 1 missing from.name placeholder")
+    match = _PLACEHOLDER_RE.match(released_placeholder)
+    if match is None:
+        raise ValueError(f"{path.name} tag 1 placeholder has unexpected format: {released_placeholder!r}")
+
+    base_key = match.group("prefix")
+    related_image_name = related_image_env_name(base_key)
+    if related_image_name is None:
+        return None
+
+    release_tag = str(tags[1]["name"])
+    related_images = load_rhoai_workbench_related_images(
+        release_tag,
+        related_images_cache,
+        source_urls,
+        urlopen=urlopen,
+    )
+    digest_ref = related_images.get(related_image_name)
+    if digest_ref is None:
+        raise ValueError(
+            f"No {related_image_name} entry in RHOAI-Build-Config for release {release_tag!r}"
+        )
+
+    config_payload = _SKOPEO_INSPECT.inspect_config(digest_ref)
+    commit_sha = extract_short_vcs_ref(config_payload, digest_ref)
+    released_suffix = match.group("suffix")
+    return ReleasedImage(
+        base_key=base_key,
+        released_suffix=released_suffix,
+        released_param_key=released_placeholder.removesuffix("_PLACEHOLDER"),
+        released_commit_key=commit_field_key(base_key, released_suffix),
+        digest_ref=digest_ref,
+        commit_sha=commit_sha,
+        release_tag=release_tag,
+        source_url=source_urls[release_tag],
+    )
+
+
+def resolve_rhoai_released_images(
+    base_dir: Path,
+    *,
+    paths: list[Path] | None = None,
+    on_item: Callable[[str], None] | None = None,
+    urlopen: Callable[..., Any] | None = None,
+) -> list[ReleasedImage]:
+    imagestream_paths = list(paths if paths is not None else iter_workbench_imagestream_paths(base_dir))
+    related_images_cache: dict[str, dict[str, str]] = {}
+    source_urls: dict[str, str] = {}
+    released_images: list[ReleasedImage] = []
+
+    for path in imagestream_paths:
+        released_image = _resolve_rhoai_released_image(
+            path,
+            related_images_cache,
+            source_urls,
+            urlopen=urlopen,
+        )
+        if released_image is None:
+            continue
+        released_images.append(released_image)
+        if on_item is not None:
+            on_item(released_image.progress_message())
+
+    return released_images
+
+
+def rhoai_env_todo_header(release_tag: str, source_url: str) -> str:
+    return (
+        f"# TODO: Update the hashes after {release_tag} official release, these values fetched from\n"
+        f"# {source_url}\n"
+    )
+
+
+def sync_rhoai_env_entries(
+    path: Path,
+    desired_entries: dict[str, str],
+    *,
+    release_tag: str,
+    source_url: str,
+    dry_run: bool = False,
+) -> bool:
+    if not desired_entries:
+        return False
+
+    current_entries = parse_env_file(path)
+    desired_keys = set(desired_entries)
+    unchanged_entries = [(key, value) for key, value in current_entries.items() if key not in desired_keys]
+
+    released_block = rhoai_env_todo_header(release_tag, source_url) + "".join(
+        f"{key}={desired_entries[key]}\n" for key in sorted(desired_entries)
+    )
+    unchanged_body = "".join(f"{key}={value}\n" for key, value in unchanged_entries)
+    updated_text = f"{released_block}\n{unchanged_body}" if unchanged_body else released_block
+
+    current_text = path.read_text(encoding="utf-8")
+    if updated_text == current_text:
+        return False
+    if not dry_run:
+        path.write_text(updated_text, encoding="utf-8")
+    return True
 
 
 def sync_managed_env_file(
@@ -390,7 +603,7 @@ def sync_managed_env_file(
     return True
 
 
-def sync_odh_params_env(base_dir: Path, released_images: list[ReleasedOdhImage], *, dry_run: bool = False) -> bool:
+def sync_odh_params_env(base_dir: Path, released_images: list[ReleasedImage], *, dry_run: bool = False) -> bool:
     desired_entries_by_base = {
         released_image.base_key: (released_image.released_param_key, released_image.digest_ref)
         for released_image in released_images
@@ -403,7 +616,7 @@ def sync_odh_params_env(base_dir: Path, released_images: list[ReleasedOdhImage],
     )
 
 
-def sync_odh_commit_env(base_dir: Path, released_images: list[ReleasedOdhImage], *, dry_run: bool = False) -> bool:
+def sync_odh_commit_env(base_dir: Path, released_images: list[ReleasedImage], *, dry_run: bool = False) -> bool:
     desired_entries_by_base = {
         f"{released_image.base_key}-commit": (released_image.released_commit_key, released_image.commit_sha)
         for released_image in released_images
@@ -412,6 +625,36 @@ def sync_odh_commit_env(base_dir: Path, released_images: list[ReleasedOdhImage],
         base_dir / "commit.env",
         desired_entries_by_base,
         managed_prefix="odh-workbench-",
+        dry_run=dry_run,
+    )
+
+
+def sync_rhoai_params_env(base_dir: Path, released_images: list[ReleasedImage], *, dry_run: bool = False) -> bool:
+    if not released_images:
+        return False
+    release_tag = released_images[0].release_tag
+    source_url = released_images[0].source_url
+    desired_entries = {image.released_param_key: image.digest_ref for image in released_images}
+    return sync_rhoai_env_entries(
+        base_dir / "params.env",
+        desired_entries,
+        release_tag=release_tag,
+        source_url=source_url,
+        dry_run=dry_run,
+    )
+
+
+def sync_rhoai_commit_env(base_dir: Path, released_images: list[ReleasedImage], *, dry_run: bool = False) -> bool:
+    if not released_images:
+        return False
+    release_tag = released_images[0].release_tag
+    source_url = released_images[0].source_url
+    desired_entries = {image.released_commit_key: image.commit_sha for image in released_images}
+    return sync_rhoai_env_entries(
+        base_dir / "commit.env",
+        desired_entries,
+        release_tag=release_tag,
+        source_url=source_url,
         dry_run=dry_run,
     )
 
@@ -498,17 +741,19 @@ def rollout_variant_imagestreams(root: Path, variant: str, target_tag_name: str,
     return changed_paths
 
 
-def run_odh_imagestream_rollout_step(
+def run_imagestream_rollout_step(
     root: Path,
     variants: tuple[str, ...],
     target_tag_name: str,
     *,
     dry_run: bool,
     reporter: StepReporter,
+    step_index: int,
+    step_total: int,
 ) -> list[Path]:
     with reporter.running_step(
-        "1/3 Updating imagestreams with new tag",
-        "1/3 Imagestreams updated",
+        f"{step_index}/{step_total} Updating imagestreams with new tag",
+        f"{step_index}/{step_total} Imagestreams updated",
     ):
         changed_paths: list[Path] = []
         for variant in variants:
@@ -521,13 +766,16 @@ def run_odh_params_step(
     *,
     dry_run: bool,
     reporter: StepReporter,
-) -> tuple[list[Path], list[ReleasedOdhImage]]:
+    step_index: int,
+    step_total: int,
+) -> tuple[list[Path], list[ReleasedImage]]:
     changed_paths: list[Path] = []
     imagestream_paths = list(iter_workbench_imagestream_paths(base_dir))
     worker_count = min(8, len(imagestream_paths) or 1)
     with reporter.running_step(
-        f"2/3 Updating the ODH params.env file ({len(imagestream_paths)} images, {worker_count} concurrent skopeo workers)",
-        "2/3 ODH params.env file updated",
+        f"{step_index}/{step_total} Updating the ODH params.env file "
+        f"({len(imagestream_paths)} images, {worker_count} concurrent skopeo workers)",
+        f"{step_index}/{step_total} ODH params.env file updated",
         total=len(imagestream_paths),
     ) as track_item:
         released_images = resolve_odh_released_images(
@@ -542,21 +790,85 @@ def run_odh_params_step(
 
 def run_odh_commit_step(
     base_dir: Path,
-    released_images: list[ReleasedOdhImage],
+    released_images: list[ReleasedImage],
     *,
     dry_run: bool,
     reporter: StepReporter,
+    step_index: int,
+    step_total: int,
 ) -> list[Path]:
     changed_paths: list[Path] = []
     with reporter.running_step(
-        "3/3 Updating the ODH commit.env and kustomization.yaml files",
-        "3/3 ODH commit.env and kustomization.yaml updated",
+        f"{step_index}/{step_total} Updating the ODH commit.env and kustomization.yaml files",
+        f"{step_index}/{step_total} ODH commit.env and kustomization.yaml updated",
     ):
         if sync_odh_commit_env(base_dir, released_images, dry_run=dry_run):
             changed_paths.append(base_dir / "commit.env")
         if regenerate_kustomization(base_dir, dry_run=dry_run):
             changed_paths.append(base_dir / "kustomization.yaml")
     return changed_paths
+
+
+def run_rhoai_params_step(
+    base_dir: Path,
+    *,
+    dry_run: bool,
+    reporter: StepReporter,
+    step_index: int,
+    step_total: int,
+    urlopen: Callable[..., Any] | None = None,
+) -> tuple[list[Path], list[ReleasedImage]]:
+    changed_paths: list[Path] = []
+    imagestream_paths = list(iter_workbench_imagestream_paths(base_dir))
+    with reporter.running_step(
+        f"{step_index}/{step_total} Updating the RHOAI params.env file ({len(imagestream_paths)} images)",
+        f"{step_index}/{step_total} RHOAI params.env file updated",
+        total=len(imagestream_paths),
+    ) as track_item:
+        released_images = resolve_rhoai_released_images(
+            base_dir,
+            paths=imagestream_paths,
+            on_item=track_item,
+            urlopen=urlopen,
+        )
+        if sync_rhoai_params_env(base_dir, released_images, dry_run=dry_run):
+            changed_paths.append(base_dir / "params.env")
+    return changed_paths, released_images
+
+
+def run_rhoai_commit_step(
+    base_dir: Path,
+    released_images: list[ReleasedImage],
+    *,
+    dry_run: bool,
+    reporter: StepReporter,
+    step_index: int,
+    step_total: int,
+) -> list[Path]:
+    changed_paths: list[Path] = []
+    with reporter.running_step(
+        f"{step_index}/{step_total} Updating the RHOAI commit.env and kustomization.yaml files",
+        f"{step_index}/{step_total} RHOAI commit.env and kustomization.yaml updated",
+    ):
+        if sync_rhoai_commit_env(base_dir, released_images, dry_run=dry_run):
+            changed_paths.append(base_dir / "commit.env")
+        if regenerate_kustomization(base_dir, dry_run=dry_run):
+            changed_paths.append(base_dir / "kustomization.yaml")
+    return changed_paths
+
+
+def variant_needs_rollout(root: Path, variant: str, target_tag_name: str) -> bool:
+    base_dir = root / "manifests" / variant / "base"
+    for path in iter_workbench_imagestream_paths(base_dir):
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        tags = data["spec"]["tags"]
+        if tags and str(tags[0].get("name")) != target_tag_name:
+            return True
+    return False
+
+
+def rollout_step_total(variants: tuple[str, ...]) -> int:
+    return 1 + (2 if "odh" in variants else 0) + (2 if "rhoai" in variants else 0)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -568,38 +880,72 @@ def main(argv: list[str] | None = None) -> int:
 
     reporter = StepReporter()
     changed_paths: list[Path] = []
+    rollout_needed = any(variant_needs_rollout(root, variant, target_tag_name) for variant in variants)
+    if not rollout_needed and not args.dry_run:
+        print("Rollout files already match the requested state.")
+        return 0
 
-    if "odh" in variants:
-        changed_paths.extend(
-            run_odh_imagestream_rollout_step(
-                root,
-                variants,
-                target_tag_name,
-                dry_run=args.dry_run,
-                reporter=reporter,
-            )
-        )
-        if not args.dry_run:
+    step_total = rollout_step_total(variants)
+    step_index = 1
+
+    imagestream_changed_paths = run_imagestream_rollout_step(
+        root,
+        variants,
+        target_tag_name,
+        dry_run=args.dry_run,
+        reporter=reporter,
+        step_index=step_index,
+        step_total=step_total,
+    )
+    changed_paths.extend(imagestream_changed_paths)
+    step_index += 1
+
+    if not args.dry_run and imagestream_changed_paths:
+        if "odh" in variants:
             params_changed_paths, released_images = run_odh_params_step(
                 root / "manifests" / "odh" / "base",
                 dry_run=args.dry_run,
                 reporter=reporter,
+                step_index=step_index,
+                step_total=step_total,
             )
             changed_paths.extend(params_changed_paths)
+            step_index += 1
             changed_paths.extend(
                 run_odh_commit_step(
                     root / "manifests" / "odh" / "base",
                     released_images,
                     dry_run=args.dry_run,
                     reporter=reporter,
+                    step_index=step_index,
+                    step_total=step_total,
+                )
+            )
+            step_index += 1
+
+        if "rhoai" in variants:
+            params_changed_paths, released_images = run_rhoai_params_step(
+                root / "manifests" / "rhoai" / "base",
+                dry_run=args.dry_run,
+                reporter=reporter,
+                step_index=step_index,
+                step_total=step_total,
+            )
+            changed_paths.extend(params_changed_paths)
+            step_index += 1
+            changed_paths.extend(
+                run_rhoai_commit_step(
+                    root / "manifests" / "rhoai" / "base",
+                    released_images,
+                    dry_run=args.dry_run,
+                    reporter=reporter,
+                    step_index=step_index,
+                    step_total=step_total,
                 )
             )
 
-    if "rhoai" in variants and "odh" not in variants:
-        changed_paths.extend(rollout_variant_imagestreams(root, "rhoai", target_tag_name, dry_run=args.dry_run))
-
     if not changed_paths:
-        if "odh" in variants and not args.dry_run:
+        if not args.dry_run:
             print("Rollout files already match the requested state.")
             return 0
         print("ImageStream files already match the requested rollout.")
