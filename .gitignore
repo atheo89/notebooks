@@ -168,6 +168,11 @@ cython_debug/
 # pnpm store
 .pnpm-store/
 
+# Local MCP configs and secrets (templates *.example are committed)
+.mcp.json
+.cursor/mcp.json
+.env.mcp.local
+
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
